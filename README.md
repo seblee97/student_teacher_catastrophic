@@ -1,6 +1,6 @@
 # catastrophic
 
-Basic requirements can be met with
+Basic requirements can (hopefully) be met with
 
 ```pip3 install numpy matplotlib torch torchvision PyYAML tensorboardX```
 
