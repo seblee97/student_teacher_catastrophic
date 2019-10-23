@@ -5,7 +5,7 @@ import os
 import collections
 import six
 
-class ContinualParameters(object):
+class StudentTeacherParameters(object):
     
     def __init__(self, parameters):
         self._config = parameters
@@ -22,9 +22,15 @@ class ContinualParameters(object):
             value = self._config
             for prop in property_name:
                 value = value.get(prop, "Unknown Key")
+                if value == "Unknown Key":
+                    raise ValueError("Config key {} unrecognised".format(prop))
             return value
         elif type(property_name) == str:
-            return self._config.get(property_name, "Unknown Key")
+            value = self._config.get(property_name, "Unknown Key")
+            if value == "Unknown Key":
+                raise ValueError("Config key {} unrecognised".format(property_name))
+            else:
+                return value
         else:
             raise TypeError("property_name supplied has wrong type. Must be list of strings or string.")
 
@@ -37,7 +43,7 @@ class ContinualParameters(object):
         """
         raise NotImplementedError # TODO: Is this worth doing? .yaml not particularly amenable 
 
-    def set_property(self, property_name: str, property_value: Any, property_description: str=None) -> None:
+    def set_property(self, property_name: Union[str, List[str]], property_value: Any, property_description: str=None) -> None:
         """
         Add to the configuration specification
 
@@ -48,7 +54,10 @@ class ContinualParameters(object):
         if property_name in self._config:
             raise Exception("This field is already defined in the configuration. Use ammend_property method to override current entry")
         else:
-            self._config[property_name] = property_value
+            if type(property_name) == str:
+                self._config[property_name] = property_value
+            else:
+                raise TypeError("Property name type {} not assignable".format(type(property_name)))
 
     def ammend_property(self, property_name: str, property_value: Any, property_description: str=None) -> None:
         """
