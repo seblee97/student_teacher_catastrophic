@@ -34,9 +34,9 @@ curriculum:
   type:                             custom                    # curriculum type (custom - declarative or standard - imperative)
 
   selection_type:                   random                    # how to determine next task (random or cyclical)
-  stopping_condition:               fixed_period              # condition on which to switch task (fixed_period or threshold)
+  stopping_condition:               threshold                 # condition on which to switch task (fixed_period or threshold)
 
   fixed_period:                     1000
-  threshold:                        0.00001
+  loss_threshold:                   0.00001
 
   custom:                           [0, 1]
