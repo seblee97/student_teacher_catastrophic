@@ -203,6 +203,7 @@ class StudentTeacher:
         curriculum_type = config.get(["curriculum", "type"])
         self.curriculum_stopping_condition = config.get(["curriculum", "stopping_condition"])
         self.curriculum_period = config.get(["curriculum", "fixed_period"])
+        self.curriculum_loss_threshold = config.get(["curriculum", "loss_threshold"])
 
         if curriculum_type == "custom":
             self.curriculum = itertools.cycle((config.get(["curriculum", "custom"])))
@@ -225,6 +226,7 @@ class StudentTeacher:
         """
         training_losses = []
         total_step_count = 0
+        steps_per_task = []
 
         # import pdb; pdb.set_trace()
 
@@ -266,6 +268,8 @@ class StudentTeacher:
                 task_step_count += 1
 
                 if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
+                    self.writer.add_scaler('steps_per_task', task_step_count, total_step_count)
+                    steps_per_task.append(task_step_count)
                     break
 
     def _switch_task(self, step: int, generalisation_error: float) -> bool: 
@@ -324,7 +328,7 @@ class StudentTeacher:
                 self.teacher_writers[i].add_scalar('generalisation_error/linear', error, total_step_count)
                 self.teacher_writers[i].add_scalar('generalisation_error/log', np.log10(error), total_step_count)
 
-            if self.verbose and total_step_count % 100 == 0:
+            if self.verbose and task_step_count % 100 == 0:
                 print("Generalisation errors @ step {} ({}'th step training on teacher {}):".format(total_step_count, task_step_count, teacher_index))
                 for i, error in enumerate(generalisation_error_per_teacher):
                     print(
