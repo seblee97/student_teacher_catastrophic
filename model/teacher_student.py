@@ -11,6 +11,8 @@ from tensorboardX import SummaryWriter
 
 from typing import List, Tuple, Generator, Dict
 
+from utils import custom_functions
+
 class Model(nn.Module):
 
     def __init__(self, config, model_type: str):
@@ -224,7 +226,7 @@ class StudentTeacher:
 
                 # overlap matrices
                 if total_step_count % self.overlap_frequency == 0 and total_step_count != 0:
-                    self._compute_overlap_matrices()
+                    self._compute_overlap_matrices(step_count=total_step_count)
 
                 total_step_count += 1
                 task_step_count += 1
@@ -280,8 +282,29 @@ class StudentTeacher:
 
             return generalisation_error_per_teacher[teacher_index]
 
-    def _compute_overlap_matrices(self):
-        raise NotImplementedError
+    def _compute_overlap_matrices(self, step_count):
+
+        # extract layer weights
+        student_layer = self.student_network.state_dict()['layers.0.weight'].data
+        teacher_layers = [teacher.state_dict()['layers.0.weight'].data for teacher in self.teachers]
+
+        # compute overlap matrices
+        student_self_overlap = student_layer.mm(student_layer.t()) / self.input_dimension
+        student_teacher_overlaps = [student_layer.mm(teacher_layer.t()) / self.input_dimension for teacher_layer in teacher_layers]
+        teacher_self_overlaps = [teacher_layer.mm(teacher_layer.t()) / self.input_dimension for teacher_layer in teacher_layers]
+
+        # generate visualisations
+        student_self_fig = custom_functions.visualise_matrix(student_self_overlap.cpu().numpy(), fig_title=r"$Q_{ik}^\mu$")
+        student_teacher_figs = [
+            custom_functions.visualise_matrix(student_teacher_overlap.cpu().numpy(), fig_title=r"$R_{in}^\mu$") \
+            for t, student_teacher_overlap in enumerate(student_teacher_overlaps)
+        ]
+
+        # log visualisations
+        self.writer.add_figure("student_self_overlap", student_self_fig, step_count)
+        for t, student_teacher_fig in enumerate(student_teacher_figs):
+            self.writer.add_figure("student_teacher_overlaps/teacher_{}".format(t), student_teacher_fig, step_count)
+
 
     def _compute_generalisation_errors(self, teacher_indices: List) -> List:
         # import pdb; pdb.set_trace()
