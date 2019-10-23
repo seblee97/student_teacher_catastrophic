@@ -1,25 +1,42 @@
 experiment_name:    
 use_gpu:                            True                      # whether to use a gpu if it is available on the device          
-seed:                               0
-resume:
-verbose:                      
+seed:                               10
+resume:        
+verbose:                            True          
 
 training:
-  training_iterations:              1000                      # number of training iterations
+  total_training_steps:             1000000000
   train_batch_size:                 1                         # number of tasks sampled per meta-update (per outer loop)
-  test_batch_size:                  500
+  test_batch_size:                  50000
   learning_rate:                    0.2
   num_teachers:                     2
-  curriculum:                       [(0, 1000)]
+  loss_function:                    mse
+  
+testing:
+  test_frequency:                   1
+  overlap_frequency:                10000000
+  test_all_teachers:                True
 
 model:
-  input_dimension:                  1                         # dimension of network input 
+  input_dimension:                  500                       # dimension of network input 
   student_hidden_layers:            [2]                       # dimension of hidden layers to be used in student network
   teacher_hidden_layers:            [1]                       # dimension of hidden layers to be used in teacher network(s)
   output_dimension:                 1                         # dimension of network output
-  nonlinearity:                     'relu'
+  nonlinearity:                     relu
   teacher_initialisation_std:       1
   student_initialisation_std:       0.001
-  add_noise_teacher:                True
-  soft_comittee:                    False
+  teacher_add_noise:                False
+  student_add_noise:                False
+  soft_committee:                   False
   bias_parameters:                  False
+
+curriculum:
+  type:                             custom                    # curriculum type (custom - declarative or standard - imperative)
+
+  selection_type:                   random                    # how to determine next task (random or cyclical)
+  stopping_condition:               fixed_period              # condition on which to switch task (fixed_period or threshold)
+
+  fixed_period:                     1000
+  threshold:                        0.00001
+
+  custom:                           [0, 1]
