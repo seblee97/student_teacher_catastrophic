@@ -14,7 +14,7 @@ training:
   
 testing:
   test_frequency:                   1
-  overlap_frequency:                10000000
+  overlap_frequency:                100
   test_all_teachers:                True
 
 model:
