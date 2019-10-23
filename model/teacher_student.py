@@ -98,38 +98,36 @@ class StudentTeacher:
         """
 
         # extract relevant parameters from config
-        self.input_dimension = config.get("input_dimension")
-        self.output_dimension = config.get("output_dimension")
+        self.input_dimension = config.get(["model", "input_dimension"])
+        self.output_dimension = config.get(["model", "output_dimension"])
+        self.nonlinearity = config.get(["model", "nonlinearity"])
+        self.soft_committee = config.get(["model", "soft_committee"])
 
-        self.train_batch_size = config.get("train_batch_size")
-        self.test_batch_size = config.get("test_batch_size")
-        self.learning_rate = config.get("learning_rate")
+        self.train_batch_size = config.get(["trainin", "train_batch_size"])
+        self.test_batch_size = config.get(["training", "test_batch_size"])
+        self.learning_rate = config.get(["training", "learning_rate"])
 
-        self.student_hidden = config.get("")
-        self.teacher_hidden = config.get("")
-        self.student_initialisation_variance = config.get("student_initialisation_variance")
-        self.teacher_initialisation_variance = config.get("teacher_initialisation_variance")
-        self.add_teacher_noise = config.get("add_teacher_noise")
-        self.soft_committee = config.get("soft_committee")
+        num_teachers = config.get(["training", "num_teachers"])
 
-        self.nonlinearity = config.get("nonlinearity")
-
-        self.curriculum = config.get("curriculum")
-
-        num_teachers = config.get("num_teachers")
-
+        # initialise student network
         self.student_network = Model(config=config, model_type='student') 
 
+        # initialise teacher networks, freeze
         self.teachers = []
         for _ in range(num_teachers):
             teacher = Model(config=config, model_type='teacher')
             teacher.freeze_weights()
             self.teachers.append(teacher)
+
+        # extract curriculum from config
+        self.curriculum = config.get(["training" , "curriculum"])
         
         trainable_parameters = filter(lambda param: param.requires_grad, self.student_network.parameters())
-        
-        self.optimiser = optim.SGD(trainable_parameters, lr=self.learning_rate)
 
+        # initialise optimiser with trainable parameters of student        
+        self.optimiser = optim.SGD(trainable_parameters, lr=self.learning_rate)
+        
+        # initialise loss function
         if config.get("loss") == 'mse':
             self.loss_function = nn.MSELoss()
         else:
