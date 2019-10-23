@@ -18,11 +18,11 @@ args = parser.parse_args()
 if __name__ == "__main__":
 
     # read parameters from config
-    with open(args.base_config, 'r') as base_yaml_file:
-        base_params = yaml.load(base_yaml_file, yaml.SafeLoader)
+    with open(args.config, 'r') as yaml_file:
+        params = yaml.load(yaml_file, yaml.SafeLoader)
 
     # create object in which to store experiment parameters
-    student_teacher_parameters = utils.parameters.StudentTeacherParameters(base_params)
+    student_teacher_parameters = utils.parameters.StudentTeacherParameters(params)
 
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
@@ -57,5 +57,8 @@ if __name__ == "__main__":
         print("Using the CPU")
         student_teacher_parameters.set_property("device", "cpu")
         experiment_device = torch.device("cpu")
+
+    student_teacher = model.StudentTeacher(config=student_teacher_parameters)
+    student_teacher.train()
         
     
