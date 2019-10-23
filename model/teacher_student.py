@@ -127,12 +127,12 @@ class StudentTeacher:
         self._extract_parameters(config)
 
         # initialise student network
-        self.student_network = Model(config=config, model_type='student')
+        self.student_network = Model(config=config, model_type='student').to(self.device)
 
         # initialise teacher networks, freeze
         self.teachers = []
         for _ in range(self.num_teachers):
-            teacher = Model(config=config, model_type='teacher')
+            teacher = Model(config=config, model_type='teacher').to(self.device)
             teacher.freeze_weights()
             self.teachers.append(teacher)
 
@@ -151,7 +151,7 @@ class StudentTeacher:
             raise NotImplementedError("{} is not currently supported, please use mse loss".format(config.get("loss")))
 
         # generate fixed test data
-        self.test_input_data = torch.randn(self.test_batch_size, self.input_dimension)
+        self.test_input_data = torch.randn(self.test_batch_size, self.input_dimension).to(self.device)
         self.test_teacher_outputs = [teacher(self.test_input_data) for teacher in self.teachers]
 
         # initialise general tensorboard writer
@@ -169,6 +169,7 @@ class StudentTeacher:
 
         self.verbose = config.get("verbose")
         self.checkpoint_path = config.get("checkpoint_path")
+        self.device = config.get("device")
 
         self.total_training_steps = config.get(["training", "total_training_steps"])
 
@@ -235,7 +236,7 @@ class StudentTeacher:
 
             while True:
 
-                random_input = torch.randn(self.train_batch_size, self.input_dimension)
+                random_input = torch.randn(self.train_batch_size, self.input_dimension).to(self.device)
     
                 teacher_output = self.teachers[teacher_index](random_input)
                 student_output = self.student_network(random_input)
