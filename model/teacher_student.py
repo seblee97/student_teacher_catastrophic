@@ -15,8 +15,13 @@ from utils import custom_functions
 
 class Model(nn.Module):
 
-    def __init__(self, config, model_type: str):
-        
+    def __init__(self, config: Dict, model_type: str) -> None:
+        """
+        Multi-layer non-linear neural network class. For use in student-teacher framework.
+
+        :param config: dictionary containing parameters to specify network configuration
+        :param model_type: "teacher" or "student"
+        """
         self.model_type = model_type # 'teacher' or 'student'
 
         assert self.model_type == 'teacher' or 'student', "Unknown model type {} provided to network".format(self.model_type)
@@ -45,8 +50,10 @@ class Model(nn.Module):
 
         self._initialise_weights()
 
-    def _construct_layers(self):
-
+    def _construct_layers(self) -> None:
+        """
+        initiates layers (input, hidden and output) according to dimensions specified in configuration
+        """
         self.layers = nn.ModuleList([])
         
         input_layer = nn.Linear(self.input_dimension, self.hidden_dimensions[0], bias=self.bias)
@@ -62,13 +69,16 @@ class Model(nn.Module):
                 param.requires_grad = False
         self.layers.append(output_layer)
 
-    def _get_model_type(self):
+    def _get_model_type(self) -> str:
         """
         returns class attribute 'model type' i.e. 'teacher' or 'student'
         """
         return self.model_type
 
-    def _initialise_weights(self):
+    def _initialise_weights(self) -> None:
+        """
+        Weight initialisation method
+        """
         for layer in self.layers:
             if self.nonlinearity_name == 'relu':
                 # std = 1 / np.sqrt(self.input_dimension)
@@ -79,12 +89,20 @@ class Model(nn.Module):
                 torch.nn.init.normal_(layer.weight)
                 # torch.nn.init.normal_(layer.bias)
 
-    def freeze_weights(self):
+    def freeze_weights(self) -> None:
+        """
+        Freezes weights in graph (always called for teacher)
+        """
         for param in self.parameters():
             param.requires_grad = False
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass
 
+        :param x: input tensor to network
+        :return y: output of network
+        """
         for layer in self.layers[:-1]:
             x = self.nonlinear_function(layer(x) / np.sqrt(self.input_dimension))
 
@@ -99,9 +117,11 @@ class Model(nn.Module):
 
 class StudentTeacher:
 
-    def __init__(self, config):
+    def __init__(self, config: Dict) -> None:
         """
-        Experiment
+        Class for orchestrating student teacher framework including training and test loops
+
+        :param config: dictionary containing parameters to specify training etc.
         """
         # extract relevant parameters from config
         self._extract_parameters(config)
@@ -142,7 +162,10 @@ class StudentTeacher:
         # initialise objects containing metrics of interest
         self._initialise_metrics()
 
-    def _extract_parameters(self, config):
+    def _extract_parameters(self, config: Dict) -> None:
+        """
+        Method to extract relevant parameters from config and make them attributes of this class
+        """
 
         self.verbose = config.get("verbose")
         self.checkpoint_path = config.get("checkpoint_path")
@@ -164,10 +187,18 @@ class StudentTeacher:
 
         self.num_teachers = config.get(["training", "num_teachers"])
 
-    def _initialise_metrics(self):
+    def _initialise_metrics(self) -> None:
+        """
+        Initialise objects that will keep metrix of training e.g. generalisation errors
+        Useful to make them attributes of class so that they can be accessed by all methods in class
+        """
         self.generalisation_errors = {i: [] for i in range(len(self.teachers))}
 
-    def _set_curriculum(self, config: Dict):
+    def _set_curriculum(self, config: Dict) -> None:
+        """
+        Establish and assign curriculum from configuration file. This is used to determine how to 
+        proceed with training (when to switch teacher, how to decide subsequent teacher etc.)
+        """
         curriculum_type = config.get(["curriculum", "type"])
         self.curriculum_stopping_condition = config.get(["curriculum", "stopping_condition"])
         self.curriculum_period = config.get(["curriculum", "fixed_period"])
@@ -187,8 +218,10 @@ class StudentTeacher:
         else:
             raise ValueError("Curriculum type {} not recognised".format(curriculum_type))
 
-    def train(self):
-
+    def train(self) -> None:
+        """
+        Training loop
+        """
         training_losses = []
         total_step_count = 0
 
@@ -234,7 +267,16 @@ class StudentTeacher:
                 if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
                     break
 
-    def _switch_task(self, step, generalisation_error):
+    def _switch_task(self, step: int, generalisation_error: float) -> bool: 
+        """
+        Method to determine whether to switch task 
+        (i.e. whether condition set out by curriculum for switching has been met)
+
+        :param step: number of steps completed for current task being trained (not overall step count)
+        :param generalisation_error: generalisation error associated with current teacher 
+
+        :return True / False: whether or not to switch task
+        """
         if self.curriculum_stopping_condition == "fixed_period":
             if step == self.curriculum_period:
                 return True
@@ -248,7 +290,16 @@ class StudentTeacher:
         else:
             raise ValueError("curriculum stopping condition {} unknown".format(self.curriculum_stopping_condition))
 
-    def _perform_test_loop(self, teacher_index, task_step_count, total_step_count):
+    def _perform_test_loop(self, teacher_index: int, task_step_count: int, total_step_count: int) -> float:
+        """
+        Test loop. Evaluated generalisation error of student wrt teacher(s)
+
+        :param teacher_index: index of current teacher student is being trained on
+        :param task_step_count: number of steps completed under current teacher
+        :param total_step_count: total number of steps student has beein training for
+
+        :return generalisation_error_wrt_current_teacher: generalisation_error for current teacher 
+        """
         with torch.no_grad():
 
             if self.test_all_teachers:
@@ -280,10 +331,17 @@ class StudentTeacher:
                         sep="\n"
                     )
 
-            return generalisation_error_per_teacher[teacher_index]
+            generalisation_error_wrt_current_teacher = generalisation_error_per_teacher[teacher_index]
 
-    def _compute_overlap_matrices(self, step_count):
+            return generalisation_error_wrt_current_teacher
 
+    def _compute_overlap_matrices(self, step_count: int) -> None:
+        """
+        calculated overlap matrices (order parameters) of student wrt itself, teacher wrt itself and student wrt teacher
+        produces figures and logs to tb
+
+        :param step_count: number of steps (overall) taken by student in training so far
+        """
         # extract layer weights
         student_layer = self.student_network.state_dict()['layers.0.weight'].data
         teacher_layers = [teacher.state_dict()['layers.0.weight'].data for teacher in self.teachers]
@@ -306,7 +364,13 @@ class StudentTeacher:
             self.writer.add_figure("student_teacher_overlaps/teacher_{}".format(t), student_teacher_fig, step_count)
 
 
-    def _compute_generalisation_errors(self, teacher_indices: List) -> List:
+    def _compute_generalisation_errors(self, teacher_indices: List[int]) -> List[float]:
+        """
+        calculated generalisation errors wrt fixed test dataset of student against teacher indices given
+
+        :param teacher_indices: teachers against which to test student 
+        :return generalisation_errors: list of generalisation errors of student against all teachers specified
+        """
         # import pdb; pdb.set_trace()
         with torch.no_grad():
             student_outputs = self.student_network(self.test_input_data)
@@ -316,7 +380,16 @@ class StudentTeacher:
                 generalisation_errors = [float(self._compute_loss(student_outputs, self.test_teacher_outputs[teacher_index])) for teacher_index in teacher_indices]
             return generalisation_errors
 
-    def _compute_loss(self, prediction, target):
+    def _compute_loss(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        """
+        Calculates loss of prediction of student vs. target from teacher
+        Loss function determined by configuration
+
+        :param prediction: prediction made by student network on given input
+        :param target: target - teacher output on same input
+
+        :return loss: loss between target (from teacher) and prediction (from student)
+        """
         loss = 0.5 * self.loss_function(prediction, target)
         return loss
 
