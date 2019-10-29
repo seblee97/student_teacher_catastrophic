@@ -11,6 +11,7 @@ training:
   learning_rate:                    0.2                       # learning rate for sgd update of student
   num_teachers:                     2                         # number of teachers to use
   loss_function:                    mse                       # function to use for loss
+  label_tasks:                      True                      # whether or not to add the task index to the input (extra supervision)
   
 testing:
   test_frequency:                   1                         # how often during training to perform generalisation error test loop
@@ -22,7 +23,7 @@ model:
   student_hidden_layers:            [2]                       # dimension of hidden layers to be used in student network
   teacher_hidden_layers:            [1]                       # dimension of hidden layers to be used in teacher network(s)
   output_dimension:                 1                         # dimension of network output
-  nonlinearity:                     relu                      # nonlinearity to be used for networks
+  nonlinearity:                     sigmoid                   # nonlinearity to be used for networks
   teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
   student_initialisation_std:       0.001                     # std of normal initialisation for student network
   teacher_add_noise:                False                     # whether or not to add noise to teacher output
@@ -33,10 +34,10 @@ model:
 curriculum:
   type:                             custom                    # curriculum type (custom - declarative or standard - imperative)
 
-  selection_type:                   random                    # how to determine next task (random or cyclical)
-  stopping_condition:               fixed_period              # condition on which to switch task (fixed_period or threshold)
+  selection_type:                   cyclical                  # how to determine next task (random or cyclical)
+  stopping_condition:               threshold                 # condition on which to switch task (fixed_period or threshold)
 
   fixed_period:                     1000                      # period for changing tasks 
-  loss_threshold:                   0.00001                   # loss threshold under which teacher is changed 
+  loss_threshold:                   0.0008                    # loss threshold under which teacher is changed 
 
   custom:                           [0, 1]                    # curriculum defined manually. Each entry defines next teacher index
