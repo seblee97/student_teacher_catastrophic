@@ -1,4 +1,4 @@
-from models import Teacher, MetaStudent, ContinualStudent
+from models import Teacher
 
 from frameworks import StudentTeacher
 
@@ -23,4 +23,10 @@ class IndependentTeachers(StudentTeacher):
             teacher.freeze_weights()
             teacher.set_noise_distribution(mean=0, std=teacher_noises[t])
             self.teachers.append(teacher)
+
+    def _signal_task_boundary_to_teacher(self, new_task: int):
+        pass
+
+    def _signal_step_boundary_to_teacher(self, step: int, current_task: int):
+        pass
     
