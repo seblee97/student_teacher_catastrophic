@@ -16,10 +16,7 @@ class Teacher(Model):
         """
         Sets a normal distribution from which to sample noise that is added to output
         """
-        if mean is None:
-            self.noise_distribution = None
-        else:
-            self.noise_distribution = tdist.Normal(torch.Tensor([mean]), torch.Tensor([std]))
+        self.noise_distribution = tdist.Normal(torch.Tensor([mean]), torch.Tensor([std]))
 
     def _construct_output_layers(self):
         self.output_layer = nn.Linear(self.hidden_dimensions[-1], self.output_dimension, bias=self.bias)
@@ -31,6 +28,6 @@ class Teacher(Model):
     def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
         y = self.output_layer(x)
         if self.noise_distribution:
-            noise = self.noise_distribution.sample((self.batch_dimension,))
+            noise = self.noise_distribution.sample((y.shape[0],))
             y = y + noise
         return y
