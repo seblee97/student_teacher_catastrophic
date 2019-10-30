@@ -82,7 +82,7 @@ class StudentTeacher(ABC):
 
         self.num_teachers = config.get(["task", "num_teachers"])
         self.label_task_bounaries = config.get(["task", "label_task_boundaries"])
-        self.task_setting = config.get(["task", "task_setting"])
+        self.learner_configuration = config.get(["task", "learner_configuration"])
         self.teacher_configuration = config.get(["task", "teacher_configuration"])
 
     @abstractmethod
@@ -139,8 +139,9 @@ class StudentTeacher(ABC):
             task_step_count = 0
             latest_task_generalisation_error = np.inf
             
-            # alert learner of task change e.g. change output head of student to relevant task (if in continual setting)
-            self._signal_task_boundary(new_task=teacher_index)
+            # alert learner/teacher(s) of task change e.g. change output head of student to relevant task (if in continual setting)
+            self._signal_task_boundary_to_learner(new_task=teacher_index)
+            self._signal_task_boundary_to_teacher(new_task=teacher_index)
 
             while True:
 
@@ -173,13 +174,21 @@ class StudentTeacher(ABC):
                 total_step_count += 1
                 task_step_count += 1
 
+                # alert learner/teacher(s) of step e.g. to drift teacher
+                self._signal_step_boundary_to_learner(step=task_step_count, current_task=teacher_index)
+                self._signal_step_boundary_to_teacher(step=task_step_count, current_task=teacher_index)
+
                 if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
                     self.writer.add_scalar('steps_per_task', task_step_count, total_step_count)
                     steps_per_task.append(task_step_count)
                     break
 
     @abstractmethod
-    def _signal_task_boundary(self):
+    def _signal_task_boundary_to_learner(self):
+        raise NotImplementedError("Base class method")
+
+    @abstractmethod
+    def _signal_task_boundary_to_teacher(self):
         raise NotImplementedError("Base class method")
 
     def _switch_task(self, step: int, generalisation_error: float) -> bool: 
@@ -229,9 +238,18 @@ class StudentTeacher(ABC):
 
             for i, error in enumerate(generalisation_error_per_teacher):
                 self.generalisation_errors[i].append(error)
+
                 # log generalisation loss per teacher
                 self.teacher_writers[i].add_scalar('generalisation_error/linear', error, total_step_count)
                 self.teacher_writers[i].add_scalar('generalisation_error/log', np.log10(error), total_step_count)
+
+                if len(self.generalisation_errors[i]) > 1:
+                    last_error = self.generalisation_errors[i][-2]
+                    error_delta = error - last_error
+                    if error_delta != 0.:
+                        # log generalisation loss delta per teacher
+                        self.teacher_writers[i].add_scalar('error_change/linear', error_delta, total_step_count)
+                        self.teacher_writers[i].add_scalar('error_change/log', np.sign(error_delta) * np.log10(abs(error_delta)), total_step_count)
 
             if self.verbose and task_step_count % 500 == 0:
                 print("Generalisation errors @ step {} ({}'th step training on teacher {}):".format(total_step_count, task_step_count, teacher_index))
