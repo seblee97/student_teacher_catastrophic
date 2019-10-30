@@ -13,7 +13,7 @@ from typing import List, Tuple, Generator, Dict
 
 from utils import custom_functions
 
-from .network import Model
+from .network import Teacher, Student
 
 class StudentTeacher:
 
@@ -26,15 +26,8 @@ class StudentTeacher:
         # extract relevant parameters from config
         self._extract_parameters(config)
 
-        # initialise student network
-        self.student_network = Model(config=config, model_type='student').to(self.device)
-
-        # initialise teacher networks, freeze
-        self.teachers = []
-        for _ in range(self.num_teachers):
-            teacher = Model(config=config, model_type='teacher').to(self.device)
-            teacher.freeze_weights()
-            self.teachers.append(teacher)
+        # setup teacher(s) and students according to config
+        self._setup_teacher_student_framework(config=config)
 
         # extract curriculum from config
         self._set_curriculum(config)
@@ -86,8 +79,30 @@ class StudentTeacher:
         self.test_frequency = config.get(["testing", "test_frequency"])
         self.overlap_frequency = config.get(["testing", "overlap_frequency"])
 
-        self.num_teachers = config.get(["training", "num_teachers"])
-        self.label_tasks = config.get(["training", "label_tasks"])
+        self.num_teachers = config.get(["task", "num_teachers"])
+        self.label_task_bounaries = config.get(["task", "label_task_boundaries"])
+        self.task_setting = config.get(["task", "task_setting"])
+        self.teacher_initialisation = config.get(["task", "teacher_initialisation"])
+
+    def _setup_teacher_student_framework(self, config: Dict):
+        # initialise student network
+        self.student_network = Student(config=config).to(self.device)
+
+        # initialise teacher networks, freeze
+        self.teachers = []
+        if self.teacher_initialisation == 'independent':
+            for _ in range(self.num_teachers):
+                teacher = Teacher(config=config).to(self.device)
+                teacher.freeze_weights()
+                teacher.set_noise_distribution(None, None)
+                self.teachers.append(teacher)
+        elif self.teacher_initialisation == 'underlying_task':
+            base_teacher = Teacher(config=config).to(self.device)
+            base_teacher.freeze_weights()
+            for _ in range(self.num_teachers):
+                teacher = copy.deepcopy(base_teacher)
+                teacher.set_noise_distribution(mean=0, std=1)
+                self.teachers.append(teacher)
 
     def _initialise_metrics(self) -> None:
         """
@@ -129,13 +144,14 @@ class StudentTeacher:
         total_step_count = 0
         steps_per_task = []
 
-        # import pdb; pdb.set_trace()
-
         while total_step_count < self.total_training_steps:
             
             teacher_index = next(self.curriculum)
             task_step_count = 0
             latest_task_generalisation_error = np.inf
+
+            # change output head of student to relevant task
+            self.student_network.set_task(teacher_index)
 
             while True:
 
@@ -235,7 +251,7 @@ class StudentTeacher:
                 self.teacher_writers[i].add_scalar('generalisation_error/linear', error, total_step_count)
                 self.teacher_writers[i].add_scalar('generalisation_error/log', np.log10(error), total_step_count)
 
-            if self.verbose and task_step_count % 100 == 0:
+            if self.verbose and task_step_count % 500 == 0:
                 print("Generalisation errors @ step {} ({}'th step training on teacher {}):".format(total_step_count, task_step_count, teacher_index))
                 for i, error in enumerate(generalisation_error_per_teacher):
                     print(
@@ -283,13 +299,18 @@ class StudentTeacher:
         :param teacher_indices: teachers against which to test student 
         :return generalisation_errors: list of generalisation errors of student against all teachers specified
         """
-        # import pdb; pdb.set_trace()
         with torch.no_grad():
-            student_outputs = self.student_network(self.test_input_data)
+            student_outputs = self.student_network.test_all_tasks(self.test_input_data)
             if self.test_all_teachers:
-                generalisation_errors = [float(self._compute_loss(student_outputs, teacher_output)) for teacher_output in self.test_teacher_outputs]
+                if self.task_setting == 'continual':
+                    generalisation_errors = [float(self._compute_loss(student_output, teacher_output)) for student_output, teacher_output in zip(student_outputs, self.test_teacher_outputs)]
+                elif self.task_setting == 'meta':
+                    generalisation_errors = [float(self._compute_loss(student_outputs, teacher_output)) for teacher_output in self.test_teacher_outputs]
             else:
-                generalisation_errors = [float(self._compute_loss(student_outputs, self.test_teacher_outputs[teacher_index])) for teacher_index in teacher_indices]
+                if self.task_setting == 'continual':
+                    generalisation_errors = [float(self._compute_loss(student_outputs[teacher_index], self.test_teacher_outputs[teacher_index])) for teacher_index in teacher_indices]
+                elif self.task_setting == 'meta':
+                    generalisation_errors = [float(self._compute_loss(student_outputs, self.test_teacher_outputs[teacher_index])) for teacher_index in teacher_indices]
             return generalisation_errors
 
     def _compute_loss(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
