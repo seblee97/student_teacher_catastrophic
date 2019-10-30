@@ -3,6 +3,8 @@ from frameworks.base_frameworks.continual_learning import ContinualLearner
 
 from frameworks.base_frameworks.noisy_teachers import NoisyTeachers
 from frameworks.base_frameworks.independent_teachers import IndependentTeachers
+from frameworks.base_frameworks.drifting_teachers import DriftingTeachers
+from frameworks.base_frameworks.overlapping_teachers import OverlappingTeachers
 
 from typing import Dict
 
@@ -18,6 +20,18 @@ class MetaIndependent(IndependentTeachers, MetaLearner):
         MetaLearner.__init__(self, config)
         IndependentTeachers.__init__(self, config)
 
+class MetaDrifting(DriftingTeachers, MetaLearner):
+
+    def __init__(self, config: Dict):
+        MetaLearner.__init__(self, config)
+        DriftingTeachers.__init__(self, config)
+
+class MetaOverlapping(OverlappingTeachers, MetaLearner):
+
+    def __init__(self, config: Dict):
+        MetaLearner.__init__(self, config)
+        OverlappingTeachers.__init__(self, config)
+
 class ContinualNoisy(NoisyTeachers, ContinualLearner):
 
     def __init__(self, config: Dict):
@@ -30,3 +44,14 @@ class ContinualIndependent(IndependentTeachers, ContinualLearner):
         ContinualLearner.__init__(self, config)
         IndependentTeachers.__init__(self, config)
 
+class ContinualDrifting(DriftingTeachers, ContinualLearner):
+
+    def __init__(self, config: Dict):
+        ContinualLearner.__init__(self, config)
+        DriftingTeachers.__init__(self, config)
+
+class ContinualOverlapping(OverlappingTeachers, ContinualLearner):
+
+    def __init__(self, config: Dict):
+        ContinualLearner.__init__(self, config)
+        OverlappingTeachers.__init__(self, config)
