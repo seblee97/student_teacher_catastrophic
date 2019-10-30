@@ -6,8 +6,8 @@ verbose:                            True                      # whether to print
 
 task:
   label_task_boundaries:            True                      # whether or not to add the task index to the input (extra supervision)
-  task_setting:                     meta                      # meta or continual - specifies whether student has separate heads for each teacher (continual) or not (meta)
-  teacher_configuration:            independent               # 'noisy': each teacher has same initialisation, each with different levels of noise added, 'independent': all randomly initialised
+  learner_configuration:            continual                 # meta or continual - specifies whether student has separate heads for each teacher (continual) or not (meta)
+  teacher_configuration:            overlapping               # 'noisy': each teacher has same initialisation, each with different levels of noise added, 'independent': all randomly initialised, 'drifting': all randomly initialised but drifting over time, 'overlapping': structured similarity in teacher weights
   num_teachers:                     2                         # number of teachers to use
 
 training:
