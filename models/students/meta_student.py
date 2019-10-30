@@ -21,6 +21,9 @@ class MetaStudent(Model):
             for param in self.output_layer.parameters():
                 param.requires_grad = False
 
+    def set_task(self, task_index: int):
+        self._current_teacher = task_index
+
     def test_all_tasks(self, x: torch.Tensor):
         for layer in self.layers:
             x = self.nonlinear_function(layer(x) / np.sqrt(self.input_dimension))
