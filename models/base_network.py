@@ -47,8 +47,9 @@ class Model(nn.Module, ABC):
         self.initialisation_std = config.get(["model", "{}_initialisation_std".format(self.model_type)])
         self.bias = config.get(["model", "bias_parameters"])
         self.soft_committee = config.get(["model", "soft_committee"])
-        self.task_setting = config.get(["task", "task_setting"])
+        self.learner_configuration = config.get(["task", "learner_configuration"])
         self.num_teachers = config.get(["task", "num_teachers"])
+        self.label_task_boundaries = config.get(["task", "label_task_boundaries"])
 
     def _construct_layers(self) -> None:
         """
