@@ -11,7 +11,7 @@ from typing import List, Tuple, Generator, Dict
 
 from abc import ABC, abstractmethod
 
-class Model(nn.Module):
+class Model(nn.Module, ABC):
 
     def __init__(self, config: Dict, model_type: str) -> None:
         """
@@ -45,7 +45,6 @@ class Model(nn.Module):
         self.output_dimension = config.get(["model", "output_dimension"])
         self.hidden_dimensions = config.get(["model", "{}_hidden_layers".format(self.model_type)])
         self.initialisation_std = config.get(["model", "{}_initialisation_std".format(self.model_type)])
-        self.add_noise = config.get(["model", "{}_add_noise".format(self.model_type)])
         self.bias = config.get(["model", "bias_parameters"])
         self.soft_committee = config.get(["model", "soft_committee"])
         self.task_setting = config.get(["task", "task_setting"])
