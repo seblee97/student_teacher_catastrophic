@@ -15,8 +15,11 @@ class ContinualLearner(StudentTeacher):
         # initialise student network
         self.student_network = ContinualStudent(config=config).to(self.device)
 
-    def _signal_task_boundary(self, new_task: int):
+    def _signal_task_boundary_to_learner(self, new_task: int):
         self.student_network.set_task(new_task)
+
+    def _signal_step_boundary_to_learner(self, step: int, current_task: int):
+        pass
 
     def _compute_generalisation_errors(self):
         with torch.no_grad():
