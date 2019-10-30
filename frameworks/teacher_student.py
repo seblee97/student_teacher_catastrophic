@@ -11,10 +11,11 @@ from tensorboardX import SummaryWriter
 
 from typing import List, Tuple, Generator, Dict
 
-from models import Teacher, MetaStudent, ContinualStudent
 from utils import visualise_matrix
 
-class StudentTeacher:
+from abc import ABC, abstractmethod
+
+class StudentTeacher(ABC):
 
     def __init__(self, config: Dict) -> None:
         """
@@ -81,27 +82,11 @@ class StudentTeacher:
         self.num_teachers = config.get(["task", "num_teachers"])
         self.label_task_bounaries = config.get(["task", "label_task_boundaries"])
         self.task_setting = config.get(["task", "task_setting"])
-        self.teacher_initialisation = config.get(["task", "teacher_initialisation"])
+        self.teacher_configuration = config.get(["task", "teacher_configuration"])
 
+    @abstractmethod
     def _setup_teacher_student_framework(self, config: Dict):
-        # initialise student network
-        self.student_network = MetaStudent(config=config).to(self.device)
-
-        # initialise teacher networks, freeze
-        self.teachers = []
-        if self.teacher_initialisation == 'independent':
-            for _ in range(self.num_teachers):
-                teacher = Teacher(config=config).to(self.device)
-                teacher.freeze_weights()
-                teacher.set_noise_distribution(None, None)
-                self.teachers.append(teacher)
-        elif self.teacher_initialisation == 'underlying_task':
-            base_teacher = Teacher(config=config).to(self.device)
-            base_teacher.freeze_weights()
-            for _ in range(self.num_teachers):
-                teacher = copy.deepcopy(base_teacher)
-                teacher.set_noise_distribution(mean=0, std=1)
-                self.teachers.append(teacher)
+        raise NotImplementedError("Base class method")
 
     def _initialise_metrics(self) -> None:
         """
@@ -149,8 +134,9 @@ class StudentTeacher:
             task_step_count = 0
             latest_task_generalisation_error = np.inf
 
-            # change output head of student to relevant task
-            self.student_network.set_task(teacher_index)
+            # change output head of student to relevant task (if in continual setting)
+            if self.task_setting == "continual":
+                self.student_network.set_task(teacher_index)
 
             while True:
 
