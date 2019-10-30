@@ -3,6 +3,8 @@ from models.base_network import Model
 import torch.nn as nn
 import torch
 
+import numpy as np
+
 from typing import Dict
 
 class ContinualStudent(Model):
@@ -28,11 +30,8 @@ class ContinualStudent(Model):
 
     def test_all_tasks(self, x: torch.Tensor):
         for layer in self.layers:
-            x = self.nonlinear_function(layer(x) / torch.sqrt(self.input_dimension))
-        if self.task_setting == 'continual': 
-            task_outputs = [self.heads[t](x) for t in range(self.num_teachers)]
-        elif self.task_setting == 'meta':
-            task_outputs = self.output_layer(x)
+            x = self.nonlinear_function(layer(x) / np.sqrt(self.input_dimension))
+        task_outputs = [self.heads[t](x) for t in range(self.num_teachers)]
         return task_outputs
 
     def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
