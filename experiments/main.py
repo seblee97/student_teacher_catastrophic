@@ -73,10 +73,16 @@ if __name__ == "__main__":
         student_teacher_parameters.set_property("device", "cpu")
         experiment_device = torch.device("cpu")
 
-    if teacher_configuration == 'noisy':
-        student_teacher = frameworks.NoisyTeachers(config=student_teacher_parameters)
-    elif teacher_configuration == 'independent':
-        student_teacher = frameworks.IndependentTeachers(config=student_teacher_parameters)
+    task_setting = student_teacher_parameters.get(["task", "task_setting"])
+
+    if teacher_configuration == 'noisy' and task_setting == 'meta':
+        student_teacher = frameworks.MetaNoisy(config=student_teacher_parameters)
+    elif teacher_configuration == 'independent' and task_setting == 'meta':
+        student_teacher = frameworks.MetaIndependent(config=student_teacher_parameters)
+    if teacher_configuration == 'noisy' and task_setting == 'continual':
+        student_teacher = frameworks.ContinualNoisy(config=student_teacher_parameters)
+    elif teacher_configuration == 'independent' and task_setting == 'continual':
+        student_teacher = frameworks.ContinualIndependent(config=student_teacher_parameters)
         
     student_teacher.train()
         
