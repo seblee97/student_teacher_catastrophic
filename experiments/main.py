@@ -1,5 +1,5 @@
 
-from context import model, utils
+from context import models, utils, frameworks
 
 import argparse
 import torch
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         student_teacher_parameters.set_property("device", "cpu")
         experiment_device = torch.device("cpu")
 
-    student_teacher = model.StudentTeacher(config=student_teacher_parameters)
+    student_teacher = frameworks.StudentTeacher(config=student_teacher_parameters)
     student_teacher.train()
         
     
