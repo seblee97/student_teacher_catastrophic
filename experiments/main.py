@@ -13,6 +13,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml')
 parser.add_argument('-gpu_id', type=int, help='id of gpu to use if more than 1 available', default=0)
 
+parser.add_argument('-learner_configuration', '--lc', type=str, help="meta or continual", default=None)
+parser.add_argument('-teacher_configuration', '--tc', type=str, help="noisy or independent", default=None)
+parser.add_argument('-num_teachers', '--nt', type=int, default=None)
+parser.add_argument('-selection_type', '--st', type=str, help="random or cyclical", default=None)
+parser.add_argument('-stopping_condition', '--sc', type=str, help="threshold or fixed_period", default=None)
+parser.add_argument('-fixed_period', '--fp', type=str, help="time between teacher change", default=None)
+parser.add_argument('-loss_threshold', '--lt', type=str, help="how low loss for current teacher goes before switching (used with threshold)", default=None)
+
 args = parser.parse_args()
 
 if __name__ == "__main__":
@@ -24,11 +32,29 @@ if __name__ == "__main__":
     # create object in which to store experiment parameters
     student_teacher_parameters = utils.parameters.StudentTeacherParameters(params)
 
+    # update parameters with (optional) args given in command line
+    if args.lc:
+        student_teacher_parameters._config["task"]["learner_configuration"] = args.lc
+    if args.tc:
+        student_teacher_parameters._config["task"]["teacher_configuration"] = args.tc
+    if args.nt:
+        student_teacher_parameters._config["task"]["num_teachers"] = args.nt
+    if args.st:
+        student_teacher_parameters._config["curriculum"]["selection_type"] = args.st
+    if args.sc:
+        student_teacher_parameters._config["curriculum"]["stopping_condition"] = args.sc
+    if args.fp:
+        student_teacher_parameters._config["curriculum"]["fixed_period"] = args.fp
+    if args.lt:
+        student_teacher_parameters._config["curriculum"]["loss_threshold"] = args.lt
+
     teacher_configuration = student_teacher_parameters.get(["task", "teacher_configuration"])
     if teacher_configuration == 'noisy':
         additional_configuration = 'noisy_config.yaml'
     elif teacher_configuration == 'independent':
         additional_configuration = 'independent_config.yaml'
+    elif teacher_configuration == 'drifting':
+        additional_configuration = 'drifting_config.yaml'
     else:
         raise ValueError("teacher configuration {} not recognised. Please use 'noisy' or 'independent'".format(teacher_configuration))
 
@@ -73,16 +99,24 @@ if __name__ == "__main__":
         student_teacher_parameters.set_property("device", "cpu")
         experiment_device = torch.device("cpu")
 
-    task_setting = student_teacher_parameters.get(["task", "task_setting"])
+    learner_configuration = student_teacher_parameters.get(["task", "learner_configuration"])
 
-    if teacher_configuration == 'noisy' and task_setting == 'meta':
+    if teacher_configuration == 'noisy' and learner_configuration == 'meta':
         student_teacher = frameworks.MetaNoisy(config=student_teacher_parameters)
-    elif teacher_configuration == 'independent' and task_setting == 'meta':
+    elif teacher_configuration == 'independent' and learner_configuration == 'meta':
         student_teacher = frameworks.MetaIndependent(config=student_teacher_parameters)
-    if teacher_configuration == 'noisy' and task_setting == 'continual':
+    elif teacher_configuration == 'noisy' and learner_configuration == 'continual':
         student_teacher = frameworks.ContinualNoisy(config=student_teacher_parameters)
-    elif teacher_configuration == 'independent' and task_setting == 'continual':
+    elif teacher_configuration == 'independent' and learner_configuration == 'continual':
         student_teacher = frameworks.ContinualIndependent(config=student_teacher_parameters)
+    elif teacher_configuration == 'drifting' and learner_configuration == 'continual':
+        student_teacher = frameworks.ContinualDrifting(config=student_teacher_parameters)
+    elif teacher_configuration == 'drifting' and learner_configuration == 'meta':
+        student_teacher = frameworks.MetaDrifting(config=student_teacher_parameters)
+    elif teacher_configuration == 'overlapping' and learner_configuration == 'continual':
+        student_teacher = frameworks.ContinualOverlapping(config=student_teacher_parameters)
+    elif teacher_configuration == 'overlapping' and learner_configuration == 'meta':
+        student_teacher = frameworks.MetaOverlapping(config=student_teacher_parameters)
         
     student_teacher.train()
         
