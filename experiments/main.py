@@ -10,19 +10,34 @@ import os
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='config.yaml')
+parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml')
 parser.add_argument('-gpu_id', type=int, help='id of gpu to use if more than 1 available', default=0)
 
 args = parser.parse_args()
 
 if __name__ == "__main__":
 
-    # read parameters from config
+    # read base-parameters from base-config
     with open(args.config, 'r') as yaml_file:
         params = yaml.load(yaml_file, yaml.SafeLoader)
 
     # create object in which to store experiment parameters
     student_teacher_parameters = utils.parameters.StudentTeacherParameters(params)
+
+    teacher_configuration = student_teacher_parameters.get(["task", "teacher_configuration"])
+    if teacher_configuration == 'noisy':
+        additional_configuration = 'noisy_config.yaml'
+    elif teacher_configuration == 'independent':
+        additional_configuration = 'independent_config.yaml'
+    else:
+        raise ValueError("teacher configuration {} not recognised. Please use 'noisy' or 'independent'".format(teacher_configuration))
+
+    # specific parameters
+    with open('configs/{}'.format(additional_configuration), 'r') as yaml_file:
+        specific_params = yaml.load(yaml_file, yaml.SafeLoader)
+    
+    # update base-parameters with specific parameters
+    student_teacher_parameters.update(specific_params)
 
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
@@ -58,7 +73,11 @@ if __name__ == "__main__":
         student_teacher_parameters.set_property("device", "cpu")
         experiment_device = torch.device("cpu")
 
-    student_teacher = frameworks.StudentTeacher(config=student_teacher_parameters)
+    if teacher_configuration == 'noisy':
+        student_teacher = frameworks.NoisyTeachers(config=student_teacher_parameters)
+    elif teacher_configuration == 'independent':
+        student_teacher = frameworks.IndependentTeachers(config=student_teacher_parameters)
+        
     student_teacher.train()
         
     
