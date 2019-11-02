@@ -55,8 +55,10 @@ if __name__ == "__main__":
         additional_configuration = 'independent_config.yaml'
     elif teacher_configuration == 'drifting':
         additional_configuration = 'drifting_config.yaml'
+    elif teacher_configuration == 'overlapping':
+        additional_configuration = 'overlapping_config.yaml'
     else:
-        raise ValueError("teacher configuration {} not recognised. Please use 'noisy' or 'independent'".format(teacher_configuration))
+        raise ValueError("teacher configuration {} not recognised. Please use 'noisy', 'overlapping', 'drifting', or 'independent',".format(teacher_configuration))
 
     # specific parameters
     with open('configs/{}'.format(additional_configuration), 'r') as yaml_file:
