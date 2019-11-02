@@ -1,0 +1,3 @@
+task:
+  overlap_percentage:                       20
+  teacher_noise:                            0

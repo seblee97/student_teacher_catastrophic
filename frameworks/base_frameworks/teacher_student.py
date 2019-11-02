@@ -11,11 +11,11 @@ from tensorboardX import SummaryWriter
 
 from typing import List, Tuple, Generator, Dict
 
-from utils import custom_functions
+from utils import visualise_matrix
 
-from .network import Teacher, Student
+from abc import ABC, abstractmethod
 
-class StudentTeacher:
+class StudentTeacher(ABC):
 
     def __init__(self, config: Dict) -> None:
         """
@@ -27,7 +27,8 @@ class StudentTeacher:
         self._extract_parameters(config)
 
         # setup teacher(s) and students according to config
-        self._setup_teacher_student_framework(config=config)
+        self._setup_teachers(config=config)
+        self._setup_student(config=config)
 
         # extract curriculum from config
         self._set_curriculum(config)
@@ -81,28 +82,16 @@ class StudentTeacher:
 
         self.num_teachers = config.get(["task", "num_teachers"])
         self.label_task_bounaries = config.get(["task", "label_task_boundaries"])
-        self.task_setting = config.get(["task", "task_setting"])
-        self.teacher_initialisation = config.get(["task", "teacher_initialisation"])
+        self.learner_configuration = config.get(["task", "learner_configuration"])
+        self.teacher_configuration = config.get(["task", "teacher_configuration"])
 
-    def _setup_teacher_student_framework(self, config: Dict):
-        # initialise student network
-        self.student_network = Student(config=config).to(self.device)
+    @abstractmethod
+    def _setup_teachers(self, config: Dict):
+        raise NotImplementedError("Base class method")
 
-        # initialise teacher networks, freeze
-        self.teachers = []
-        if self.teacher_initialisation == 'independent':
-            for _ in range(self.num_teachers):
-                teacher = Teacher(config=config).to(self.device)
-                teacher.freeze_weights()
-                teacher.set_noise_distribution(None, None)
-                self.teachers.append(teacher)
-        elif self.teacher_initialisation == 'underlying_task':
-            base_teacher = Teacher(config=config).to(self.device)
-            base_teacher.freeze_weights()
-            for _ in range(self.num_teachers):
-                teacher = copy.deepcopy(base_teacher)
-                teacher.set_noise_distribution(mean=0, std=1)
-                self.teachers.append(teacher)
+    @abstractmethod
+    def _setup_student(self, config: Dict):
+        raise NotImplementedError("Base class method")
 
     def _initialise_metrics(self) -> None:
         """
@@ -149,19 +138,14 @@ class StudentTeacher:
             teacher_index = next(self.curriculum)
             task_step_count = 0
             latest_task_generalisation_error = np.inf
-
-            # change output head of student to relevant task
-            self.student_network.set_task(teacher_index)
+            
+            # alert learner/teacher(s) of task change e.g. change output head of student to relevant task (if in continual setting)
+            self._signal_task_boundary_to_learner(new_task=teacher_index)
+            self._signal_task_boundary_to_teacher(new_task=teacher_index)
 
             while True:
 
                 random_input = torch.randn(self.train_batch_size, self.input_dimension).to(self.device)
-
-                # if self.label_tasks:
-                #     import pdb; pdb.set_trace()
-                #     task_label = torch.zeros(self.train_batch_size, len(self.teachers))
-                #     task_label[:, teacher_index] = 1.
-                #     random_input = torch.concat(random_input, task_label)
     
                 teacher_output = self.teachers[teacher_index](random_input)
                 student_output = self.student_network(random_input)
@@ -190,10 +174,22 @@ class StudentTeacher:
                 total_step_count += 1
                 task_step_count += 1
 
+                # alert learner/teacher(s) of step e.g. to drift teacher
+                self._signal_step_boundary_to_learner(step=task_step_count, current_task=teacher_index)
+                self._signal_step_boundary_to_teacher(step=task_step_count, current_task=teacher_index)
+
                 if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
                     self.writer.add_scalar('steps_per_task', task_step_count, total_step_count)
                     steps_per_task.append(task_step_count)
                     break
+
+    @abstractmethod
+    def _signal_task_boundary_to_learner(self):
+        raise NotImplementedError("Base class method")
+
+    @abstractmethod
+    def _signal_task_boundary_to_teacher(self):
+        raise NotImplementedError("Base class method")
 
     def _switch_task(self, step: int, generalisation_error: float) -> bool: 
         """
@@ -230,12 +226,7 @@ class StudentTeacher:
         """
         with torch.no_grad():
 
-            if self.test_all_teachers:
-                teachers_to_test = list(range(len(self.teachers)))
-            else:
-                teachers_to_test = [teacher_index]
-
-            generalisation_error_per_teacher = self._compute_generalisation_errors(teachers_to_test)
+            generalisation_error_per_teacher = self._compute_generalisation_errors()
 
             # log average generalisation losses over teachers
             self.writer.add_scalar(
@@ -247,9 +238,18 @@ class StudentTeacher:
 
             for i, error in enumerate(generalisation_error_per_teacher):
                 self.generalisation_errors[i].append(error)
+
                 # log generalisation loss per teacher
                 self.teacher_writers[i].add_scalar('generalisation_error/linear', error, total_step_count)
                 self.teacher_writers[i].add_scalar('generalisation_error/log', np.log10(error), total_step_count)
+
+                if len(self.generalisation_errors[i]) > 1:
+                    last_error = self.generalisation_errors[i][-2]
+                    error_delta = error - last_error
+                    if error_delta != 0.:
+                        # log generalisation loss delta per teacher
+                        self.teacher_writers[i].add_scalar('error_change/linear', error_delta, total_step_count)
+                        self.teacher_writers[i].add_scalar('error_change/log', np.sign(error_delta) * np.log10(abs(error_delta)), total_step_count)
 
             if self.verbose and task_step_count % 500 == 0:
                 print("Generalisation errors @ step {} ({}'th step training on teacher {}):".format(total_step_count, task_step_count, teacher_index))
@@ -280,9 +280,9 @@ class StudentTeacher:
         teacher_self_overlaps = [teacher_layer.mm(teacher_layer.t()) / self.input_dimension for teacher_layer in teacher_layers]
 
         # generate visualisations
-        student_self_fig = custom_functions.visualise_matrix(student_self_overlap.cpu().numpy(), fig_title=r"$Q_{ik}^\mu$")
+        student_self_fig = visualise_matrix(student_self_overlap.cpu().numpy(), fig_title=r"$Q_{ik}^\mu$")
         student_teacher_figs = [
-            custom_functions.visualise_matrix(student_teacher_overlap.cpu().numpy(), fig_title=r"$R_{in}^\mu$") \
+            visualise_matrix(student_teacher_overlap.cpu().numpy(), fig_title=r"$R_{in}^\mu$") \
             for t, student_teacher_overlap in enumerate(student_teacher_overlaps)
         ]
 
@@ -291,27 +291,15 @@ class StudentTeacher:
         for t, student_teacher_fig in enumerate(student_teacher_figs):
             self.writer.add_figure("student_teacher_overlaps/teacher_{}".format(t), student_teacher_fig, step_count)
 
-
-    def _compute_generalisation_errors(self, teacher_indices: List[int]) -> List[float]:
+    @abstractmethod
+    def _compute_generalisation_errors(self) -> List[float]:
         """
         calculated generalisation errors wrt fixed test dataset of student against teacher indices given
 
         :param teacher_indices: teachers against which to test student 
         :return generalisation_errors: list of generalisation errors of student against all teachers specified
         """
-        with torch.no_grad():
-            student_outputs = self.student_network.test_all_tasks(self.test_input_data)
-            if self.test_all_teachers:
-                if self.task_setting == 'continual':
-                    generalisation_errors = [float(self._compute_loss(student_output, teacher_output)) for student_output, teacher_output in zip(student_outputs, self.test_teacher_outputs)]
-                elif self.task_setting == 'meta':
-                    generalisation_errors = [float(self._compute_loss(student_outputs, teacher_output)) for teacher_output in self.test_teacher_outputs]
-            else:
-                if self.task_setting == 'continual':
-                    generalisation_errors = [float(self._compute_loss(student_outputs[teacher_index], self.test_teacher_outputs[teacher_index])) for teacher_index in teacher_indices]
-                elif self.task_setting == 'meta':
-                    generalisation_errors = [float(self._compute_loss(student_outputs, self.test_teacher_outputs[teacher_index])) for teacher_index in teacher_indices]
-            return generalisation_errors
+        raise NotImplementedError("Base class method")
 
     def _compute_loss(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """
