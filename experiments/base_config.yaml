@@ -11,7 +11,7 @@ task:
   num_teachers:                     2                         # number of teachers to use
 
 training:
-  total_training_steps:             1000000000                # total number of training steps to take
+  total_training_steps:             100000                    # total number of training steps to take
   train_batch_size:                 1                         # number of tasks sampled per meta-update (per outer loop)
   test_batch_size:                  50000                     # number of samples to use for generalisatio error
   learning_rate:                    0.2                       # learning rate for sgd update of student
