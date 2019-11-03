@@ -13,7 +13,7 @@ class Teacher(Model):
         Model.__init__(self, config=config, model_type='teacher')
         self.noisy = False
 
-    def get_output_statistics(self, repeats=1000):
+    def get_output_statistics(self, repeats=5000):
         with torch.no_grad():
             random_input = torch.randn(repeats, self.input_dimension)
             output = self.forward(random_input)
@@ -22,6 +22,7 @@ class Teacher(Model):
             output_max = float(max(output))
             output_min = float(min(output))
             output_range = output_max - output_min
+        return output_std
 
     def set_noise_distribution(self, mean: float, std: float):
         """
