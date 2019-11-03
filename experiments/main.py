@@ -58,7 +58,7 @@ if __name__ == "__main__":
     if args.en:
         student_teacher_parameters._config["experiment_name"] = args.en
     if args.v:
-        student_teacher_parameters._config["verbose"] = args.v
+        student_teacher_parameters._config["verbose"] = bool(args.v)
 
     teacher_configuration = student_teacher_parameters.get(["task", "teacher_configuration"])
     if teacher_configuration == 'noisy':
