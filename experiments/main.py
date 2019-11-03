@@ -18,10 +18,10 @@ parser.add_argument('-teacher_configuration', '--tc', type=str, help="noisy or i
 parser.add_argument('-num_teachers', '--nt', type=int, default=None)
 parser.add_argument('-selection_type', '--st', type=str, help="random or cyclical", default=None)
 parser.add_argument('-stopping_condition', '--sc', type=str, help="threshold or fixed_period", default=None)
-parser.add_argument('-fixed_period', '--fp', type=str, help="time between teacher change", default=None)
+parser.add_argument('-fixed_period', '--fp', type=int, help="time between teacher change", default=None)
 parser.add_argument('-loss_threshold', '--lt', type=str, help="how low loss for current teacher goes before switching (used with threshold)", default=None)
 parser.add_argument('-nonlinearity', '--nl', type=str, help="which non linearity to use", default=None)
-parser.add_argument('-total_steps', '--ts', type=str, help="total timesteps to run algorithm", default=None)
+parser.add_argument('-total_steps', '--ts', type=int, help="total timesteps to run algorithm", default=None)
 parser.add_argument('-experiment_name', '--en', type=str, help="name to give to experiment", default=None)
 
 args = parser.parse_args()
