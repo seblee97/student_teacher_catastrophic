@@ -22,6 +22,7 @@ parser.add_argument('-fixed_period', '--fp', type=str, help="time between teache
 parser.add_argument('-loss_threshold', '--lt', type=str, help="how low loss for current teacher goes before switching (used with threshold)", default=None)
 parser.add_argument('-nonlinearity', '--nl', type=str, help="which non linearity to use", default=None)
 parser.add_argument('-total_steps', '--ts', type=str, help="total timesteps to run algorithm", default=None)
+parser.add_argument('-experiment_name', '--en', type=str, help="name to give to experiment", default=None)
 
 args = parser.parse_args()
 
@@ -53,6 +54,8 @@ if __name__ == "__main__":
         student_teacher_parameters._config["model"]["nonlinearity"] = args.lt
     if args.ts:
         student_teacher_parameters._config["training"]["total_training_steps"] = args.ts
+    if args.en:
+        student_teacher_parameters._config["experiment_name"] = args.en
 
     teacher_configuration = student_teacher_parameters.get(["task", "teacher_configuration"])
     if teacher_configuration == 'noisy':
