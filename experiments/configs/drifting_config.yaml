@@ -1,4 +1,4 @@
 task:
   teacher_noise:                        0
-  drift_size:                           0
+  drift_size:                           0.01
   drift_frequency:                      1
