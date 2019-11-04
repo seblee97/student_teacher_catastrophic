@@ -83,16 +83,18 @@ if __name__ == "__main__":
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
     experiment_name = student_teacher_parameters.get("experiment_name")
-    if experiment_name:
-        checkpoint_path = 'results/{}/{}/'.format(exp_timestamp, experiment_name)
-    else:
-        checkpoint_path = 'results/{}/'.format(exp_timestamp)
-    student_teacher_parameters.set_property("checkpoint_path", checkpoint_path)
 
-    # overwrite default location if manually specified
     if args.cp:
-        student_teacher_parameters._config["checkpoint_path"] = args.cp
+        results_folder_base = args.cp if args.cp.endswith('/') else args.cp + '/'
+    else:
+        results_folder_base = 'results/'
+        
+    if experiment_name:
+        checkpoint_path = '{}/{}/{}/'.format(results_folder_base, exp_timestamp, experiment_name)
+    else:
+        checkpoint_path = '{}/{}/'.format(results_folder_base, exp_timestamp)
 
+    student_teacher_parameters.set_property("checkpoint_path", checkpoint_path)
     student_teacher_parameters.set_property("experiment_timestamp", exp_timestamp)
 
     # get specified random seed value from config
