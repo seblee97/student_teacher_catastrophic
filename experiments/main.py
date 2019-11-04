@@ -24,6 +24,7 @@ parser.add_argument('-nonlinearity', '--nl', type=str, help="which non linearity
 parser.add_argument('-total_steps', '--ts', type=int, help="total timesteps to run algorithm", default=None)
 parser.add_argument('-experiment_name', '--en', type=str, help="name to give to experiment", default=None)
 parser.add_argument('-verbose', '--v', type=int, help="whether to display prints", default=None)
+parser.add_argument('-checkpoint_path', '--cp', type=str, help="where to log results", default=None)
 
 args = parser.parse_args()
 
@@ -87,6 +88,11 @@ if __name__ == "__main__":
     else:
         checkpoint_path = 'results/{}/'.format(exp_timestamp)
     student_teacher_parameters.set_property("checkpoint_path", checkpoint_path)
+
+    # overwrite default location if manually specified
+    if args.cp:
+        student_teacher_parameters._config["checkpoint_path"] = args.cp
+
     student_teacher_parameters.set_property("experiment_timestamp", exp_timestamp)
 
     # get specified random seed value from config
