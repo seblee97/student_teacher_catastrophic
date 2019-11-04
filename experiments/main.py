@@ -52,12 +52,12 @@ if __name__ == "__main__":
     if args.lt:
         student_teacher_parameters._config["curriculum"]["loss_threshold"] = args.lt
     if args.nl:
-        student_teacher_parameters._config["model"]["nonlinearity"] = args.lt
+        student_teacher_parameters._config["model"]["nonlinearity"] = args.nl
     if args.ts:
         student_teacher_parameters._config["training"]["total_training_steps"] = args.ts
     if args.en:
         student_teacher_parameters._config["experiment_name"] = args.en
-    if args.v:
+    if args.v is not None:
         student_teacher_parameters._config["verbose"] = bool(args.v)
 
     teacher_configuration = student_teacher_parameters.get(["task", "teacher_configuration"])
