@@ -21,13 +21,14 @@ class OverlappingTeachers(StudentTeacher):
             "Provide one noise for each teacher. {} noises given, {} teachers specified".format(len(teacher_noise), self.num_teachers)
             teacher_noises = teacher_noise
 
-        overlap_percentage = config.get(["task", "overlap_percentage"])
+        overlap_percentages = config.get(["task", "overlap_percentages"])
 
         self.teachers = []
         original_teacher = Teacher(config=config).to(self.device)
         original_teacher.freeze_weights()
-        original_teacher_output_std = original_teacher.get_output_statistics()
-        original_teacher.set_noise_distribution(mean=0, std=teacher_noises[0] * original_teacher_output_std)
+        if teacher_noises[0] != 0:
+            original_teacher_output_std = original_teacher.get_output_statistics()
+            original_teacher.set_noise_distribution(mean=0, std=teacher_noises[0] * original_teacher_output_std)
         self.teachers.append(original_teacher)
         for t in range(self.num_teachers - 1):
             teacher = Teacher(config=config).to(self.device)
@@ -35,12 +36,13 @@ class OverlappingTeachers(StudentTeacher):
                 layer_shape = teacher.state_dict()[layer].shape 
                 assert len(layer_shape) == 2, "shape of layer tensor is not 2. Check consitency of layer construction with task."
                 for row in range(layer_shape[0]):
-                    overlapping_weights_dim = round(0.01 * overlap_percentage * layer_shape[1])
+                    overlapping_weights_dim = round(0.01 * overlap_percentages[l] * layer_shape[1])
                     overlapping_weights = copy.deepcopy(original_teacher.state_dict()[layer][row][:overlapping_weights_dim])
                     teacher.state_dict()[layer][row][:overlapping_weights_dim] = overlapping_weights
             teacher.freeze_weights()
-            teacher_output_std = teacher.get_output_statistics()
-            teacher.set_noise_distribution(mean=0, std=teacher_noises[t + 1] * teacher_output_std)
+            if teacher_noises[t + 1] != 0:
+                teacher_output_std = teacher.get_output_statistics()
+                teacher.set_noise_distribution(mean=0, std=teacher_noises[t + 1] * teacher_output_std)
             self.teachers.append(teacher)
 
     def _signal_task_boundary_to_teacher(self, new_task: int):
