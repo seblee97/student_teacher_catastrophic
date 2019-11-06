@@ -28,6 +28,8 @@ class Teacher(Model):
         """
         Sets a normal distribution from which to sample noise that is added to output
         """
+        if std == 0:
+            raise ValueError("Standard Deviation of Normal cannot be 0.")
         self.noise_distribution = tdist.Normal(torch.Tensor([mean]), torch.Tensor([std]))
         self.noisy = True
 
