@@ -156,9 +156,9 @@ class StudentTeacher(ABC):
                 # training iteration
                 self.optimiser.zero_grad()
                 loss = self._compute_loss(student_output, teacher_output)
-                training_losses.append(float(loss))
                 loss.backward()
                 self.optimiser.step()
+                training_losses.append(float(loss))
 
                 # log training loss
                 self.writer.add_scalar('training_loss', float(loss), total_step_count)
@@ -278,9 +278,19 @@ class StudentTeacher(ABC):
         student_self_overlap = student_layer.mm(student_layer.t()) / self.input_dimension
         student_teacher_overlaps = [student_layer.mm(teacher_layer.t()) / self.input_dimension for teacher_layer in teacher_layers]
         teacher_self_overlaps = [teacher_layer.mm(teacher_layer.t()) / self.input_dimension for teacher_layer in teacher_layers]
+        teacher_pairs = list(itertools.combinations(range(len(teacher_layers)), 2))
+        teacher_teacher_overlaps = {(i, j): teacher_layers[i].mm(teacher_layers[j].t()) / self.input_dimension for (i, j) in teacher_pairs}
 
         # generate visualisations
         student_self_fig = visualise_matrix(student_self_overlap.cpu().numpy(), fig_title=r"$Q_{ik}^\mu$")
+        teacher_cross_figs = {(i, j):
+            visualise_matrix(teacher_teacher_overlaps[(i, j)].cpu().numpy(), fig_title=r"$T_{nm}$") \
+            for (i, j) in teacher_teacher_overlaps
+        }
+        teacher_self_figs = [
+            visualise_matrix(teacher_self_overlap.cpu().numpy(), fig_title=r"$T_{nm}$") \
+            for teacher_self_overlap in teacher_self_overlaps
+        ]
         student_teacher_figs = [
             visualise_matrix(student_teacher_overlap.cpu().numpy(), fig_title=r"$R_{in}^\mu$") \
             for t, student_teacher_overlap in enumerate(student_teacher_overlaps)
@@ -290,6 +300,10 @@ class StudentTeacher(ABC):
         self.writer.add_figure("student_self_overlap", student_self_fig, step_count)
         for t, student_teacher_fig in enumerate(student_teacher_figs):
             self.writer.add_figure("student_teacher_overlaps/teacher_{}".format(t), student_teacher_fig, step_count)
+        for t, teacher_self_fig in enumerate(teacher_self_figs):
+            self.writer.add_figure("teacher_self_overlaps/teacher_{}".format(t), teacher_self_fig, step_count)
+        for (i, j), teacher_cross_fig in list(teacher_cross_figs.items()):
+            self.writer.add_figure("teacher_cross_overlaps/teacher{}x{}".format(i, j), teacher_cross_fig, step_count)
 
     @abstractmethod
     def _compute_generalisation_errors(self) -> List[float]:
