@@ -15,7 +15,6 @@ class ContinualStudent(Model):
         self._current_teacher = None
 
     def _construct_output_layers(self):
-
         # create one head per teacher
         self.heads = nn.ModuleList([])
         for _ in range(self.num_teachers):
