@@ -22,7 +22,8 @@ class NoisyTeachers(StudentTeacher):
         base_teacher_output_std = base_teacher.get_output_statistics()
         for t in range(self.num_teachers):
             teacher = copy.deepcopy(base_teacher)
-            teacher.set_noise_distribution(mean=0, std=teacher_noises[t] * base_teacher_output_std)
+            if teacher_noises[t] != 0:
+                teacher.set_noise_distribution(mean=0, std=teacher_noises[t] * base_teacher_output_std)
             self.teachers.append(teacher)
     
     def _signal_task_boundary_to_teacher(self, new_task: int):

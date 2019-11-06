@@ -22,8 +22,9 @@ class DriftingTeachers(StudentTeacher):
         for t in range(self.num_teachers):
             teacher = DriftingTeacher(config=config).to(self.device)
             teacher.freeze_weights()
-            teacher_output_std = teacher.get_output_statistics()
-            teacher.set_noise_distribution(mean=0, std=teacher_noises[t] * teacher_output_std)
+            if teacher_noises[t] != 0:
+                teacher_output_std = teacher.get_output_statistics()
+                teacher.set_noise_distribution(mean=0, std=teacher_noises[t] * teacher_output_std)
             self.teachers.append(teacher)
 
     def _signal_task_boundary_to_teacher(self, new_task: int):
