@@ -212,7 +212,7 @@ class StudentTeacher(ABC):
             else:
                 return False
         else:
-            raise ValueError("curriculum stopping condition {} unknown".format(self.curriculum_stopping_condition))
+            raise ValueError("curriculum stopping condition {} unknown. Please use 'fixed_period' or 'threshold'.".format(self.curriculum_stopping_condition))
 
     def _perform_test_loop(self, teacher_index: int, task_step_count: int, total_step_count: int) -> float:
         """
