@@ -25,6 +25,7 @@ parser.add_argument('-total_steps', '--ts', type=int, help="total timesteps to r
 parser.add_argument('-experiment_name', '--en', type=str, help="name to give to experiment", default=None)
 parser.add_argument('-verbose', '--v', type=int, help="whether to display prints", default=None)
 parser.add_argument('-checkpoint_path', '--cp', type=str, help="where to log results", default=None)
+parser.add_argument('-teacher_overlaps', '--to', type=str, help="per layer overlaps between teachers. Must be in format '[30, 20, etc.]'", default=None)
 
 args = parser.parse_args()
 
@@ -79,6 +80,11 @@ if __name__ == "__main__":
     
     # update base-parameters with specific parameters
     student_teacher_parameters.update(specific_params)
+
+    # update specific parameters with (optional) args given in command line
+    if args.to:
+        overlaps = [int(op) for op in "".join(args.to).strip('[]').split(',')]
+        student_teacher_parameters._config["task"]["overlap_percentages"] = overlaps
 
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
