@@ -12,6 +12,7 @@ class ContinualLearner(StudentTeacher):
         StudentTeacher.__init__(self, config)
 
     def _setup_student(self, config):
+        """Instantiate student"""
         # initialise student network
         self.student_network = ContinualStudent(config=config).to(self.device)
 
