@@ -9,6 +9,7 @@ class DriftingTeachers(StudentTeacher):
         self.drift_frequency = config.get(["task", "drift_frequency"])
 
     def _setup_teachers(self, config):
+        """Instantiate Teachers"""
         # initialise teacher networks, freeze
         teacher_noise = config.get(["task", "teacher_noise"])
         if type(teacher_noise) is int:

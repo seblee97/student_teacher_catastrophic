@@ -10,6 +10,13 @@ class NoisyTeachers(StudentTeacher):
         StudentTeacher.__init__(self, config)
 
     def _setup_teachers(self, config):
+        """
+        Instantiate all teachers
+
+        Start with one 'original' teacher. Copy this teacher given amount of times.
+        Noise distributions set separately for each teacher. This represents tasks in which 
+        all share an 'underlying' structure but have slight differences in their environments.
+        """
         # initialise teacher networks, freeze
         teacher_noises = config.get(["task", "teacher_noises"])
 

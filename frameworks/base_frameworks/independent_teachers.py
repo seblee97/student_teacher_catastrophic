@@ -8,6 +8,7 @@ class IndependentTeachers(StudentTeacher):
         StudentTeacher.__init__(self, config)
 
     def _setup_teachers(self, config):
+        """Instantiate all teachers"""
         # initialise teacher networks, freeze
         teacher_noise = config.get(["task", "teacher_noise"])
         if type(teacher_noise) is int:
