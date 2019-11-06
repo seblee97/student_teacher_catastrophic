@@ -33,7 +33,8 @@ class StudentTeacher(ABC):
         # extract curriculum from config
         self._set_curriculum(config)
         
-        trainable_parameters = filter(lambda param: param.requires_grad, self.student_network.parameters())
+        trainable_parameters = self.student_network.parameters()
+        # trainable_parameters = filter(lambda param: param.requires_grad, self.student_network.parameters())
 
         # initialise optimiser with trainable parameters of student        
         self.optimiser = optim.SGD(trainable_parameters, lr=self.learning_rate)
@@ -87,6 +88,7 @@ class StudentTeacher(ABC):
 
     @abstractmethod
     def _setup_teachers(self, config: Dict):
+        """Instantiate all teachers"""
         raise NotImplementedError("Base class method")
 
     @abstractmethod
