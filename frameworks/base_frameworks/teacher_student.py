@@ -93,6 +93,7 @@ class StudentTeacher(ABC):
 
     @abstractmethod
     def _setup_student(self, config: Dict):
+        """Instantiate student"""
         raise NotImplementedError("Base class method")
 
     def _initialise_metrics(self) -> None:
@@ -246,7 +247,7 @@ class StudentTeacher(ABC):
                 self.teacher_writers[i].add_scalar('generalisation_error/log', np.log10(error), total_step_count)
 
                 if len(self.generalisation_errors[i]) > 1:
-                    last_error = self.generalisation_errors[i][-2]
+                    last_error = copy.deepcopy(self.generalisation_errors[i][-2])
                     error_delta = error - last_error
                     if error_delta != 0.:
                         # log generalisation loss delta per teacher

@@ -1,6 +1,6 @@
 experiment_name:                    
 use_gpu:                            True                      # whether to use a gpu if it is available on the device          
-seed:                               1                         # random seed 
+seed:                               0                         # random seed 
 resume:        
 verbose:                            True                      # whether to print
 
