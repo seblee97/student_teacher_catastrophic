@@ -27,14 +27,19 @@ class Model(nn.Module, ABC):
         # extract relevant parameters from config
         self._extract_parameters(config=config)
 
+        def linear_function(x):
+            return x
+
         # initialise specified nonlinearity function
         self.nonlinearity_name = config.get(["model", "nonlinearity"])
         if self.nonlinearity_name == 'relu':
             self.nonlinear_function = F.relu
         elif self.nonlinearity_name == 'sigmoid':
             self.nonlinear_function = torch.sigmoid
+        elif self.nonlinearity_name == 'linear': 
+            self.nonlinear_function = linear_function
         else:
-            raise ValueError("Unknown non-linearity. Please use 'relu' or 'sigmoid'")
+            raise ValueError("Unknown non-linearity. Please use 'relu' or 'sigmoid' or 'linear'")
 
         super(Model, self).__init__()
 
