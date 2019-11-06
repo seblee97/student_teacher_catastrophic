@@ -12,6 +12,7 @@ class ContinualStudent(Model):
     def __init__(self, config: Dict) -> None:
 
         Model.__init__(self, config=config, model_type='student')
+        self._current_teacher = None
 
     def _construct_output_layers(self):
 
@@ -20,12 +21,19 @@ class ContinualStudent(Model):
         for _ in range(self.num_teachers):
             output_layer = nn.Linear(self.hidden_dimensions[-1], self.output_dimension, bias=self.bias)
             self._initialise_weights(output_layer)
-            if self.soft_committee:
-                for param in output_layer.parameters():
-                    param.requires_grad = False
+            # freeze heads (unfrozen when current task)
+            for param in output_layer.parameters():
+                param.requires_grad = False
             self.heads.append(output_layer)
 
     def set_task(self, task_index: int):
+        # freeze weights of head for previous task
+        if self._current_teacher:
+            for param in self.heads[self._current_teacher].parameters():
+                param.requires_grad = False
+        # unfreeze weights of head for new task
+        for param in self.heads[task_index].parameters():
+            param.requires_grad = True
         self._current_teacher = task_index
 
     def test_all_tasks(self, x: torch.Tensor):
