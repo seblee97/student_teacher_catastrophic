@@ -30,6 +30,7 @@ model:
   nonlinearity:                     relu                      # nonlinearity to be used for networks
   teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
   student_initialisation_std:       0.001                     # std of normal initialisation for student network
+  initialise_student_outputs:       False                     # whether or not to initialise hidden -> output weights of student
   soft_committee:                   False                     # whether or not to freeze output layer (scm)
   bias_parameters:                  False                     # whether or not to have bias parameters on linaer layers
 
@@ -38,6 +39,6 @@ curriculum:
   selection_type:                   cyclical                  # how to determine next task (random or cyclical)
   stopping_condition:               fixed_period              # condition on which to switch task (fixed_period or threshold)
 
-  fixed_period:                     1                         # period for changing tasks 
+  fixed_period:                     5000                      # period for changing tasks 
   loss_threshold:                   0.0001                    # loss threshold under which teacher is changed 
   custom:                           [0, 1]                    # curriculum defined manually. Each entry defines next teacher index
