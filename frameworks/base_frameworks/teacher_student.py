@@ -278,24 +278,39 @@ class StudentTeacher(ABC):
         teacher_layers = [teacher.state_dict()['layers.0.weight'].data for teacher in self.teachers]
 
         # compute overlap matrices
-        student_self_overlap = student_layer.mm(student_layer.t()) / self.input_dimension
-        student_teacher_overlaps = [student_layer.mm(teacher_layer.t()) / self.input_dimension for teacher_layer in teacher_layers]
-        teacher_self_overlaps = [teacher_layer.mm(teacher_layer.t()) / self.input_dimension for teacher_layer in teacher_layers]
+        student_self_overlap = (student_layer.mm(student_layer.t()) / self.input_dimension).cpu().numpy()
+        student_teacher_overlaps = [(student_layer.mm(teacher_layer.t()) / self.input_dimension).cpu().numpy() for teacher_layer in teacher_layers]
+        teacher_self_overlaps = [(teacher_layer.mm(teacher_layer.t()) / self.input_dimension).cpu().numpy() for teacher_layer in teacher_layers]
         teacher_pairs = list(itertools.combinations(range(len(teacher_layers)), 2))
-        teacher_teacher_overlaps = {(i, j): teacher_layers[i].mm(teacher_layers[j].t()) / self.input_dimension for (i, j) in teacher_pairs}
+        teacher_teacher_overlaps = {(i, j): (teacher_layers[i].mm(teacher_layers[j].t()) / self.input_dimension).cpu().numpy() for (i, j) in teacher_pairs}
+
+        # log overlap values (scalars vs image graphs below)
+        def log_matrix_values(log_name: str, matrix):
+            matrix_shape = matrix.shape
+            for i in range(matrix_shape[0]):
+                for j in range(matrix_shape[1]):
+                    self.writer.add_scalar("{}/values_{}_{}".format(log_name, i, j), matrix[i][j], step_count)
+        
+        log_matrix_values("student_self_overlap", student_self_overlap)
+        for s, student_teacher_overlap in enumerate(student_teacher_overlaps):
+            log_matrix_values("student_teacher_overlaps/{}".format(s), student_teacher_overlap)
+        for s, teacher_self_overlap in enumerate(teacher_self_overlaps):
+            log_matrix_values("teacher_self_overlaps/{}".format(s), teacher_self_overlap)
+        for (i, j) in teacher_teacher_overlaps:
+            log_matrix_values("teacher_teacher_overlaps/{}_{}".format(i, j), teacher_teacher_overlaps[(i, j)])
 
         # generate visualisations
-        student_self_fig = visualise_matrix(student_self_overlap.cpu().numpy(), fig_title=r"$Q_{ik}^\mu$")
+        student_self_fig = visualise_matrix(student_self_overlap, fig_title=r"$Q_{ik}^\mu$")
         teacher_cross_figs = {(i, j):
-            visualise_matrix(teacher_teacher_overlaps[(i, j)].cpu().numpy(), fig_title=r"$T_{nm}$") \
+            visualise_matrix(teacher_teacher_overlaps[(i, j)], fig_title=r"$T_{nm}$") \
             for (i, j) in teacher_teacher_overlaps
         }
         teacher_self_figs = [
-            visualise_matrix(teacher_self_overlap.cpu().numpy(), fig_title=r"$T_{nm}$") \
+            visualise_matrix(teacher_self_overlap, fig_title=r"$T_{nm}$") \
             for teacher_self_overlap in teacher_self_overlaps
         ]
         student_teacher_figs = [
-            visualise_matrix(student_teacher_overlap.cpu().numpy(), fig_title=r"$R_{in}^\mu$") \
+            visualise_matrix(student_teacher_overlap, fig_title=r"$R_{in}^\mu$") \
             for t, student_teacher_overlap in enumerate(student_teacher_overlaps)
         ]
 
