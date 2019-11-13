@@ -1,32 +1,32 @@
 # kill sessions already running
-tmux kill-session -t 0
-tmux kill-session -t 10
-tmux kill-session -t 15
-tmux kill-session -t 20
-tmux kill-session -t 25
+tmux kill-session -t seed_5
+tmux kill-session -t seed_10
+tmux kill-session -t seed_15
+tmux kill-session -t seed_20
+tmux kill-session -t seed_25
 
 tmux kill-session -t tensorboard
 
 # start tmux sessions one for each experiment
-tmux new -s 0 -d
-tmux new -s 10 -d
-tmux new -s 15 -d
-tmux new -s 20 -d
-tmux new -s 25 -d
+tmux new -s seed_5 -d
+tmux new -s seed_10 -d
+tmux new -s seed_15 -d
+tmux new -s seed_20 -d
+tmux new -s seed_25 -d
 
 # initialise virtual environments
-tmux send-keys -t 0 "source ~/envs/cata/bin/activate" C-m
-tmux send-keys -t 10 "source ~/envs/cata/bin/activate" C-m
-tmux send-keys -t 15 "source ~/envs/cata/bin/activate" C-m
-tmux send-keys -t 20 "source ~/envs/cata/bin/activate" C-m
-tmux send-keys -t 25 "source ~/envs/cata/bin/activate" C-m
+tmux send-keys -t seed_5 "source ~/envs/cata/bin/activate" C-m
+tmux send-keys -t seed_10 "source ~/envs/cata/bin/activate" C-m
+tmux send-keys -t seed_15 "source ~/envs/cata/bin/activate" C-m
+tmux send-keys -t seed_20 "source ~/envs/cata/bin/activate" C-m
+tmux send-keys -t seed_25 "source ~/envs/cata/bin/activate" C-m
 
 # send keys to run experiments
-tmux send-keys -t 0 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 0 --nl relu --to '[0, 0]' -s 0" C-m
-tmux send-keys -t 10 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 0 --nl relu --to '[0, 0]' -s 10" C-m
-tmux send-keys -t 15 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 0 --nl relu --to '[0, 0]' -s 15" C-m
-tmux send-keys -t 20 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 0 --nl relu --to '[0, 0]' -s 20" C-m
-tmux send-keys -t 25 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 0 --nl relu --to '[0, 0]' -s 25" C-m
+tmux send-keys -t seed_5 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 1 --nl relu --to '[0, 0]' --s 5 --en seed5" C-m
+tmux send-keys -t seed_10 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 1 --nl relu --to '[0, 0]' --s 10 --en seed10" C-m
+tmux send-keys -t seed_15 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 1 --nl relu --to '[0, 0]' --s 15 --en seed15" C-m
+tmux send-keys -t seed_20 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 1 --nl relu --to '[0, 0]' --s 20 --en seed20" C-m
+tmux send-keys -t seed_25 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 1 --nl relu --to '[0, 0]' --s 25 --en seed25" C-m
 
 # start tmux session for tensorboard, launch tensorboard
 tmux new -s tensorboard -d
