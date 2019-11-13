@@ -22,11 +22,11 @@ tmux send-keys -t seed_20 "source ~/envs/cata/bin/activate" C-m
 tmux send-keys -t seed_25 "source ~/envs/cata/bin/activate" C-m
 
 # send keys to run experiments
-tmux send-keys -t seed_5 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 1 --cp '/content/drive/My Drive/colab_results/threshold' --nl relu --to '[0, 0]' --s 5 --en seed5" C-m
-tmux send-keys -t seed_10 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 1 --cp '/content/drive/My Drive/colab_results/threshold' --nl relu --to '[0, 0]' --s 10 --en seed10" C-m
-tmux send-keys -t seed_15 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 1 --cp '/content/drive/My Drive/colab_results/threshold' --nl relu --to '[0, 0]' --s 15 --en seed15" C-m
-tmux send-keys -t seed_20 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 1 --cp '/content/drive/My Drive/colab_results/threshold' --nl relu --to '[0, 0]' --s 20 --en seed20" C-m
-tmux send-keys -t seed_25 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 1 --cp '/content/drive/My Drive/colab_results/threshold' --nl relu --to '[0, 0]' --s 25 --en seed25" C-m
+tmux send-keys -t seed_5 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 0 --cp '/content/drive/My Drive/colab_results/threshold' --nl relu --to '[0, 0]' --s 5 --en seed5" C-m
+tmux send-keys -t seed_10 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 0 --cp '/content/drive/My Drive/colab_results/threshold' --nl relu --to '[0, 0]' --s 10 --en seed10" C-m
+tmux send-keys -t seed_15 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 0 --cp '/content/drive/My Drive/colab_results/threshold' --nl relu --to '[0, 0]' --s 15 --en seed15" C-m
+tmux send-keys -t seed_20 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 0 --cp '/content/drive/My Drive/colab_results/threshold' --nl relu --to '[0, 0]' --s 20 --en seed20" C-m
+tmux send-keys -t seed_25 "python main.py --lc continual --tc overlapping --sc threshold --ts 100000 --v 0 --cp '/content/drive/My Drive/colab_results/threshold' --nl relu --to '[0, 0]' --s 25 --en seed25" C-m
 
 # start tmux session for tensorboard, launch tensorboard
 tmux new -s tensorboard -d
