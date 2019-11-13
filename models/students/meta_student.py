@@ -16,7 +16,12 @@ class MetaStudent(Model):
     def _construct_output_layers(self):
 
         self.output_layer = nn.Linear(self.hidden_dimensions[-1], self.output_dimension, bias=self.bias)
-        self._initialise_weights(self.output_layer)
+        if self.initialise_student_outputs:
+            self.output_layer = self._initialise_weights(self.output_layer)
+        else:
+            torch.nn.init.zeros_(self.output_layer.weight)
+            if self.bias:
+                torch.nn.init.zeros_(self.output_layer.bias)
         if self.soft_committee:
             for param in self.output_layer.parameters():
                 param.requires_grad = False

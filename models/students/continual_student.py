@@ -19,7 +19,12 @@ class ContinualStudent(Model):
         self.heads = nn.ModuleList([])
         for _ in range(self.num_teachers):
             output_layer = nn.Linear(self.hidden_dimensions[-1], self.output_dimension, bias=self.bias)
-            self._initialise_weights(output_layer)
+            if self.initialise_student_outputs:
+                output_layer = self._initialise_weights(output_layer)
+            else:
+                torch.nn.init.zeros_(output_layer.weight)
+                if self.bias:
+                    torch.nn.init.zeros_(output_layer.bias)
             # freeze heads (unfrozen when current task)
             for param in output_layer.parameters():
                 param.requires_grad = False

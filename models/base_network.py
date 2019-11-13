@@ -55,6 +55,7 @@ class Model(nn.Module, ABC):
         self.learner_configuration = config.get(["task", "learner_configuration"])
         self.num_teachers = config.get(["task", "num_teachers"])
         self.label_task_boundaries = config.get(["task", "label_task_boundaries"])
+        self.initialise_student_outputs = config.get(["model", "initialise_student_outputs"])
 
     def _construct_layers(self) -> None:
         """
@@ -62,8 +63,7 @@ class Model(nn.Module, ABC):
         """
         self.layers = nn.ModuleList([])
         
-        input_layer = nn.Linear(self.input_dimension, self.hidden_dimensions[0], bias=self.bias)
-        self._initialise_weights(input_layer)
+        input_layer = self._initialise_weights(nn.Linear(self.input_dimension, self.hidden_dimensions[0], bias=self.bias))
         self.layers.append(input_layer)
 
         for h in self.hidden_dimensions[:-1]:
@@ -100,6 +100,8 @@ class Model(nn.Module, ABC):
             torch.nn.init.normal_(layer.weight, std=self.initialisation_std)
             if self.bias:
                 torch.nn.init.normal_(layer.bias, std=self.initialisation_std)
+        
+        return layer
 
     def freeze_weights(self) -> None:
         """
