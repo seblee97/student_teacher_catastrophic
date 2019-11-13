@@ -13,6 +13,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml')
 parser.add_argument('-gpu_id', type=int, help='id of gpu to use if more than 1 available', default=0)
 
+parser.add_argument('-seed', '--s', type=int, help='seed to use for packages with prng', default=None)
 parser.add_argument('-learner_configuration', '--lc', type=str, help="meta or continual", default=None)
 parser.add_argument('-teacher_configuration', '--tc', type=str, help="noisy or independent", default=None)
 parser.add_argument('-num_teachers', '--nt', type=int, default=None)
@@ -39,6 +40,8 @@ if __name__ == "__main__":
     student_teacher_parameters = utils.parameters.StudentTeacherParameters(params)
 
     # update parameters with (optional) args given in command line
+    if args.s:
+        student_teacher_parameters._config["seed"] = args.s
     if args.lc:
         student_teacher_parameters._config["task"]["learner_configuration"] = args.lc
     if args.tc:
