@@ -46,10 +46,10 @@ I have added the raw tensorboard logs to the google drive here:\\
 
 \noindent if you want to look in more detail. 
 
-\subsection{Periodic}
+\subsection{Periodic - ReLU}
 
 In this setup the teacher is changed with a fixed period of 5000 training steps. 
-I ran the experiment with five different random seeds. 
+I ran the experiment with five different random seeds. This section shows results with the ReLU non-linearity.
 
 \subsubsection{Independent Teachers}
 
@@ -107,7 +107,7 @@ I ran the experiment with five different random seeds.
     % \vspace{1em}
     \caption[]{At the start of training, the rate of forgetting is very large.
     Very quickly however this levels off and performance on the network not currently
-    being used to train the student stays level.}\label{fig: results}
+    being used to train the student stays level.}\label{fig: results17}
 \end{figure}
 \FloatBarrier
 
@@ -198,7 +198,7 @@ I ran the experiment with five different random seeds.
     % \vspace{1em}
     \caption[]{With 25 and 50\% overlaps they are not clearly distinguishable
     from the independent case although the 50\% case seems to separate itself a little already.
-    Oddly it takes longer to stop forgetting than in the independent case.}\label{fig: results}
+    Oddly it takes longer to stop forgetting than in the independent case.}\label{fig: results16}
 \end{figure}
 \FloatBarrier
 
@@ -272,7 +272,7 @@ I ran the experiment with five different random seeds.
     \vspace{1em}
     \caption[]{Once we reach 75\% there is a clear split from the independent case.
     There is some co-learning happening but again it starts to take longer to level out
-    when teachers are swapped.}\label{fig: results}
+    when teachers are swapped.}\label{fig: results15}
 \end{figure}
 \FloatBarrier
 
@@ -337,7 +337,7 @@ I ran the experiment with five different random seeds.
     % \vspace{1em}
     \caption[]{There is a strange phenomenon when the overlap reaches the limit of 100\%, which
     is already hinted at above. While there is no discernible forgetting the overall learning 
-    is much slower and saturates.}\label{fig: results}
+    is much slower and saturates.}\label{fig: results14}
 \end{figure}
 \FloatBarrier
 
@@ -479,6 +479,253 @@ This phenomenon of saturation with 100\% overlap of hidden weights holds for all
     % \caption[]{}\label{fig: results}
     \end{figure}
     \FloatBarrier
+
+\newpage
+    
+\subsection{Periodic - Sigmoid}
+
+In this setup the teacher is changed with a fixed period of 5000 training steps. 
+I ran the experiment with five different random seeds. This section shows results with the Sigmoid non-linearity.
+I've only shown the plots for independent and full overlap settings, i.e. the two extremes. Other plots like above
+are on the google drive. With the sigmoid non-linearity, there is no proper convergence. 
+
+\subsubsection{Independent Teachers}
+
+\begin{figure}[htpb]
+    \centering
+    \pgfplotsset{
+        width=0.8\textwidth,
+        height=0.45\textwidth,
+        legend style={at={(axis cs:-0.5,-1)},anchor=south west},
+    % 	legend style={at={(0.97,0.03)},
+    % 		anchor=south east},
+        label style={font=\large},
+        legend cell align = {left},
+        xmin=0, xmax=1,
+        ymin=0, ymax=1,
+        cycle list={
+    % 	{red, densely dotted, ultra thick},
+    % 	{blue, solid, thick},
+    % 	{black!45!green, loosely dashed, ultra thick},
+    % 	{yellow, loosely dotted, ultra thick},
+        {green!45!black, thick},
+        {red, thick},
+        {orange, thick},
+        {blue, thick},
+        {red!45!blue, thick}}}
+    \begin{tikzpicture}
+    \begin{axis}
+    [
+        scaled x ticks = true,
+        xlabel={\small Training steps},
+        % ylabel={\small Meta validation loss, $\Delta_{\text{Test}}$},
+        ylabel={\small Generalisation Error (log)},
+        xtick={0,0.5,1},
+        xtick distance=0.5,
+        xticklabels={0, 50000, 100000},
+        ytick distance=0.2,
+        % ytick={0,0.12,0.24, 0.36, 0.48,0.6,0.72,0.84, 0.96},
+        yticklabels={-20, -3.6, -3, -2.4, -1.8, -1.2, -0.6},
+        legend pos=south east,
+        % xmajorgrids=true,
+        % ymajorgrids=true,
+        % grid style=dashed,
+    ]
+    \addplot graphics [xmin=0,xmax=1,ymin=0,ymax=1] {independent_seed_5_full_sigmoid.png};
+    \end{axis}
+    \end{tikzpicture}%
+    \vspace{0.2em}
+    \begin{tikzpicture}
+    % 	\draw (-3.2,-0.5) -- (-3.2,0.3) -- (1.6,0.3) -- (1.6,-0.5) -- (-3.2,-0.5);
+        \draw [magenta, thick] (-9,-0.2) -- (-8.5,-0.2);
+        \node at (-7.6, -0.2) {Teacher 1};
+        \draw [green!35!black, thick] (-4,-0.2) -- (-3.5,-0.2);
+        \node at (-2.6, -0.2) {Teacher 2};
+    \end{tikzpicture}
+    % \vspace{1em}
+    \caption[]{}\label{fig: results13}
+\end{figure}
+\FloatBarrier
+
+\subsubsection{Overlap 100\%}
+
+\begin{figure}[htpb]
+    \centering
+    \pgfplotsset{
+        width=0.8\textwidth,
+        height=0.45\textwidth,
+        legend style={at={(axis cs:-0.5,-1)},anchor=south west},
+    % 	legend style={at={(0.97,0.03)},
+    % 		anchor=south east},
+        label style={font=\large},
+        legend cell align = {left},
+        xmin=0, xmax=1,
+        ymin=0, ymax=1,
+        cycle list={
+    % 	{red, densely dotted, ultra thick},
+    % 	{blue, solid, thick},
+    % 	{black!45!green, loosely dashed, ultra thick},
+    % 	{yellow, loosely dotted, ultra thick},
+        {green!45!black, thick},
+        {red, thick},
+        {orange, thick},
+        {blue, thick},
+        {red!45!blue, thick}}}
+    \begin{tikzpicture}
+    \begin{axis}
+    [
+        scaled x ticks = true,
+        xlabel={\small Training steps},
+        % ylabel={\small Meta validation loss, $\Delta_{\text{Test}}$},
+        ylabel={\small Generalisation Error (log)},
+        xtick={0,0.5,1},
+        xtick distance=0.5,
+        xticklabels={0, 50000, 100000},
+        ytick distance=0.1428,
+        % ytick={0,0.12,0.24, 0.36, 0.48,0.6,0.72,0.84, 0.96},
+        yticklabels={-20, -4.5, -4, -3.5, -3, -2.5, -2, -1.5, -1, -0.5},
+        legend pos=south east,
+        % xmajorgrids=true,
+        % ymajorgrids=true,
+        % grid style=dashed,
+    ]
+    \addplot graphics [xmin=0,xmax=1,ymin=0,ymax=1] {overlap_100_seed_5_full_sigmoid.png};
+    \end{axis}
+    \end{tikzpicture}%
+    \vspace{0.2em}
+    \begin{tikzpicture}
+        \draw [magenta, thick] (-9,-0.2) -- (-8.5,-0.2);
+        \node at (-7.6, -0.2) {Teacher 1};
+        \draw [green!35!black, thick] (-4,-0.2) -- (-3.5,-0.2);
+        \node at (-2.6, -0.2) {Teacher 2};
+    \end{tikzpicture}
+    % \vspace{1em}
+    \caption[]{}\label{fig: results1}
+\end{figure}
+\FloatBarrier
+
+\newpage
+    
+\subsection{Periodic - Linear}
+
+In this setup the teacher is changed with a fixed period of 5000 training steps. 
+I ran the experiment with five different random seeds. This section shows results without a non-linearity.
+Again only independent and full overlap shown here. 
+
+\subsubsection{Independent Teachers}
+
+\begin{figure}[htpb]
+    \centering
+    \pgfplotsset{
+        width=0.8\textwidth,
+        height=0.45\textwidth,
+        legend style={at={(axis cs:-0.5,-1)},anchor=south west},
+    % 	legend style={at={(0.97,0.03)},
+    % 		anchor=south east},
+        label style={font=\large},
+        legend cell align = {left},
+        xmin=0, xmax=1,
+        ymin=0, ymax=1,
+        cycle list={
+    % 	{red, densely dotted, ultra thick},
+    % 	{blue, solid, thick},
+    % 	{black!45!green, loosely dashed, ultra thick},
+    % 	{yellow, loosely dotted, ultra thick},
+        {green!45!black, thick},
+        {red, thick},
+        {orange, thick},
+        {blue, thick},
+        {red!45!blue, thick}}}
+    \begin{tikzpicture}
+    \begin{axis}
+    [
+        scaled x ticks = true,
+        xlabel={\small Training steps},
+        % ylabel={\small Meta validation loss, $\Delta_{\text{Test}}$},
+        ylabel={\small Generalisation Error (log)},
+        xtick={0,0.5,1},
+        xtick distance=0.5,
+        xticklabels={0, 50000, 100000},
+        ytick distance=0.25,
+        % ytick={0,0.12,0.24, 0.36, 0.48,0.6,0.72,0.84, 0.96},
+        yticklabels={-20, -16, -12, -8, -4, 0, -0.6},
+        legend pos=south east,
+        % xmajorgrids=true,
+        % ymajorgrids=true,
+        % grid style=dashed,
+    ]
+    \addplot graphics [xmin=0,xmax=1,ymin=0,ymax=1] {independent_seed_5_full_linear.png};
+    \end{axis}
+    \end{tikzpicture}%
+    \vspace{0.2em}
+    \begin{tikzpicture}
+    % 	\draw (-3.2,-0.5) -- (-3.2,0.3) -- (1.6,0.3) -- (1.6,-0.5) -- (-3.2,-0.5);
+        \draw [blue, thick] (-9,-0.2) -- (-8.5,-0.2);
+        \node at (-7.6, -0.2) {Teacher 1};
+        \draw [orange, thick] (-4,-0.2) -- (-3.5,-0.2);
+        \node at (-2.6, -0.2) {Teacher 2};
+    \end{tikzpicture}
+    % \vspace{1em}
+    \caption[]{}\label{fig: results17}
+\end{figure}
+\FloatBarrier
+
+\subsubsection{Overlap 100\%}
+
+\begin{figure}[htpb]
+    \centering
+    \pgfplotsset{
+        width=0.8\textwidth,
+        height=0.45\textwidth,
+        legend style={at={(axis cs:-0.5,-1)},anchor=south west},
+    % 	legend style={at={(0.97,0.03)},
+    % 		anchor=south east},
+        label style={font=\large},
+        legend cell align = {left},
+        xmin=0, xmax=1,
+        ymin=0, ymax=1,
+        cycle list={
+    % 	{red, densely dotted, ultra thick},
+    % 	{blue, solid, thick},
+    % 	{black!45!green, loosely dashed, ultra thick},
+    % 	{yellow, loosely dotted, ultra thick},
+        {green!45!black, thick},
+        {red, thick},
+        {orange, thick},
+        {blue, thick},
+        {red!45!blue, thick}}}
+    \begin{tikzpicture}
+    \begin{axis}
+    [
+        scaled x ticks = true,
+        xlabel={\small Training steps},
+        % ylabel={\small Meta validation loss, $\Delta_{\text{Test}}$},
+        ylabel={\small Generalisation Error (log)},
+        xtick={0,0.5,1},
+        xtick distance=0.5,
+        xticklabels={0, 50000, 100000},
+        ytick distance=0.25,
+        % ytick={0,0.12,0.24, 0.36, 0.48,0.6,0.72,0.84, 0.96},
+        yticklabels={-20, -16, -12, -8, -4, 0, -0.6},
+        legend pos=south east,
+        % xmajorgrids=true,
+        % ymajorgrids=true,
+        % grid style=dashed,
+    ]
+    \addplot graphics [xmin=0,xmax=1,ymin=0,ymax=1] {overlap_100_seed_5_full_linear.png};
+    \end{axis}
+    \end{tikzpicture}%
+    \vspace{0.2em}
+    \begin{tikzpicture}
+        \draw [red, thick] (-9,-0.2) -- (-8.5,-0.2);
+        \node at (-7.6, -0.2) {Teacher 1};
+        \draw [blue, thick] (-4,-0.2) -- (-3.5,-0.2);
+        \node at (-2.6, -0.2) {Teacher 2};
+    \end{tikzpicture}
+    % \vspace{1em}
+    \caption[]{}\label{fig: results19}
+\end{figure}
+\FloatBarrier
 
 % \subsection{Fully Interleaved}
 
