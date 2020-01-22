@@ -29,13 +29,14 @@ def _read_events_file(events_file_path: str, attribute: str) -> List:
             return values
     return values
 
-def _make_plot(data: List[List[List]], labels: List[str], title: str=None, xlabel: str=None, ylabel: str=None, average: bool=True):
+def _make_plot(data: List[List[List]], labels: List[str], scale_axes: int=None, title: str=None, xlabel: str=None, ylabel: str=None, average: bool=True):
     """
     returns matplotlib figure of data provided
     :param data: list of list of list of values to plot. 
             Outer list is sets of data to plot. 
             Each set has repeats, each repeat has list of data.
     :param labels: label for each set of data
+    :param scale_axes: in case readings are not taken every step for this data, scale x axis with this number as range.
     :param title: title for plot
     :param xlabel: label for x axis
     :param ylabel: label for y axis
@@ -54,13 +55,23 @@ def _make_plot(data: List[List[List]], labels: List[str], title: str=None, xlabe
                 processed_sub_data = sub_data
             averaged_data = np.mean(processed_sub_data, axis=0)
             data_deviations = np.std(processed_sub_data, axis=0)
-            plt.plot(range(len(averaged_data)), averaged_data, label=labels[s])
+            if scale_axes:
+                scaling = scale_axes / len(averaged_data)
+                x_data = [i * scaling for i in range(len(averaged_data))]
+            else:
+                x_data = range(len(averaged_data))
+            plt.plot(x_data, averaged_data, label=labels[s])
             plt.fill_between(
-                range(len(averaged_data)), averaged_data - data_deviations, averaged_data + data_deviations, alpha=0.3
+                x_data, averaged_data - data_deviations, averaged_data + data_deviations, alpha=0.3
             )
         else:
             for d, data_list in enumerate(sub_data):
-                plt.plot(range(len(data_list)), data_list, label="{}-repeat{}".format(labels[s], d))
+                if scale_axes:
+                    scaling = scale_axes / len(data_list)
+                    x_data = [i * scaling for i in range(len(data_list))]
+                else:
+                    x_data = range(len(data_list))
+                plt.plot(x_data, data_list, label="{}-repeat{}".format(labels[s], d))
     plt.legend()
     if title:
         plt.title(title)
@@ -140,7 +151,7 @@ class eventReader:
         return value_dict
     
 
-    def generate_plots(self, data: Dict, average=True):
+    def generate_plots(self, data: Dict, average=True, scale_axes=None):
         """
         :param data: nested dictionary of plot data.
             Structure of dictionary should be as follows:
@@ -156,11 +167,11 @@ class eventReader:
                 if 'teacher1' in data[experiment][attribute]:
                     t1_all_seeds = list(data[experiment][attribute]['teacher1'].values())
                     t2_all_seeds = list(data[experiment][attribute]['teacher2'].values())
-                    fig = _make_plot([t1_all_seeds, t2_all_seeds], average=average, title=attribute, labels=["Teacher 1", "Teacher 2"])
+                    fig = _make_plot([t1_all_seeds, t2_all_seeds], average=average, title=attribute, labels=["Teacher 1", "Teacher 2"], scale_axes=scale_axes)
                     all_plots.append(fig)
                 elif 'general' in data[experiment][attribute]:
                     general_all_seeds = list(data[experiment][attribute]['general'].values())
-                    fig = _make_plot([general_all_seeds], average=average, title=attribute, labels=[""])
+                    fig = _make_plot([general_all_seeds], average=average, title=attribute, labels=[""], scale_axes=scale_axes)
                     all_plots.append(fig)
         return all_plots
                     
