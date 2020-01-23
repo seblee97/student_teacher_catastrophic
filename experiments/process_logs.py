@@ -1,11 +1,42 @@
 import numpy as np 
 import matplotlib.pyplot as plt 
 import tensorflow as tf
-import os
+from tensorflow.python.summary.summary_iterator import summary_iterator
 
+import os
 import warnings
+import argparse
+
+from PyPDF2 import PdfFileMerger
 
 from typing import List, Tuple, Dict
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("-path_to_dir", type=str, help="path to directory of experimental results")
+parser.add_argument("-attribute_list_path", type=str, help="path to file containing list of attributes to process")
+parser.add_argument("-steps", type=int, default=100000)
+parser.add_argument("-pdf_name", type=str)
+parser.add_argument("-save_figs", action='store_false')
+parser.add_argument("-multiple_experiments", action='store_true')
+parser.add_argument("-delete_after_merge", action='store_false')
+
+args = parser.parse_args()
+
+def _concatenate_pdfs(pdf_directory: str, output_file_name: str, delete_individuals: bool):
+
+    pdfs = [os.path.join(pdf_directory, f) for f in os.listdir(pdf_directory) if f.endswith('pdf')]
+
+    merger = PdfFileMerger()
+
+    for pdf in pdfs:
+        merger.append(open(pdf, 'rb'))
+
+    with open("{}.pdf".format(output_file_name), "wb") as fout:
+        merger.write(fout)
+
+    for pdf in pdfs:
+        os.remove(pdf)
 
 def _read_events_file(events_file_path: str, attribute: str) -> List:
     """
@@ -15,7 +46,7 @@ def _read_events_file(events_file_path: str, attribute: str) -> List:
     :return values: list of values associated with attibute.
     """
     values = []
-    iterator = tf.train.summary_iterator(events_file_path)
+    iterator = summary_iterator(events_file_path)
     while True:
         try:
             e = next(iterator)
@@ -27,6 +58,10 @@ def _read_events_file(events_file_path: str, attribute: str) -> List:
                 pass
         except: 
             return values
+
+    if len(values) == 0:
+        raise Exception("Event file {} has no data for attribute {}".format(event_file_path, attribute))
+
     return values
 
 def _make_plot(data: List[List[List]], labels: List[str], scale_axes: int=None, title: str=None, xlabel: str=None, ylabel: str=None, average: bool=True):
@@ -55,6 +90,7 @@ def _make_plot(data: List[List[List]], labels: List[str], scale_axes: int=None, 
                 processed_sub_data = sub_data
             averaged_data = np.mean(processed_sub_data, axis=0)
             data_deviations = np.std(processed_sub_data, axis=0)
+
             if scale_axes:
                 scaling = scale_axes / len(averaged_data)
                 x_data = [i * scaling for i in range(len(averaged_data))]
@@ -73,8 +109,14 @@ def _make_plot(data: List[List[List]], labels: List[str], scale_axes: int=None, 
                     x_data = range(len(data_list))
                 plt.plot(x_data, data_list, label="{}-repeat{}".format(labels[s], d))
     plt.legend()
+    plt.minorticks_on()
+    plt.grid(which='major', linestyle='-', linewidth='0.5', color='red', alpha=0.5)
+    plt.grid(which='minor', linestyle=':', linewidth='0.5', color='black', alpha=0.5)
     if title:
-        plt.title(title)
+        if average:
+            plt.title("(average) {}".format(title))
+        else:
+            plt.title("(unaveraged) {}".format(title))
     if xlabel:
         plt.xlabel(xlabel)
     if ylabel:
@@ -95,7 +137,7 @@ def smooth_values(values: List, window_width: int) -> List:
 
 class eventReader:
     
-    def __init__(self, event_file_directory: str):
+    def __init__(self, event_file_directory: str, multiple_experiments: bool=False):
         """
         :param event_file_directory: directory of event files. 
             Structure of directory should be as follows:
@@ -116,23 +158,29 @@ class eventReader:
         self.event_file_directory = event_file_directory
         
         # experiment names
-        self.experiment_folders = [f for f in os.listdir(self.event_file_directory) if not f.startswith(".")]
-        
+        if multiple_experiments:
+            self.experiment_folders = [f for f in os.listdir(self.event_file_directory) if not f.startswith(".") and f != 'figures']
+        else:
+            self.experiment_folders = [self.event_file_directory]
+
         # seeds
-        self.seed_directories = [[os.path.join(self.event_file_directory, e, f) for f in os.listdir(os.path.join(self.event_file_directory, e)) if not f.startswith(".")] for e in self.experiment_folders]
+        if multiple_experiments:
+            self.seed_directories = [[os.path.join(self.event_file_directory, e, f) for f in os.listdir(os.path.join(self.event_file_directory, e)) if not f.startswith(".")] for e in self.experiment_folders]
+        else:
+            self.seed_directories = [[os.path.join(self.event_file_directory, f) for f in os.listdir(e) if not f.startswith(".") and f != 'figures'] for e in self.experiment_folders]
         
         # teacher-agnostic event file paths sorted by experiment_name/seed
         self.general_event_file_paths = [[
-            [[os.path.join(sub_dir, f) for f in os.listdir(sub_dir) if 'tfevents' in f][1]] for sub_dir in seed_directory] for seed_directory in self.seed_directories
+            [os.path.join(sub_dir, f) for f in os.listdir(sub_dir) if 'tfevents' in f and os.path.getsize(os.path.join(sub_dir, f)) > 5] for sub_dir in seed_directory] for seed_directory in self.seed_directories
         ]
         
         # teacher-specific event file paths
         self.teacher1_event_file_paths = [[
-            [[os.path.join(sub_dir, 'teacher_0', f) for f in os.listdir(os.path.join(sub_dir, 'teacher_0')) if 'tfevents' in f][1]]
+            [os.path.join(sub_dir, 'teacher_0', f) for f in os.listdir(os.path.join(sub_dir, 'teacher_0')) if 'tfevents' in f and os.path.getsize(os.path.join(sub_dir, f)) > 5]
             for sub_dir in seed_directory] for seed_directory in self.seed_directories
         ]
         self.teacher2_event_file_paths = [[
-            [[os.path.join(sub_dir, 'teacher_1', f) for f in os.listdir(os.path.join(sub_dir, 'teacher_1')) if 'tfevents' in f][1]] 
+            [os.path.join(sub_dir, 'teacher_1', f) for f in os.listdir(os.path.join(sub_dir, 'teacher_1')) if 'tfevents' in f and os.path.getsize(os.path.join(sub_dir, f)) > 5] 
             for sub_dir in seed_directory] for seed_directory in self.seed_directories
         ]
 
@@ -161,17 +209,50 @@ class eventReader:
                             seed_key:
                                 data_value
         """
-        all_plots = []
+        all_plots = {}
         for experiment in data:
             for attribute in data[experiment]:
                 if 'teacher1' in data[experiment][attribute]:
                     t1_all_seeds = list(data[experiment][attribute]['teacher1'].values())
                     t2_all_seeds = list(data[experiment][attribute]['teacher2'].values())
                     fig = _make_plot([t1_all_seeds, t2_all_seeds], average=average, title=attribute, labels=["Teacher 1", "Teacher 2"], scale_axes=scale_axes)
-                    all_plots.append(fig)
+                    all_plots["{}_{}".format(experiment, attribute)] = fig
                 elif 'general' in data[experiment][attribute]:
                     general_all_seeds = list(data[experiment][attribute]['general'].values())
                     fig = _make_plot([general_all_seeds], average=average, title=attribute, labels=[""], scale_axes=scale_axes)
-                    all_plots.append(fig)
+                    all_plots["{}_{}".format(experiment, attribute)] = fig
         return all_plots
                     
+        
+if __name__ == "__main__":
+    eR = eventReader(event_file_directory=args.path_to_dir, multiple_experiments=args.multiple_experiments)
+    
+    attributes = []
+    with open(args.attribute_list_path) as f:
+        for attribute_line in f:
+            attribute_info = attribute_line.rstrip()
+            attribute, general = attribute_info.split(",")
+            attributes.append((attribute, int(general)))
+            
+    print(attributes)
+    value_dict = eR.get_values(attributes)
+
+    averaged_plots = eR.generate_plots(value_dict, average=True, scale_axes=args.steps)
+    unaveraged_plots = eR.generate_plots(value_dict, average=False, scale_axes=args.steps)
+
+    if args.save_figs:
+        os.makedirs("{}/figures".format(args.path_to_dir), exist_ok=True)
+        for figtitle in averaged_plots:
+            figtitle_mod = figtitle.replace("/", "_")
+            save_dir = os.path.join(args.path_to_dir, 'figures', 'average_{}'.format(figtitle_mod))
+            averaged_plots[figtitle].savefig("{}.pdf".format(save_dir), dpi=1000)
+        for figtitle in unaveraged_plots:
+            figtitle_mod = figtitle.replace("/", "_")
+            save_dir = os.path.join(args.path_to_dir, 'figures', figtitle_mod)
+            unaveraged_plots[figtitle].savefig("{}.pdf".format(save_dir), dpi=1000)
+
+    _concatenate_pdfs(
+        os.path.join(args.path_to_dir, 'figures'), 
+        output_file_name=os.path.join(args.path_to_dir, 'figures', args.pdf_name),
+        delete_individuals=args.delete_after_merge 
+        )
