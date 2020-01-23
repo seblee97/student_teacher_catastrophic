@@ -74,8 +74,12 @@ if __name__ == "__main__":
         additional_configuration = 'drifting_config.yaml'
     elif teacher_configuration == 'overlapping':
         additional_configuration = 'overlapping_config.yaml'
+
+    elif teacher_configuration == 'mnist':
+        additional_configuration = 'mnist_config.yaml'
     else:
-        raise ValueError("teacher configuration {} not recognised. Please use 'noisy', 'overlapping', 'drifting', or 'independent',".format(teacher_configuration))
+        raise ValueError("teacher configuration {} not recognised. Please use 'noisy', \
+                'overlapping', 'drifting', 'independent', or 'mnist'".format(teacher_configuration))
 
     # specific parameters
     with open('configs/{}'.format(additional_configuration), 'r') as yaml_file:
@@ -151,6 +155,10 @@ if __name__ == "__main__":
         student_teacher = frameworks.ContinualOverlapping(config=student_teacher_parameters)
     elif teacher_configuration == 'overlapping' and learner_configuration == 'meta':
         student_teacher = frameworks.MetaOverlapping(config=student_teacher_parameters)
+    elif teacher_configuration == 'mnist' and learner_configuration == 'continual':
+        student_teacher = frameworks.ContinualMNIST(config=student_teacher_parameters)
+    elif teacher_configuration == 'mnist' and learner_configuration == 'meta':
+        student_teacher = frameworks.MetaMNIST(config=student_teacher_parameters)
         
     student_teacher.train()
         
