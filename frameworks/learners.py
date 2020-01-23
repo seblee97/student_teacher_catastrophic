@@ -5,6 +5,7 @@ from frameworks.base_frameworks.noisy_teachers import NoisyTeachers
 from frameworks.base_frameworks.independent_teachers import IndependentTeachers
 from frameworks.base_frameworks.drifting_teachers import DriftingTeachers
 from frameworks.base_frameworks.overlapping_teachers import OverlappingTeachers
+from frameworks.base_frameworks.mnist_reachers import MNISTTeachers
 
 from typing import Dict
 
@@ -55,3 +56,13 @@ class ContinualOverlapping(OverlappingTeachers, ContinualLearner):
     def __init__(self, config: Dict):
         ContinualLearner.__init__(self, config)
         OverlappingTeachers.__init__(self, config)
+
+class ContinualMNIST(MNISTTeachers, MNISTContinualLearner):
+
+    def __init__(self, config: Dict):
+        raise NotImplementedError
+
+class MetaMNIST(MNISTTeachers, MNISTMetaLearner):
+
+    def __init__(self, config: Dict):
+        raise NotImplementedError

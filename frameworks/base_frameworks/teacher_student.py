@@ -15,7 +15,7 @@ from utils import visualise_matrix
 
 from abc import ABC, abstractmethod
 
-class StudentTeacher(ABC):
+class Framework(ABC):
 
     def __init__(self, config: Dict) -> None:
         """
@@ -128,63 +128,12 @@ class StudentTeacher(ABC):
         else:
             raise ValueError("Curriculum type {} not recognised".format(curriculum_type))
 
+    @abstractmethod
     def train(self) -> None:
         """
         Training loop
         """
-        training_losses = []
-        total_step_count = 0
-        steps_per_task = []
-
-        while total_step_count < self.total_training_steps:
-            
-            teacher_index = next(self.curriculum)
-            task_step_count = 0
-            latest_task_generalisation_error = np.inf
-            
-            # alert learner/teacher(s) of task change e.g. change output head of student to relevant task (if in continual setting)
-            self._signal_task_boundary_to_learner(new_task=teacher_index)
-            self._signal_task_boundary_to_teacher(new_task=teacher_index)
-
-            while True:
-
-                random_input = torch.randn(self.train_batch_size, self.input_dimension).to(self.device)
-    
-                teacher_output = self.teachers[teacher_index](random_input)
-                student_output = self.student_network(random_input)
-
-                if self.verbose and task_step_count % 1000 == 0:
-                    print("Training step {}".format(task_step_count))
-
-                # training iteration
-                self.optimiser.zero_grad()
-                loss = self._compute_loss(student_output, teacher_output)
-                loss.backward()
-                self.optimiser.step()
-                training_losses.append(float(loss))
-
-                # log training loss
-                self.writer.add_scalar('training_loss', float(loss), total_step_count)
-
-                # test
-                if total_step_count % self.test_frequency == 0 and total_step_count != 0:
-                    latest_task_generalisation_error = self._perform_test_loop(teacher_index, task_step_count, total_step_count)
-
-                # overlap matrices
-                if total_step_count % self.overlap_frequency == 0 and total_step_count != 0:
-                    self._compute_overlap_matrices(step_count=total_step_count)
-
-                total_step_count += 1
-                task_step_count += 1
-
-                # alert learner/teacher(s) of step e.g. to drift teacher
-                self._signal_step_boundary_to_learner(step=task_step_count, current_task=teacher_index)
-                self._signal_step_boundary_to_teacher(step=task_step_count, current_task=teacher_index)
-
-                if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
-                    self.writer.add_scalar('steps_per_task', task_step_count, total_step_count)
-                    steps_per_task.append(task_step_count)
-                    break
+        raise NotImplementedError("Base class method")
 
     @abstractmethod
     def _signal_task_boundary_to_learner(self):
@@ -346,5 +295,70 @@ class StudentTeacher(ABC):
         loss = 0.5 * self.loss_function(prediction, target)
         return loss
 
+
+class StudentTeacher(Framework):
+
+    def train(self) -> None:
+
+        training_losses = []
+        total_step_count = 0
+        steps_per_task = []
+
+        while total_step_count < self.total_training_steps:
+            
+            teacher_index = next(self.curriculum)
+            task_step_count = 0
+            latest_task_generalisation_error = np.inf
+            
+            # alert learner/teacher(s) of task change e.g. change output head of student to relevant task (if in continual setting)
+            self._signal_task_boundary_to_learner(new_task=teacher_index)
+            self._signal_task_boundary_to_teacher(new_task=teacher_index)
+
+            while True:
+
+                random_input = torch.randn(self.train_batch_size, self.input_dimension).to(self.device)
+    
+                teacher_output = self.teachers[teacher_index](random_input)
+                student_output = self.student_network(random_input)
+
+                if self.verbose and task_step_count % 1000 == 0:
+                    print("Training step {}".format(task_step_count))
+
+                # training iteration
+                self.optimiser.zero_grad()
+                loss = self._compute_loss(student_output, teacher_output)
+                loss.backward()
+                self.optimiser.step()
+                training_losses.append(float(loss))
+
+                # log training loss
+                self.writer.add_scalar('training_loss', float(loss), total_step_count)
+
+                # test
+                if total_step_count % self.test_frequency == 0 and total_step_count != 0:
+                    latest_task_generalisation_error = self._perform_test_loop(teacher_index, task_step_count, total_step_count)
+
+                # overlap matrices
+                if total_step_count % self.overlap_frequency == 0 and total_step_count != 0:
+                    self._compute_overlap_matrices(step_count=total_step_count)
+
+                total_step_count += 1
+                task_step_count += 1
+
+                # alert learner/teacher(s) of step e.g. to drift teacher
+                self._signal_step_boundary_to_learner(step=task_step_count, current_task=teacher_index)
+                self._signal_step_boundary_to_teacher(step=task_step_count, current_task=teacher_index)
+
+                if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
+                    self.writer.add_scalar('steps_per_task', task_step_count, total_step_count)
+                    steps_per_task.append(task_step_count)
+                    break
+
+
+class MNIST(Framework):
+
+    def train(self) -> None:
+
+        raise NotImplementedError
 
         
