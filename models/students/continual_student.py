@@ -49,3 +49,22 @@ class ContinualStudent(Model):
     def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
         y = self.heads[self._current_teacher](x)
         return y
+
+class MNISTContinualStudent(Model):
+
+    def __init__(self, config: Dict) -> None:
+
+        Model.__init__(self, config=config, model_type='student')
+        self._current_teacher = None
+
+    def _construct_output_layers(self):
+        raise NotImplementedError
+
+    def set_task(self, task_index: int):
+        raise NotImplementedError
+
+    def test_all_tasks(self, x: torch.Tensor):
+        raise NotImplementedError
+
+    def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError

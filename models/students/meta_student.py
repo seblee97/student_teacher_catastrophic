@@ -38,3 +38,21 @@ class MetaStudent(Model):
     def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
         y = self.output_layer(x)
         return y
+
+class MNISTMetaStudent(Model):
+
+    def __init__(self, config: Dict) -> None:
+
+        Model.__init__(self, config=config, model_type='student')
+
+    def _construct_output_layers(self):
+        raise NotImplementedError
+
+    def set_task(self, task_index: int):
+        raise NotImplementedError
+
+    def test_all_tasks(self, x: torch.Tensor):
+        raise NotImplementedError
+
+    def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError
