@@ -9,6 +9,9 @@ from frameworks.base_frameworks.mnist_reachers import MNISTTeachers
 
 from typing import Dict
 
+import torch
+import torchvision
+
 class MetaNoisy(NoisyTeachers, MetaLearner):
 
     def __init__(self, config: Dict):
@@ -57,9 +60,18 @@ class ContinualOverlapping(OverlappingTeachers, ContinualLearner):
         ContinualLearner.__init__(self, config)
         OverlappingTeachers.__init__(self, config)
 
-class ContinualMNIST(MNISTTeachers, MNISTContinualLearner):
+class ContinualMNIST:
 
     def __init__(self, config: Dict):
+        self.data_path = config.get('data_path')
+
+        # transforms to add to data
+        transform = torchvision.transforms.Compose([
+            transforms.ToTensor()
+        ])
+
+        mnist_data = torchvision.datasets.MNIST(self.data_path, transform=transform)
+        data_loader = torchvision.
         raise NotImplementedError
 
 class MetaMNIST(MNISTTeachers, MNISTMetaLearner):
