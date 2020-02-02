@@ -66,7 +66,7 @@ class Model(nn.Module, ABC):
         input_layer = self._initialise_weights(nn.Linear(self.input_dimension, self.hidden_dimensions[0], bias=self.bias))
         self.layers.append(input_layer)
 
-        for h in self.hidden_dimensions[:-1]:
+        for h in range(len(self.hidden_dimensions[:-1])):
             hidden_layer = self._initialise_weights(nn.Linear(self.hidden_dimensions[h], self.hidden_dimensions[h + 1], bias=self.bias))
             self.layers.append(hidden_layer)
 
