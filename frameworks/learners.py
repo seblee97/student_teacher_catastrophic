@@ -1,16 +1,13 @@
-from frameworks.base_frameworks.meta_learning import MetaLearner
-from frameworks.base_frameworks.continual_learning import ContinualLearner
+from frameworks.base_frameworks.meta_learning import MetaLearner, MNISTMetaLearner
+from frameworks.base_frameworks.continual_learning import ContinualLearner, MNISTContinualLearner
 
 from frameworks.base_frameworks.noisy_teachers import NoisyTeachers
 from frameworks.base_frameworks.independent_teachers import IndependentTeachers
 from frameworks.base_frameworks.drifting_teachers import DriftingTeachers
 from frameworks.base_frameworks.overlapping_teachers import OverlappingTeachers
-from frameworks.base_frameworks.mnist_reachers import MNISTTeachers
+from frameworks.base_frameworks.mnist_teachers import MNISTTeachers
 
 from typing import Dict
-
-import torch
-import torchvision
 
 class MetaNoisy(NoisyTeachers, MetaLearner):
 
@@ -60,21 +57,14 @@ class ContinualOverlapping(OverlappingTeachers, ContinualLearner):
         ContinualLearner.__init__(self, config)
         OverlappingTeachers.__init__(self, config)
 
-class ContinualMNIST:
+class ContinualMNIST(MNISTTeachers, MNISTContinualLearner):
 
     def __init__(self, config: Dict):
-        self.data_path = config.get('data_path')
-
-        # transforms to add to data
-        transform = torchvision.transforms.Compose([
-            transforms.ToTensor()
-        ])
-
-        mnist_data = torchvision.datasets.MNIST(self.data_path, transform=transform)
-        data_loader = torchvision.
-        raise NotImplementedError
+        MNISTTeachers.__init__(self, config)
+        MNISTContinualLearner.__init__(self, config)
 
 class MetaMNIST(MNISTTeachers, MNISTMetaLearner):
 
     def __init__(self, config: Dict):
-        raise NotImplementedError
+        MNISTTeachers.__init__(self, config)
+        MNISTMetaLearner.__init__(self, config)
