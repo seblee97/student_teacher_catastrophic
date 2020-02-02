@@ -42,12 +42,10 @@ class Framework(ABC):
         # initialise loss function
         if config.get(["training", "loss_function"]) == 'mse':
             self.loss_function = nn.MSELoss()
+        elif config.get(["training", "loss_function"]) == 'cross_entropy':
+            self.loss_function = nn.CrossEntropyLoss()
         else:
-            raise NotImplementedError("{} is not currently supported, please use mse loss".format(config.get("loss")))
-
-        # generate fixed test data
-        self.test_input_data = torch.randn(self.test_batch_size, self.input_dimension).to(self.device)
-        self.test_teacher_outputs = [teacher(self.test_input_data) for teacher in self.teachers]
+            raise NotImplementedError("{} is not currently supported, please use mse loss or cross_entropy for mnist".format(config.get("loss")))
 
         # initialise general tensorboard writer
         self.writer = SummaryWriter(self.checkpoint_path)
@@ -178,7 +176,8 @@ class Framework(ABC):
         """
         with torch.no_grad():
 
-            generalisation_error_per_teacher = self._compute_generalisation_errors()
+            generalisation_error_per_teacher = self._compute_generalisation_errors(teacher_index=teacher_index).get('generalisation_error')
+            classification_accuracy = self._compute_generalisation_errors(teacher_index=teacher_index).get('accuracy')
 
             # log average generalisation losses over teachers
             self.writer.add_scalar(
@@ -195,6 +194,9 @@ class Framework(ABC):
                 self.teacher_writers[i].add_scalar('generalisation_error/linear', error, total_step_count)
                 self.teacher_writers[i].add_scalar('generalisation_error/log', np.log10(error), total_step_count)
 
+                if classification_accuracy:
+                    self.teacher_writers[i].add_scalar('classification_accuracy', classification_accuracy[i], total_step_count)
+
                 if len(self.generalisation_errors[i]) > 1:
                     last_error = copy.deepcopy(self.generalisation_errors[i][-2])
                     error_delta = error - last_error
@@ -210,11 +212,19 @@ class Framework(ABC):
                         "{}Teacher {}: {}".format("".rjust(10), i, error),
                         sep="\n"
                     )
+                if classification_accuracy:
+                    print("Classification accuracies @ step {} ({}'th step training on teacher {}):".format(total_step_count, task_step_count, teacher_index))
+                    for i, acc in enumerate(classification_accuracy):
+                        print(
+                            "{}Teacher {}: {}".format("".rjust(10), i, acc),
+                            sep="\n"
+                        )
 
             generalisation_error_wrt_current_teacher = generalisation_error_per_teacher[teacher_index]
 
             return generalisation_error_wrt_current_teacher
 
+    @abstractmethod
     def _compute_overlap_matrices(self, step_count: int) -> None:
         """
         calculated overlap matrices (order parameters) of student wrt itself, teacher wrt itself and student wrt teacher
@@ -222,58 +232,10 @@ class Framework(ABC):
 
         :param step_count: number of steps (overall) taken by student in training so far
         """
-        # extract layer weights
-        student_layer = self.student_network.state_dict()['layers.0.weight'].data
-        teacher_layers = [teacher.state_dict()['layers.0.weight'].data for teacher in self.teachers]
-
-        # compute overlap matrices
-        student_self_overlap = (student_layer.mm(student_layer.t()) / self.input_dimension).cpu().numpy()
-        student_teacher_overlaps = [(student_layer.mm(teacher_layer.t()) / self.input_dimension).cpu().numpy() for teacher_layer in teacher_layers]
-        teacher_self_overlaps = [(teacher_layer.mm(teacher_layer.t()) / self.input_dimension).cpu().numpy() for teacher_layer in teacher_layers]
-        teacher_pairs = list(itertools.combinations(range(len(teacher_layers)), 2))
-        teacher_teacher_overlaps = {(i, j): (teacher_layers[i].mm(teacher_layers[j].t()) / self.input_dimension).cpu().numpy() for (i, j) in teacher_pairs}
-
-        # log overlap values (scalars vs image graphs below)
-        def log_matrix_values(log_name: str, matrix):
-            matrix_shape = matrix.shape
-            for i in range(matrix_shape[0]):
-                for j in range(matrix_shape[1]):
-                    self.writer.add_scalar("{}/values_{}_{}".format(log_name, i, j), matrix[i][j], step_count)
-        
-        log_matrix_values("student_self_overlap", student_self_overlap)
-        for s, student_teacher_overlap in enumerate(student_teacher_overlaps):
-            log_matrix_values("student_teacher_overlaps/{}".format(s), student_teacher_overlap)
-        for s, teacher_self_overlap in enumerate(teacher_self_overlaps):
-            log_matrix_values("teacher_self_overlaps/{}".format(s), teacher_self_overlap)
-        for (i, j) in teacher_teacher_overlaps:
-            log_matrix_values("teacher_teacher_overlaps/{}_{}".format(i, j), teacher_teacher_overlaps[(i, j)])
-
-        # generate visualisations
-        student_self_fig = visualise_matrix(student_self_overlap, fig_title=r"$Q_{ik}^\mu$")
-        teacher_cross_figs = {(i, j):
-            visualise_matrix(teacher_teacher_overlaps[(i, j)], fig_title=r"$T_{nm}$") \
-            for (i, j) in teacher_teacher_overlaps
-        }
-        teacher_self_figs = [
-            visualise_matrix(teacher_self_overlap, fig_title=r"$T_{nm}$") \
-            for teacher_self_overlap in teacher_self_overlaps
-        ]
-        student_teacher_figs = [
-            visualise_matrix(student_teacher_overlap, fig_title=r"$R_{in}^\mu$") \
-            for t, student_teacher_overlap in enumerate(student_teacher_overlaps)
-        ]
-
-        # log visualisations
-        self.writer.add_figure("student_self_overlap", student_self_fig, step_count)
-        for t, student_teacher_fig in enumerate(student_teacher_figs):
-            self.writer.add_figure("student_teacher_overlaps/teacher_{}".format(t), student_teacher_fig, step_count)
-        for t, teacher_self_fig in enumerate(teacher_self_figs):
-            self.writer.add_figure("teacher_self_overlaps/teacher_{}".format(t), teacher_self_fig, step_count)
-        for (i, j), teacher_cross_fig in list(teacher_cross_figs.items()):
-            self.writer.add_figure("teacher_cross_overlaps/teacher{}x{}".format(i, j), teacher_cross_fig, step_count)
+        raise NotImplementedError("Base class method")
 
     @abstractmethod
-    def _compute_generalisation_errors(self) -> List[float]:
+    def _compute_generalisation_errors(self, teacher_index: int=None) -> Dict[str, List[float]]:
         """
         calculated generalisation errors wrt fixed test dataset of student against teacher indices given
 
@@ -281,7 +243,8 @@ class Framework(ABC):
         :return generalisation_errors: list of generalisation errors of student against all teachers specified
         """
         raise NotImplementedError("Base class method")
-
+    
+    @abstractmethod
     def _compute_loss(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """
         Calculates loss of prediction of student vs. target from teacher
@@ -292,11 +255,17 @@ class Framework(ABC):
 
         :return loss: loss between target (from teacher) and prediction (from student)
         """
-        loss = 0.5 * self.loss_function(prediction, target)
-        return loss
+        raise NotImplementedError("Base class method")
 
 
 class StudentTeacher(Framework):
+
+    def __init__(self, config: Dict) -> None:
+        Framework.__init__(self, config)
+
+        # generate fixed test data
+        self.test_input_data = torch.randn(self.test_batch_size, self.input_dimension).to(self.device)
+        self.test_teacher_outputs = [teacher(self.test_input_data) for teacher in self.teachers]
 
     def train(self) -> None:
 
@@ -354,11 +323,142 @@ class StudentTeacher(Framework):
                     steps_per_task.append(task_step_count)
                     break
 
+    def _compute_overlap_matrices(self, step_count: int) -> None:
+        # extract layer weights
+        student_layer = self.student_network.state_dict()['layers.0.weight'].data
+        teacher_layers = [teacher.state_dict()['layers.0.weight'].data for teacher in self.teachers]
+
+        # compute overlap matrices
+        student_self_overlap = (student_layer.mm(student_layer.t()) / self.input_dimension).cpu().numpy()
+        student_teacher_overlaps = [(student_layer.mm(teacher_layer.t()) / self.input_dimension).cpu().numpy() for teacher_layer in teacher_layers]
+        teacher_self_overlaps = [(teacher_layer.mm(teacher_layer.t()) / self.input_dimension).cpu().numpy() for teacher_layer in teacher_layers]
+        teacher_pairs = list(itertools.combinations(range(len(teacher_layers)), 2))
+        teacher_teacher_overlaps = {(i, j): (teacher_layers[i].mm(teacher_layers[j].t()) / self.input_dimension).cpu().numpy() for (i, j) in teacher_pairs}
+
+        # log overlap values (scalars vs image graphs below)
+        def log_matrix_values(log_name: str, matrix):
+            matrix_shape = matrix.shape
+            for i in range(matrix_shape[0]):
+                for j in range(matrix_shape[1]):
+                    self.writer.add_scalar("{}/values_{}_{}".format(log_name, i, j), matrix[i][j], step_count)
+        
+        log_matrix_values("student_self_overlap", student_self_overlap)
+        for s, student_teacher_overlap in enumerate(student_teacher_overlaps):
+            log_matrix_values("student_teacher_overlaps/{}".format(s), student_teacher_overlap)
+        for s, teacher_self_overlap in enumerate(teacher_self_overlaps):
+            log_matrix_values("teacher_self_overlaps/{}".format(s), teacher_self_overlap)
+        for (i, j) in teacher_teacher_overlaps:
+            log_matrix_values("teacher_teacher_overlaps/{}_{}".format(i, j), teacher_teacher_overlaps[(i, j)])
+
+        # generate visualisations
+        student_self_fig = visualise_matrix(student_self_overlap, fig_title=r"$Q_{ik}^\mu$")
+        teacher_cross_figs = {(i, j):
+            visualise_matrix(teacher_teacher_overlaps[(i, j)], fig_title=r"$T_{nm}$") \
+            for (i, j) in teacher_teacher_overlaps
+        }
+        teacher_self_figs = [
+            visualise_matrix(teacher_self_overlap, fig_title=r"$T_{nm}$") \
+            for teacher_self_overlap in teacher_self_overlaps
+        ]
+        student_teacher_figs = [
+            visualise_matrix(student_teacher_overlap, fig_title=r"$R_{in}^\mu$") \
+            for t, student_teacher_overlap in enumerate(student_teacher_overlaps)
+        ]
+
+        # log visualisations
+        self.writer.add_figure("student_self_overlap", student_self_fig, step_count)
+        for t, student_teacher_fig in enumerate(student_teacher_figs):
+            self.writer.add_figure("student_teacher_overlaps/teacher_{}".format(t), student_teacher_fig, step_count)
+        for t, teacher_self_fig in enumerate(teacher_self_figs):
+            self.writer.add_figure("teacher_self_overlaps/teacher_{}".format(t), teacher_self_fig, step_count)
+        for (i, j), teacher_cross_fig in list(teacher_cross_figs.items()):
+            self.writer.add_figure("teacher_cross_overlaps/teacher{}x{}".format(i, j), teacher_cross_fig, step_count)
+        
+    def _compute_loss(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        loss = 0.5 * self.loss_function(prediction, target)
+        return loss
+
 
 class MNIST(Framework):
 
+    def __init__(self, config: Dict) -> None:
+        Framework.__init__(self, config)
+
     def train(self) -> None:
 
-        raise NotImplementedError
+        training_losses = []
+        total_step_count = 0
+        steps_per_task = []
+
+        while total_step_count < self.total_training_steps:
+            
+            teacher_index = next(self.curriculum)
+            task_step_count = 0
+            latest_task_generalisation_error = np.inf
+            
+            # alert learner/teacher(s) of task change e.g. change output head of student to relevant task (if in continual setting)
+            self._signal_task_boundary_to_learner(new_task=teacher_index)
+            self._signal_task_boundary_to_teacher(new_task=teacher_index)
+
+            while True:
+
+                training_batch = []
+                
+                for _ in range(self.train_batch_size):
+                    if len(self.teachers[teacher_index]) == 0:
+                        self._reset_batch(task_index=teacher_index, classes=self.mnist_teacher_classes[teacher_index])
+                    training_data_point = self.teachers[teacher_index].pop()
+                    training_batch.append(training_data_point)
+
+                image_input = torch.stack([item[0] for item in training_batch]).to(self.device)
+
+                teacher_output = torch.flatten(torch.stack([item[1] for item in training_batch]).to(self.device))
+                student_output = self.student_network(image_input)  
+
+                if self.verbose and task_step_count % 1000 == 0:
+                    print("Training step {}".format(task_step_count))
+
+                # training iteration
+                self.optimiser.zero_grad()
+                loss = self._compute_loss(student_output, teacher_output)
+                loss.backward()
+                self.optimiser.step()
+                training_losses.append(float(loss))
+
+                # log training loss
+                self.writer.add_scalar('training_loss', float(loss), total_step_count)
+
+                # test
+                if total_step_count % self.test_frequency == 0 and total_step_count != 0:
+                    latest_task_generalisation_error = self._perform_test_loop(teacher_index, task_step_count, total_step_count)
+
+                total_step_count += 1
+                task_step_count += 1
+
+                # alert learner/teacher(s) of step e.g. to drift teacher
+                self._signal_step_boundary_to_learner(step=task_step_count, current_task=teacher_index)
+                self._signal_step_boundary_to_teacher(step=task_step_count, current_task=teacher_index)
+
+                if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
+                    self.writer.add_scalar('steps_per_task', task_step_count, total_step_count)
+                    steps_per_task.append(task_step_count)
+                    break
+
+    def _compute_overlap_matrices(self, step_count: int) -> None:
+        pass
+
+    def _compute_loss(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        """
+        Cross-entropy loss
+        """
+        loss = self.loss_function(prediction, target)
+        return loss
+
+    def _compute_classification_acc(self, prediction: torch.Tensor, target: torch.Tensor):
+        class_predictions = torch.argmax(prediction, axis=1)
+        accuracy = int(sum(class_predictions == target)) / len(target)
+        return accuracy
+
+        
 
         
