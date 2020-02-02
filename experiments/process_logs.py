@@ -92,6 +92,10 @@ def _make_plot(data: List[List[List]], labels: List[str], scale_axes: int=None, 
             data_deviations = np.std(processed_sub_data, axis=0)
 
             if scale_axes:
+                if len(averaged_data) == 0:
+                    raise ArithmeticError("Division by zero. \
+                        Please check attribute list to ensure data corresponding to each \
+                        attribute exists in logs")
                 scaling = scale_axes / len(averaged_data)
                 x_data = [i * scaling for i in range(len(averaged_data))]
             else:
