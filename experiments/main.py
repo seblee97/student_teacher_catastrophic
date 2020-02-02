@@ -15,7 +15,7 @@ parser.add_argument('-gpu_id', type=int, help='id of gpu to use if more than 1 a
 
 parser.add_argument('-seed', '--s', type=int, help='seed to use for packages with prng', default=None)
 parser.add_argument('-learner_configuration', '--lc', type=str, help="meta or continual", default=None)
-parser.add_argument('-teacher_configuration', '--tc', type=str, help="noisy or independent", default=None)
+parser.add_argument('-teacher_configuration', '--tc', type=str, help="noisy or independent or mnist", default=None)
 parser.add_argument('-num_teachers', '--nt', type=int, default=None)
 parser.add_argument('-selection_type', '--st', type=str, help="random or cyclical", default=None)
 parser.add_argument('-stopping_condition', '--sc', type=str, help="threshold or fixed_period", default=None)
@@ -159,7 +159,6 @@ if __name__ == "__main__":
         student_teacher = frameworks.ContinualMNIST(config=student_teacher_parameters)
     elif teacher_configuration == 'mnist' and learner_configuration == 'meta':
         student_teacher = frameworks.MetaMNIST(config=student_teacher_parameters)
-        
+    
     student_teacher.train()
-        
     
