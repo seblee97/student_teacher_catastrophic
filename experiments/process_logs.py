@@ -20,12 +20,14 @@ parser.add_argument("-pdf_name", type=str)
 parser.add_argument("-save_figs", action='store_false')
 parser.add_argument("-multiple_experiments", action='store_true')
 parser.add_argument("-delete_after_merge", action='store_false')
+parser.add_argument("-start_percentile", type=int, default=0, help='percentile of the x range from which to start processing')
+parser.add_argument("-end_percentile", type=int, default=100, help='percentile of the x range at which to stop processing')
 
 args = parser.parse_args()
 
-def _concatenate_pdfs(pdf_directory: str, output_file_name: str, delete_individuals: bool):
+def _concatenate_pdfs(pdf_directory: str, output_file_name: str, delete_individuals: bool, keep_existing: List[str]):
 
-    pdfs = [os.path.join(pdf_directory, f) for f in os.listdir(pdf_directory) if f.endswith('pdf')]
+    pdfs = [os.path.join(pdf_directory, f) for f in os.listdir(pdf_directory) if f.endswith('pdf') and os.path.join(pdf_directory, f) not in keep_existing]
 
     merger = PdfFileMerger()
 
@@ -38,11 +40,13 @@ def _concatenate_pdfs(pdf_directory: str, output_file_name: str, delete_individu
     for pdf in pdfs:
         os.remove(pdf)
 
-def _read_events_file(events_file_path: str, attribute: str) -> List:
+def _read_events_file(events_file_path: str, attribute: str, start: int=None, end: int=None) -> List:
     """
     returns values in tensorboard event file associated with the given attribute tag
     :param events_file_path: path to tensorboard events file
     :param attribute: name of tag to filter events file for
+    (:param start: percentile of the x range from which to start reading)
+    (:param end: percentile of the x range at which to stop reading)
     :return values: list of values associated with attibute.
     """
     values = []
@@ -57,6 +61,7 @@ def _read_events_file(events_file_path: str, attribute: str) -> List:
             except:
                 pass
         except: 
+
             return values
 
     if len(values) == 0:
@@ -64,13 +69,16 @@ def _read_events_file(events_file_path: str, attribute: str) -> List:
 
     return values
 
-def _make_plot(data: List[List[List]], labels: List[str], scale_axes: int=None, title: str=None, xlabel: str=None, ylabel: str=None, average: bool=True):
+def _make_plot(data: List[List[List]], labels: List[str], start: int=0, end: int=100, scale_axes: int=None, title: str=None, xlabel: str=None, ylabel: str=None, average: bool=True):
     """
     returns matplotlib figure of data provided
     :param data: list of list of list of values to plot. 
             Outer list is sets of data to plot. 
             Each set has repeats, each repeat has list of data.
     :param labels: label for each set of data
+    :param start: percentile of the x range from which data processing started 
+    :param end: percentile of the x range at which data processing ended 
+    :param end: percentile of the x range at which to stop reading
     :param scale_axes: in case readings are not taken every step for this data, scale x axis with this number as range.
     :param title: title for plot
     :param xlabel: label for x axis
@@ -92,13 +100,26 @@ def _make_plot(data: List[List[List]], labels: List[str], scale_axes: int=None, 
             data_deviations = np.std(processed_sub_data, axis=0)
 
             if scale_axes:
+                if len(averaged_data) == 0:
+                    raise ArithmeticError("Division by zero. \
+                        Please check attribute list to ensure data corresponding to each \
+                        attribute exists in logs")
                 scaling = scale_axes / len(averaged_data)
                 x_data = [i * scaling for i in range(len(averaged_data))]
+
             else:
                 x_data = range(len(averaged_data))
-            plt.plot(x_data, averaged_data, label=labels[s])
+            
+            # note currently inefficient since still requires going through whole iterator even if much is discarded. \
+            # currently not an impediment so fine for now.
+            # crop to specific region
+            full_dataset_range = len(x_data)
+            start_index = int(0.01 * start * full_dataset_range)
+            end_index = int(0.01 * end * full_dataset_range)
+
+            plt.plot(x_data[start_index: end_index], averaged_data[start_index: end_index], label=labels[s])
             plt.fill_between(
-                x_data, averaged_data - data_deviations, averaged_data + data_deviations, alpha=0.3
+                x_data[start_index: end_index], (averaged_data - data_deviations)[start_index: end_index], (averaged_data + data_deviations)[start_index: end_index], alpha=0.3
             )
         else:
             for d, data_list in enumerate(sub_data):
@@ -107,7 +128,13 @@ def _make_plot(data: List[List[List]], labels: List[str], scale_axes: int=None, 
                     x_data = [i * scaling for i in range(len(data_list))]
                 else:
                     x_data = range(len(data_list))
-                plt.plot(x_data, data_list, label="{}-repeat{}".format(labels[s], d))
+
+                # crop to specific region
+                full_dataset_range = len(x_data)
+                start_index = int(0.01 * start * full_dataset_range)
+                end_index = int(0.01 * end * full_dataset_range)
+
+                plt.plot(x_data[start_index: end_index], data_list[start_index: end_index], label="{}-repeat{}".format(labels[s], d))
     plt.legend()
     plt.minorticks_on()
     plt.grid(which='major', linestyle='-', linewidth='0.5', color='red', alpha=0.5)
@@ -199,7 +226,7 @@ class eventReader:
         return value_dict
     
 
-    def generate_plots(self, data: Dict, average=True, scale_axes=None):
+    def generate_plots(self, data: Dict, average=True, scale_axes=None, start: int=0, end: int=100):
         """
         :param data: nested dictionary of plot data.
             Structure of dictionary should be as follows:
@@ -215,11 +242,11 @@ class eventReader:
                 if 'teacher1' in data[experiment][attribute]:
                     t1_all_seeds = list(data[experiment][attribute]['teacher1'].values())
                     t2_all_seeds = list(data[experiment][attribute]['teacher2'].values())
-                    fig = _make_plot([t1_all_seeds, t2_all_seeds], average=average, title=attribute, labels=["Teacher 1", "Teacher 2"], scale_axes=scale_axes)
+                    fig = _make_plot([t1_all_seeds, t2_all_seeds], average=average, title=attribute, labels=["Teacher 1", "Teacher 2"], scale_axes=scale_axes, start=start, end=end)
                     all_plots["{}_{}".format(experiment, attribute)] = fig
                 elif 'general' in data[experiment][attribute]:
                     general_all_seeds = list(data[experiment][attribute]['general'].values())
-                    fig = _make_plot([general_all_seeds], average=average, title=attribute, labels=[""], scale_axes=scale_axes)
+                    fig = _make_plot([general_all_seeds], average=average, title=attribute, labels=[""], scale_axes=scale_axes, start=start, end=end)
                     all_plots["{}_{}".format(experiment, attribute)] = fig
         return all_plots
                     
@@ -237,11 +264,15 @@ if __name__ == "__main__":
     print(attributes)
     value_dict = eR.get_values(attributes)
 
-    averaged_plots = eR.generate_plots(value_dict, average=True, scale_axes=args.steps)
-    unaveraged_plots = eR.generate_plots(value_dict, average=False, scale_axes=args.steps)
+    averaged_plots = eR.generate_plots(value_dict, average=True, scale_axes=args.steps, start=args.start_percentile, end=args.end_percentile)
+    unaveraged_plots = eR.generate_plots(value_dict, average=False, scale_axes=args.steps, start=args.start_percentile, end=args.end_percentile)
 
     if args.save_figs:
         os.makedirs("{}/figures".format(args.path_to_dir), exist_ok=True)
+
+        figure_path = os.path.join(args.path_to_dir, 'figures')
+        existing_pdfs = [os.path.join(figure_path, f) for f in os.listdir(figure_path) if f.endswith('pdf')]
+
         for figtitle in averaged_plots:
             figtitle_mod = figtitle.replace("/", "_")
             save_dir = os.path.join(args.path_to_dir, 'figures', 'average_{}'.format(figtitle_mod))
@@ -251,8 +282,9 @@ if __name__ == "__main__":
             save_dir = os.path.join(args.path_to_dir, 'figures', figtitle_mod)
             unaveraged_plots[figtitle].savefig("{}.pdf".format(save_dir), dpi=1000)
 
-    _concatenate_pdfs(
-        os.path.join(args.path_to_dir, 'figures'), 
-        output_file_name=os.path.join(args.path_to_dir, 'figures', args.pdf_name),
-        delete_individuals=args.delete_after_merge 
-        )
+        _concatenate_pdfs(
+            os.path.join(args.path_to_dir, 'figures'), 
+            output_file_name=os.path.join(args.path_to_dir, 'figures', args.pdf_name),
+            delete_individuals=args.delete_after_merge,
+            keep_existing=existing_pdfs
+            )
