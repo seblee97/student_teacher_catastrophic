@@ -1,6 +1,7 @@
 from models import Teacher
 
 from frameworks import MNIST
+from utils import load_mnist_data, get_binary_classification_datasets
 
 import torch
 import torchvision
@@ -28,41 +29,25 @@ class MNISTTeachers(MNIST):
             raise AssertionError("Number of teachers specified in base config is not compatible with\
                 number of MNIST classifiers specified.")
 
-        # transforms to add to data
-        transform = torchvision.transforms.Compose([
-            torchvision.transforms.Grayscale(),
-            torchvision.transforms.ToTensor()
-        ])
+        # load mnist data
+        self.mnist_train_x, self.mnist_train_y, mnist_test_x,  mnist_test_y = load_mnist_data(data_path=self.data_path)
 
-        mnist_train = torchvision.datasets.MNIST(self.data_path, transform=transform, train=True)
-        self.mnist_train_x = mnist_train.train_data
-        self.mnist_train_y = mnist_train.train_labels
-
-        mnist_test = torchvision.datasets.MNIST(self.data_path, transform=transform, train=False)
-        mnist_test_x = mnist_test.test_data
-        mnist_test_y = mnist_test.test_labels
-
-        # initialise different binary classifiers
-        self.teachers = [_ for _ in range(self.num_teachers)]
-
-        self.test_data_x = []
-        self.test_data_y = []
-
-        for t, task in enumerate(self.mnist_teacher_classes):
-            self._reset_batch(t, task)
-
-        # test data sets
-        for task in self.mnist_teacher_classes:
-
-            d1_test = [(torch.flatten(x).type(torch.FloatTensor), torch.Tensor([0]).type(torch.LongTensor)) for (i, x) in enumerate(mnist_test_x) if mnist_test_y[i] == task[0]]
-            d2_test = [(torch.flatten(x).type(torch.FloatTensor), torch.Tensor([1]).type(torch.LongTensor)) for (i, x) in enumerate(mnist_test_x) if mnist_test_y[i] == task[1]]
-            task_test_data = d1_test + d2_test
-            random.shuffle(task_test_data)
-            
+        # get fixed test dataset (filtered for tasks specified)
+        test_data = [get_binary_classification_datasets(x_data=mnist_test_x, y_data=mnist_test_y, task_classes=task_classes) for task_classes in self.mnist_teacher_classes]
+        self.test_data_x, self.test_data_y = [], []
+        for task_test_data in test_data: 
             task_test_inputs = torch.stack([d[0] for d in task_test_data]).to(self.device)
             task_test_labels = torch.stack([d[1] for d in task_test_data]).squeeze().to(self.device)
             self.test_data_x.append(task_test_inputs)
             self.test_data_y.append(task_test_labels)
+
+        # initialise different binary classifiers
+        self.teachers = [_ for _ in range(self.num_teachers)]
+
+        # filter data for relevant images for each task
+        for t, task in enumerate(self.mnist_teacher_classes):
+            teacher_data = get_binary_classification_datasets(self.mnist_train_x, self.mnist_train_y, task)
+            self.teachers[t] = teacher_data
 
     def _reset_batch(self, task_index: int, classes: List[int]):
         d1_train = [(torch.flatten(x).type(torch.FloatTensor), torch.Tensor([0]).type(torch.LongTensor)) for (i, x) in enumerate(self.mnist_train_x) if self.mnist_train_y[i] == classes[0]]
