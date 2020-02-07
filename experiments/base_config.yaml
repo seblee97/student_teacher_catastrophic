@@ -13,9 +13,11 @@ task:
 training:
   total_training_steps:             100000                    # total number of training steps to take
   train_batch_size:                 1                         # number of tasks sampled per meta-update (per outer loop)
-  test_batch_size:                  50000                     # number of samples to use for generalisatio error
-  learning_rate:                    0.2                       # learning rate for sgd update of student
+  test_batch_size:                  10000                     # number of samples to use for generalisatio error
+  learning_rate:                    0.001                       # learning rate for sgd update of student
   loss_function:                    mse                       # function to use for loss
+  input_source:                     mnist              # whether to have inputs drawn randomly or (e.g. from mnist)
+  pca_input:                        64                        # number of principle components to reduce data to (no PCA if -1)                         
   
 testing:
   test_frequency:                   1                         # how often during training to perform generalisation error test loop
@@ -23,14 +25,15 @@ testing:
   test_all_teachers:                True                      # whether to compute generalisation losses for all teachers or just one currently teaching
 
 model:
-  input_dimension:                  500                       # dimension of network input 
+  input_dimension:                  64                       # dimension of network input 
   student_hidden_layers:            [2]                       # dimension of hidden layers to be used in student network
   teacher_hidden_layers:            [1]                       # dimension of hidden layers to be used in teacher network(s)
   output_dimension:                 1                         # dimension of network output
-  nonlinearity:                     relu                      # nonlinearity to be used for networks
+  student_nonlinearity:             relu                      # nonlinearity to be used for networks
+  teacher_nonlinearities:           [relu, relu]
   teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
   student_initialisation_std:       0.001                     # std of normal initialisation for student network
-  initialise_student_outputs:       False                     # whether or not to initialise hidden -> output weights of student
+  initialise_student_outputs:       True                     # whether or not to initialise hidden -> output weights of student
   soft_committee:                   False                     # whether or not to freeze output layer (scm)
   bias_parameters:                  False                     # whether or not to have bias parameters on linaer layers
 
