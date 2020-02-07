@@ -65,28 +65,34 @@ if __name__ == "__main__":
     if args.v is not None:
         student_teacher_parameters._config["verbose"] = bool(args.v)
 
+    additional_configurations = []
+
     teacher_configuration = student_teacher_parameters.get(["task", "teacher_configuration"])
     if teacher_configuration == 'noisy':
-        additional_configuration = 'noisy_config.yaml'
+        additional_configurations.append('noisy_config.yaml')
     elif teacher_configuration == 'independent':
-        additional_configuration = 'independent_config.yaml'
+        additional_configurations.append('independent_config.yaml')
     elif teacher_configuration == 'drifting':
-        additional_configuration = 'drifting_config.yaml'
+        additional_configurations.append('drifting_config.yaml')
     elif teacher_configuration == 'overlapping':
-        additional_configuration = 'overlapping_config.yaml'
+        additional_configurations.append('overlapping_config.yaml')
 
     elif teacher_configuration == 'mnist':
-        additional_configuration = 'mnist_config.yaml'
+        additional_configurations.append('mnist_config.yaml')
     else:
         raise ValueError("teacher configuration {} not recognised. Please use 'noisy', \
                 'overlapping', 'drifting', 'independent', or 'mnist'".format(teacher_configuration))
 
+    if student_teacher_parameters.get(["training", "input_source"]) == 'mnist':
+        additional_configurations.append('mnist_input_config.yaml')
+
     # specific parameters
-    with open('configs/{}'.format(additional_configuration), 'r') as yaml_file:
-        specific_params = yaml.load(yaml_file, yaml.SafeLoader)
+    for additional_configuration in additional_configurations:
+        with open('configs/{}'.format(additional_configuration), 'r') as yaml_file:
+            specific_params = yaml.load(yaml_file, yaml.SafeLoader)
     
-    # update base-parameters with specific parameters
-    student_teacher_parameters.update(specific_params)
+        # update base-parameters with specific parameters
+        student_teacher_parameters.update(specific_params)
 
     # update specific parameters with (optional) args given in command line
     if args.to:
