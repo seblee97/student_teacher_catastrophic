@@ -11,7 +11,7 @@ from tensorboardX import SummaryWriter
 
 from typing import List, Tuple, Generator, Dict
 
-from utils import visualise_matrix
+from utils import visualise_matrix, get_binary_classification_datasets, load_mnist_data, load_mnist_data_as_dataloader
 
 from abc import ABC, abstractmethod
 
@@ -70,6 +70,7 @@ class Framework(ABC):
         self.output_dimension = config.get(["model", "output_dimension"])
         self.nonlinearity = config.get(["model", "nonlinearity"])
         self.soft_committee = config.get(["model", "soft_committee"])
+        self.student_hidden = config.get(["model", "student_hidden_layers"])
 
         self.train_batch_size = config.get(["training", "train_batch_size"])
         self.test_batch_size = config.get(["training", "test_batch_size"])
@@ -83,6 +84,14 @@ class Framework(ABC):
         self.label_task_bounaries = config.get(["task", "label_task_boundaries"])
         self.learner_configuration = config.get(["task", "learner_configuration"])
         self.teacher_configuration = config.get(["task", "teacher_configuration"])
+
+        self.input_source = config.get(["training", "input_source"])
+        self.pca_input = config.get(["training", "pca_input"])
+
+        if self.pca_input > 0:
+            if self.pca_input != self.input_dimension:
+                raise ValueError("Please ensure that if PCA is applied that the number of principal components\
+                    matches the input dimension for the network.")
 
     @abstractmethod
     def _setup_teachers(self, config: Dict):
@@ -264,7 +273,29 @@ class StudentTeacher(Framework):
         Framework.__init__(self, config)
 
         # generate fixed test data
-        self.test_input_data = torch.randn(self.test_batch_size, self.input_dimension).to(self.device)
+        if self.input_source == 'iid_gaussian':
+            self.test_input_data = torch.randn(self.test_batch_size, self.input_dimension).to(self.device)
+        elif self.input_source == 'mnist':
+            # load mnist test data
+            self.data_path = config.get("data_path")
+            test_input_data = iter(load_mnist_data_as_dataloader(
+                data_path=self.data_path, train=False, batch_size=self.test_batch_size, pca=self.pca_input)
+                ).next()[0]
+
+            self.data_mu = torch.mean(test_input_data, axis=0)
+            self.data_sigma = torch.std(test_input_data, axis=0)
+
+            # standardise test inputs
+            self.test_input_data = torch.stack([(d - self.data_mu) / self.data_sigma for d in test_input_data])
+
+            # load mnist training data
+            self.mnist_dataloader = load_mnist_data_as_dataloader(data_path=self.data_path, batch_size=self.train_batch_size, pca=self.pca_input)
+            # self.mnist_train_x = self.mnist_train_x.type(torch.FloatTensor)
+            self.training_data_iterator = iter(self.mnist_dataloader)
+
+        else:
+            raise ValueError("Input source type {} not recognised. Please use either iid_gaussian or mnist".format(self.input_source))
+
         self.test_teacher_outputs = [teacher(self.test_input_data) for teacher in self.teachers]
 
     def train(self) -> None:
@@ -284,11 +315,25 @@ class StudentTeacher(Framework):
             self._signal_task_boundary_to_teacher(new_task=teacher_index)
 
             while True:
+                
+                if self.input_source == 'iid_gaussian':
+                    batch_input = torch.randn(self.train_batch_size, self.input_dimension).to(self.device)
+                elif self.input_source == 'mnist':
+                    
+                    try:
+                        batch_input = next(self.training_data_iterator)[0].to(self.device)
+                    except:
+                        self.training_data_iterator = iter(self.mnist_dataloader)
+                        batch_input = next(self.training_data_iterator)[0].to(self.device)
 
-                random_input = torch.randn(self.train_batch_size, self.input_dimension).to(self.device)
-    
-                teacher_output = self.teachers[teacher_index](random_input)
-                student_output = self.student_network(random_input)
+                    # normalise input
+                    batch_input = (batch_input - self.data_mu) / self.data_sigma
+
+                else:
+                    raise ValueError("Input source type {} not recognised. Please use either iid_gaussian or mnist".format(self.input_source))
+
+                teacher_output = self.teachers[teacher_index](batch_input)
+                student_output = self.student_network(batch_input)
 
                 if self.verbose and task_step_count % 1000 == 0:
                     print("Training step {}".format(task_step_count))
@@ -324,13 +369,30 @@ class StudentTeacher(Framework):
                     break
 
     def _compute_overlap_matrices(self, step_count: int) -> None:
+
+        for layer in range(len(self.student_hidden)):
+            self._compute_layer_overlaps(layer=str(layer), step_count=step_count, head=None)
+
+        self._compute_layer_overlaps(layer="output", step_count=step_count, head=0)
+        self._compute_layer_overlaps(layer="output", step_count=step_count, head=1)
+
+    def _compute_layer_overlaps(self, layer: str, step_count: int, head: int):
+
         # extract layer weights
-        student_layer = self.student_network.state_dict()['layers.0.weight'].data
-        teacher_layers = [teacher.state_dict()['layers.0.weight'].data for teacher in self.teachers]
+        if head is None:
+            student_layer = self.student_network.state_dict()['layers.{}.weight'.format(layer)].data
+            teacher_layers = [teacher.state_dict()['layers.{}.weight'.format(layer)].data for teacher in self.teachers]
+        else:
+            student_layer = self.student_network.state_dict()['heads.{}.weight'.format(str(head))].data
+            teacher_layers = [teacher.state_dict()['output_layer.weight'].data for teacher in self.teachers]
+            layer = layer + "_head_{}".format(str(head))
 
         # compute overlap matrices
         student_self_overlap = (student_layer.mm(student_layer.t()) / self.input_dimension).cpu().numpy()
-        student_teacher_overlaps = [(student_layer.mm(teacher_layer.t()) / self.input_dimension).cpu().numpy() for teacher_layer in teacher_layers]
+        if head is None:
+            student_teacher_overlaps = [(student_layer.mm(teacher_layer.t()) / self.input_dimension).cpu().numpy() for teacher_layer in teacher_layers]
+        else:
+            student_teacher_overlaps = [(student_layer.t().mm(teacher_layer) / self.input_dimension).cpu().numpy() for teacher_layer in teacher_layers]
         teacher_self_overlaps = [(teacher_layer.mm(teacher_layer.t()) / self.input_dimension).cpu().numpy() for teacher_layer in teacher_layers]
         teacher_pairs = list(itertools.combinations(range(len(teacher_layers)), 2))
         teacher_teacher_overlaps = {(i, j): (teacher_layers[i].mm(teacher_layers[j].t()) / self.input_dimension).cpu().numpy() for (i, j) in teacher_pairs}
@@ -340,7 +402,7 @@ class StudentTeacher(Framework):
             matrix_shape = matrix.shape
             for i in range(matrix_shape[0]):
                 for j in range(matrix_shape[1]):
-                    self.writer.add_scalar("{}/values_{}_{}".format(log_name, i, j), matrix[i][j], step_count)
+                    self.writer.add_scalar("layer_{}_{}/values_{}_{}".format(layer, log_name, i, j), matrix[i][j], step_count)
         
         log_matrix_values("student_self_overlap", student_self_overlap)
         for s, student_teacher_overlap in enumerate(student_teacher_overlaps):
@@ -366,13 +428,13 @@ class StudentTeacher(Framework):
         ]
 
         # log visualisations
-        self.writer.add_figure("student_self_overlap", student_self_fig, step_count)
+        self.writer.add_figure("layer_{}_student_self_overlap".format(str(layer)), student_self_fig, step_count)
         for t, student_teacher_fig in enumerate(student_teacher_figs):
-            self.writer.add_figure("student_teacher_overlaps/teacher_{}".format(t), student_teacher_fig, step_count)
+            self.writer.add_figure("layer_{}_student_teacher_overlaps/teacher_{}".format(layer, t), student_teacher_fig, step_count)
         for t, teacher_self_fig in enumerate(teacher_self_figs):
-            self.writer.add_figure("teacher_self_overlaps/teacher_{}".format(t), teacher_self_fig, step_count)
+            self.writer.add_figure("layer_{}_teacher_self_overlaps/teacher_{}".format(layer, t), teacher_self_fig, step_count)
         for (i, j), teacher_cross_fig in list(teacher_cross_figs.items()):
-            self.writer.add_figure("teacher_cross_overlaps/teacher{}x{}".format(i, j), teacher_cross_fig, step_count)
+            self.writer.add_figure("layer_{}_teacher_cross_overlaps/teacher{}x{}".format(layer, i, j), teacher_cross_fig, step_count)
         
     def _compute_loss(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         loss = 0.5 * self.loss_function(prediction, target)
@@ -406,7 +468,8 @@ class MNIST(Framework):
                 
                 for _ in range(self.train_batch_size):
                     if len(self.teachers[teacher_index]) == 0:
-                        self._reset_batch(task_index=teacher_index, classes=self.mnist_teacher_classes[teacher_index])
+                        task_data = get_binary_classification_datasets(self.mnist_x_data, self.mnist_y_data, self.mnist_teacher_classes[teacher_index])
+                        self.teachers[teacher_index] = task_data
                     training_data_point = self.teachers[teacher_index].pop()
                     training_batch.append(training_data_point)
 
