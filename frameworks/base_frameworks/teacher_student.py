@@ -68,7 +68,7 @@ class Framework(ABC):
 
         self.input_dimension = config.get(["model", "input_dimension"])
         self.output_dimension = config.get(["model", "output_dimension"])
-        self.nonlinearity = config.get(["model", "nonlinearity"])
+        # self.nonlinearity = config.get(["model", "nonlinearity"])
         self.soft_committee = config.get(["model", "soft_committee"])
         self.student_hidden = config.get(["model", "student_hidden_layers"])
 
@@ -233,6 +233,17 @@ class Framework(ABC):
 
             return generalisation_error_wrt_current_teacher
 
+    def _log_output_weights(self, step_count: int) -> None:
+        """
+        extract and log output weights of student.
+        """
+        # extract output layer weights for student
+        student_output_layer_weights = self.student_network._get_head_weights()
+        for h, head in enumerate(student_output_layer_weights):
+            flattened_weights = torch.flatten(head)
+            for w, weight in enumerate(flattened_weights):
+                self.writer.add_scalar('student_head_{}_weight_{}'.format(h, w), float(weight), step_count)
+
     @abstractmethod
     def _compute_overlap_matrices(self, step_count: int) -> None:
         """
@@ -358,6 +369,9 @@ class StudentTeacher(Framework):
 
                 total_step_count += 1
                 task_step_count += 1
+
+                # output layer weights
+                self._log_output_weights(step_count=total_step_count)
 
                 # alert learner/teacher(s) of step e.g. to drift teacher
                 self._signal_step_boundary_to_learner(step=task_step_count, current_task=teacher_index)
