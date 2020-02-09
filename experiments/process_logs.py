@@ -1,11 +1,13 @@
 import numpy as np 
 import matplotlib.pyplot as plt 
+import matplotlib.gridspec as gridspec
 import tensorflow as tf
 from tensorflow.python.summary.summary_iterator import summary_iterator
 
 import os
 import warnings
 import argparse
+import json
 
 from PyPDF2 import PdfFileMerger
 
@@ -15,6 +17,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("-path_to_dir", type=str, help="path to directory of experimental results")
 parser.add_argument("-attribute_list_path", type=str, help="path to file containing list of attributes to process")
+parser.add_argument("-summary_plot_attributes", type=str, help="path to file containing list of attributes to plot for summary", default=None)
 parser.add_argument("-steps", type=int, default=100000)
 parser.add_argument("-pdf_name", type=str)
 parser.add_argument("-save_figs", action='store_false')
@@ -249,7 +252,115 @@ class eventReader:
                     fig = _make_plot([general_all_seeds], average=average, title=attribute, labels=[""], scale_axes=scale_axes, start=start, end=end)
                     all_plots["{}_{}".format(experiment, attribute)] = fig
         return all_plots
+
+# Hard-coded subplot layouts for different numbers of graphs
+LAYOUTS = {1: (1, 1), 2: (2, 1), 3: (3, 1), 4: (2, 2), 5: (3, 2), 6: (3, 2), 7: (4, 2), 8: (4, 2), 9: (3, 3), 10: (5, 2), 11: (4, 3), 12: (4, 3)}
+
+def summary_plot(data: Dict, path: str, scale_axes, start, end, figure_title):
+    """
+    Generate a 2x2 plot with 
+
+        - generalisation error (log)
+        - teacher-student overlap
+        - student-student overlap
+        - second layer weights
+
+        or the relevant datasets specified by file at path.
+    """
+    # open json
+    with open(path) as json_file:
+        data_keys = json.load(json_file)
+
+    figs = []
+
+    number_of_graphs = len(data_keys.keys())
+
+    rows = LAYOUTS[number_of_graphs][0]
+    columns = LAYOUTS[number_of_graphs][1]
+
+    width = 5
+    height = 4
+
+    heights = [height for _ in range(rows)]
+    widths = [width for _ in range(columns)]
+
+    for r in range(1):
+
+        fig = plt.figure(constrained_layout=False, figsize=(columns * width, rows * height))
+
+        spec = gridspec.GridSpec(nrows=rows, ncols=columns, width_ratios=widths, height_ratios=heights)
+
+        key_index = 0
+
+        for row in range(rows):
+            for column in range(columns):
+
+                if key_index < number_of_graphs:
+
+                    fig_sub = fig.add_subplot(spec[row, column])
+
+                    plot_index = list(data_keys.keys())[key_index]
+                    i_data_keys = data_keys[plot_index]
+
+                    for key in i_data_keys['keys']:
+                        if i_data_keys["general"]:
+
+                            general_y_data = data[key]['general']['seed_{}'.format(r)]
+
+                            # scale axes
+                            if scale_axes:
+                                scaling = scale_axes / len(general_y_data)
+                                x_data = [i * scaling for i in range(len(general_y_data))]
+                            else:
+                                x_data = range(len(general_y_data))
+                            
+                            # crop
+                            full_dataset_range = len(x_data)
+                            start_index = int(0.01 * start * full_dataset_range)
+                            end_index = int(0.01 * end * full_dataset_range)
+                            
+                            # plot
+                            fig_sub.plot(x_data[start_index: end_index], general_y_data[start_index: end_index])
+
+                        else:
+
+                            t1_y_data = data[key]['teacher1']['seed_{}'.format(r)]
+                            t2_y_data = data[key]['teacher2']['seed_{}'.format(r)]
+
+                            # scale axes
+                            if scale_axes:
+                                scaling = scale_axes / len(t1_y_data)
+                                x_data = [i * scaling for i in range(len(t1_y_data))]
+                            else:
+                                x_data = range(len(t1_y_data))
+                            
+                            # crop
+                            full_dataset_range = len(x_data)
+                            start_index = int(0.01 * start * full_dataset_range)
+                            end_index = int(0.01 * end * full_dataset_range)
+                            
+                            # plot
+                            fig_sub.plot(x_data[start_index: end_index], t1_y_data[start_index: end_index], label='Teacher 1')
+                            fig_sub.plot(x_data[start_index: end_index], t2_y_data[start_index: end_index], label='Teacher 2')
+
+                        # labelling
+                        fig_sub.set_xlabel("Step")
+                        fig_sub.set_ylabel(i_data_keys["title"])
+                        # column.set_xticklabels(["{:.3e}".format(t) for t in column.get_xticks()])
+                        fig_sub.legend()
+
+                        # grids
+                        fig_sub.minorticks_on()
+                        fig_sub.grid(which='major', linestyle='-', linewidth='0.5', color='red', alpha=0.5)
+                        fig_sub.grid(which='minor', linestyle=':', linewidth='0.5', color='black', alpha=0.5)
                     
+                    key_index += 1
+        
+        fig.suptitle("Summary Plot: {}".format(figure_title))
+
+        figs.append(fig)
+
+    return figs
         
 if __name__ == "__main__":
     eR = eventReader(event_file_directory=args.path_to_dir, multiple_experiments=args.multiple_experiments)
@@ -263,6 +374,12 @@ if __name__ == "__main__":
             
     print(attributes)
     value_dict = eR.get_values(attributes)
+
+    if args.summary_plot_attributes:
+        summary_plots = summary_plot(
+            value_dict[list(value_dict.keys())[0]], args.summary_plot_attributes, scale_axes=args.steps, 
+            start=args.start_percentile, end=args.end_percentile, figure_title=list(value_dict.keys())[0]
+            )
 
     averaged_plots = eR.generate_plots(value_dict, average=True, scale_axes=args.steps, start=args.start_percentile, end=args.end_percentile)
     unaveraged_plots = eR.generate_plots(value_dict, average=False, scale_axes=args.steps, start=args.start_percentile, end=args.end_percentile)
@@ -281,6 +398,11 @@ if __name__ == "__main__":
             figtitle_mod = figtitle.replace("/", "_")
             save_dir = os.path.join(args.path_to_dir, 'figures', figtitle_mod)
             unaveraged_plots[figtitle].savefig("{}.pdf".format(save_dir), dpi=1000)
+
+        for r, fig in enumerate(summary_plots):
+            save_dir = os.path.join(args.path_to_dir, 'figures', 'summary_plot_{}.pdf'.format(r))
+            fig.savefig(save_dir, dpi=1000)
+            existing_pdfs.append(save_dir)
 
         _concatenate_pdfs(
             os.path.join(args.path_to_dir, 'figures'), 

@@ -1,0 +1,32 @@
+{
+    "a": {
+        "general": 0, 
+        "keys": ["generalisation_error/log"],
+        "title": "Generalisation Error"
+    },
+
+    "b": {
+        "general": 1, 
+        "keys": ["layer_0_student_teacher_overlaps/0/values_0_0", "layer_0_student_teacher_overlaps/0/values_1_0", "layer_0_student_teacher_overlaps/1/values_0_0", "layer_0_student_teacher_overlaps/1/values_1_0"],
+        "title": "Student-Teacher Overlaps"
+    },
+
+    "c": {
+        "general": 1, 
+        "keys": ["layer_0_student_self_overlap/values_0_0", "layer_0_student_self_overlap/values_1_1", "layer_0_student_self_overlap/values_0_1", "layer_0_student_self_overlap/values_1_0"],
+        "title": "Student-Student Overlap"
+    },
+
+    "d": {
+        "general": 0, 
+        "keys": ["generalisation_error/log"],
+        "title": "Generalisation Error"
+    },
+    
+    "e": {
+        "general": 0,
+        "keys": ["generalisation_error/log"],
+        "title": "Generalisation Error"
+    }
+
+}
