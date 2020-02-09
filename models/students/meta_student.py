@@ -39,6 +39,10 @@ class MetaStudent(Model):
         y = self.output_layer(x)
         return y
 
+    def _get_head_weights(self):
+        import pdb; pdb.set_trace()
+        raise NotImplementedError
+
 class MNISTMetaStudent(Model):
 
     def __init__(self, config: Dict) -> None:
@@ -55,4 +59,7 @@ class MNISTMetaStudent(Model):
         raise NotImplementedError
 
     def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError
+
+    def _get_head_weights(self):
         raise NotImplementedError
