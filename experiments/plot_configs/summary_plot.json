@@ -2,31 +2,40 @@
     "a": {
         "general": 0, 
         "keys": ["generalisation_error/log"],
-        "title": "Generalisation Error"
+        "title": "Generalisation Error",
+        "ylimits": [-14, 0],
+        "image": 0
     },
 
     "b": {
         "general": 1, 
         "keys": ["layer_0_student_teacher_overlaps/0/values_0_0", "layer_0_student_teacher_overlaps/0/values_1_0", "layer_0_student_teacher_overlaps/1/values_0_0", "layer_0_student_teacher_overlaps/1/values_1_0"],
-        "title": "Student-Teacher Overlaps"
+        "title": "Student-Teacher Overlaps",
+        "ylimits": [0, 0.4],
+        "image": 0
     },
 
     "c": {
         "general": 1, 
         "keys": ["layer_0_student_self_overlap/values_0_0", "layer_0_student_self_overlap/values_1_1", "layer_0_student_self_overlap/values_0_1", "layer_0_student_self_overlap/values_1_0"],
-        "title": "Student-Student Overlap"
+        "title": "Student-Student Overlap",
+        "ylimits": [0, 0.15],
+        "image": 0
     },
 
     "d": {
-        "general": 0, 
-        "keys": ["generalisation_error/log"],
-        "title": "Generalisation Error"
+        "general": 1, 
+        "keys": "layer_0_student_teacher_overlaps/0/values_2_1",
+        "title": "Student-Teacher Overlaps",
+        "ylimits": 0,
+        "image": 1
     },
-    
-    "e": {
-        "general": 0,
-        "keys": ["generalisation_error/log"],
-        "title": "Generalisation Error"
-    }
 
+    "e": {
+        "general": 1, 
+        "keys": "layer_0_student_teacher_overlaps/1/values_2_1",
+        "title": "Student-Teacher Overlaps",
+        "ylimits": 0,
+        "image": 1
+    }
 }
