@@ -25,7 +25,7 @@ class AdversarialTeachers(StudentTeacher):
 
         self.teachers = []
         for t in range(self.num_teachers):
-            teacher = Teacher(config=config).to(self.device)
+            teacher = Teacher(config=config, index=t).to(self.device)
             if teacher_noises[t] != 0:
                 teacher.set_noise_distribution(mean=0, std=teacher_noises[t])
             self.teachers.append(teacher)

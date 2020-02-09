@@ -20,7 +20,7 @@ class IndependentTeachers(StudentTeacher):
 
         self.teachers = []
         for t in range(self.num_teachers):
-            teacher = Teacher(config=config).to(self.device)
+            teacher = Teacher(config=config, index=t).to(self.device)
             teacher.freeze_weights()
             if teacher_noises[t] != 0:
                 teacher_output_std = teacher.get_output_statistics()

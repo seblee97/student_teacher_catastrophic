@@ -32,14 +32,14 @@ class OverlappingTeachers(StudentTeacher):
         overlap_percentages = config.get(["task", "overlap_percentages"])
 
         self.teachers = []
-        original_teacher = Teacher(config=config).to(self.device)
+        original_teacher = Teacher(config=config, index=0).to(self.device)
         original_teacher.freeze_weights()
         if teacher_noises[0] != 0:
             original_teacher_output_std = original_teacher.get_output_statistics()
             original_teacher.set_noise_distribution(mean=0, std=teacher_noises[0] * original_teacher_output_std)
         self.teachers.append(original_teacher)
         for t in range(self.num_teachers - 1):
-            teacher = Teacher(config=config).to(self.device)
+            teacher = Teacher(config=config, index=t + 1).to(self.device)
             for l, layer in enumerate(teacher.state_dict()):
                 layer_shape = teacher.state_dict()[layer].shape 
                 assert len(layer_shape) == 2, "shape of layer tensor is not 2. Check consitency of layer construction with task."

@@ -21,7 +21,7 @@ class DriftingTeachers(StudentTeacher):
 
         self.teachers = []
         for t in range(self.num_teachers):
-            teacher = DriftingTeacher(config=config).to(self.device)
+            teacher = DriftingTeacher(config=config, index=t).to(self.device)
             teacher.freeze_weights()
             if teacher_noises[t] != 0:
                 teacher_output_std = teacher.get_output_statistics()

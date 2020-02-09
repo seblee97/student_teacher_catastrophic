@@ -24,7 +24,7 @@ class NoisyTeachers(StudentTeacher):
         "Provide one noise for each teacher. {} noises given, {} teachers specified".format(len(teacher_noises), self.num_teachers)
 
         self.teachers = []
-        base_teacher = Teacher(config=config).to(self.device)
+        base_teacher = Teacher(config=config, index=0).to(self.device)
         base_teacher.freeze_weights()
         base_teacher_output_std = base_teacher.get_output_statistics()
         for t in range(self.num_teachers):
