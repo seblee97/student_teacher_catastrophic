@@ -22,6 +22,12 @@ class Model(nn.Module, ABC):
         """
         self.model_type = model_type # 'teacher' or 'student'
 
+        if 'teacher' in self.model_type:
+            self.model_type, model_index = self.model_type.split("_")
+            model_index = int(model_index)
+        else:
+            model_index = None
+
         assert self.model_type == 'teacher' or 'student', "Unknown model type {} provided to network".format(self.model_type)
 
         # extract relevant parameters from config
@@ -31,7 +37,11 @@ class Model(nn.Module, ABC):
             return x
 
         # initialise specified nonlinearity function
-        self.nonlinearity_name = config.get(["model", "nonlinearity"])
+        if self.model_type == 'teacher':
+            self.nonlinearity_name = config.get(["model", "teacher_nonlinearities"])[model_index]
+        else:
+            self.nonlinearity_name = config.get(["model", "student_nonlinearity"])
+
         if self.nonlinearity_name == 'relu':
             self.nonlinear_function = F.relu
         elif self.nonlinearity_name == 'sigmoid':
