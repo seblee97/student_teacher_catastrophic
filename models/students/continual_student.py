@@ -5,7 +5,7 @@ import torch
 
 import numpy as np
 
-from typing import Dict
+from typing import Dict, List
 
 class ContinualStudent(Model):
 
@@ -50,6 +50,11 @@ class ContinualStudent(Model):
         y = self.heads[self._current_teacher](x)
         return y
 
+    def _get_head_weights(self) -> List[torch.Tensor]:
+        # extract weights of output layer. Multi-headed for continual setting => one set per teacher
+        head_weights = [self.state_dict()['heads.{}.weight'.format(h)] for h in range(self.num_teachers)] # could use self.heads directly
+        return head_weights
+
 class MNISTContinualStudent(Model):
 
     def __init__(self, config: Dict) -> None:
@@ -67,4 +72,7 @@ class MNISTContinualStudent(Model):
         raise NotImplementedError
 
     def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError
+
+    def _get_head_weights(self):
         raise NotImplementedError
