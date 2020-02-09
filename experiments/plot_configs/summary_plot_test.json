@@ -1,0 +1,23 @@
+{
+    "a": {
+        "general": 0, 
+        "keys": ["generalisation_error/log"],
+        "title": "Generalisation Error",
+        "ylimits": [-14, 0],
+        "image": 0
+    },
+    "d": {
+        "general": 1, 
+        "keys": "layer_0_student_teacher_overlaps/0/values_2_1",
+        "title": "Student-Teacher Overlaps",
+        "ylimits": 0,
+        "image": 1
+    },
+    "e": {
+        "general": 1, 
+        "keys": "layer_0_student_teacher_overlaps/1/values_2_1",
+        "title": "Student-Teacher Overlaps",
+        "ylimits": 0,
+        "image": 1
+    }
+}
