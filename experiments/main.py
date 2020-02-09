@@ -21,7 +21,8 @@ parser.add_argument('-selection_type', '--st', type=str, help="random or cyclica
 parser.add_argument('-stopping_condition', '--sc', type=str, help="threshold or fixed_period", default=None)
 parser.add_argument('-fixed_period', '--fp', type=int, help="time between teacher change", default=None)
 parser.add_argument('-loss_threshold', '--lt', type=str, help="how low loss for current teacher goes before switching (used with threshold)", default=None)
-parser.add_argument('-nonlinearity', '--nl', type=str, help="which non linearity to use", default=None)
+parser.add_argument('-student_nonlinearity', '--snl', type=str, help="which non linearity to use for student", default=None)
+parser.add_argument('-teacher_nonlinearities', '--tnl', type=str, help="which non linearity to use for teacher", default=None)
 parser.add_argument('-total_steps', '--ts', type=int, help="total timesteps to run algorithm", default=None)
 parser.add_argument('-experiment_name', '--en', type=str, help="name to give to experiment", default=None)
 parser.add_argument('-verbose', '--v', type=int, help="whether to display prints", default=None)
@@ -56,8 +57,10 @@ if __name__ == "__main__":
         student_teacher_parameters._config["curriculum"]["fixed_period"] = args.fp
     if args.lt:
         student_teacher_parameters._config["curriculum"]["loss_threshold"] = args.lt
-    if args.nl:
-        student_teacher_parameters._config["model"]["nonlinearity"] = args.nl
+    if args.snl:
+        student_teacher_parameters._config["model"]["student_nonlinearity"] = args.snl
+    if args.tnl:
+        student_teacher_parameters._config["model"]["teacher_nonlinearities"] = args.tnl
     if args.ts:
         student_teacher_parameters._config["training"]["total_training_steps"] = args.ts
     if args.en:
