@@ -1,13 +1,17 @@
 import numpy as np 
 import matplotlib.pyplot as plt 
 import matplotlib.gridspec as gridspec
+import matplotlib.animation as animation 
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import tensorflow as tf
 from tensorflow.python.summary.summary_iterator import summary_iterator
+import itertools
 
 import os
 import warnings
 import argparse
 import json
+import subprocess
 
 from PyPDF2 import PdfFileMerger
 
@@ -18,6 +22,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-path_to_dir", type=str, help="path to directory of experimental results")
 parser.add_argument("-attribute_list_path", type=str, help="path to file containing list of attributes to process")
 parser.add_argument("-summary_plot_attributes", type=str, help="path to file containing list of attributes to plot for summary", default=None)
+parser.add_argument("-animate", action='store_false')
 parser.add_argument("-steps", type=int, default=100000)
 parser.add_argument("-pdf_name", type=str)
 parser.add_argument("-save_figs", action='store_false')
@@ -54,12 +59,13 @@ def _read_events_file(events_file_path: str, attribute: str, start: int=None, en
     """
     values = []
     iterator = summary_iterator(events_file_path)
+
     while True:
         try:
             e = next(iterator)
             try:
                 for v in e.summary.value:
-                    if v.tag == attribute:
+                    if v.tag == attribute:    
                         values.append(v.simple_value)
             except:
                 pass
@@ -217,7 +223,7 @@ class eventReader:
         
     def get_values(self, attributes: List[Tuple[str, bool]]):
         value_dict = {experiment: {} for experiment in self.experiment_folders}
-        for attribute, general_attribute in attributes:
+        for attribute, general_attribute, data_type in attributes:
             for e, experiment_name in enumerate(self.experiment_folders):
                 if general_attribute:
                     values = {"general": {"seed_{}".format(repeat): _read_events_file(event_file_path[0], attribute) for repeat, event_file_path in enumerate(self.general_event_file_paths[e])}}
@@ -254,9 +260,9 @@ class eventReader:
         return all_plots
 
 # Hard-coded subplot layouts for different numbers of graphs
-LAYOUTS = {1: (1, 1), 2: (2, 1), 3: (3, 1), 4: (2, 2), 5: (3, 2), 6: (3, 2), 7: (4, 2), 8: (4, 2), 9: (3, 3), 10: (5, 2), 11: (4, 3), 12: (4, 3)}
+LAYOUTS = {1: (1, 1), 2: (1, 2), 3: (1, 3), 4: (2, 2), 5: (2, 3), 6: (2, 3), 7: (2, 4), 8: (2, 4), 9: (3, 3), 10: (2, 5), 11: (3, 4), 12: (3, 4)}
 
-def summary_plot(data: Dict, path: str, scale_axes, start, end, figure_title):
+def summary_plot(data: Dict, path: str, scale_axes: int, start: float, end: float, figure_title: str):
     """
     Generate a 2x2 plot with 
 
@@ -361,31 +367,207 @@ def summary_plot(data: Dict, path: str, scale_axes, start, end, figure_title):
         figs.append(fig)
 
     return figs
+
+def summary_plot_animate(data: Dict, path: str, scale_axes: int, start: float, end: float, figure_title: str, save_path: str): 
+
+    # open json
+    with open(path) as json_file:
+        data_keys = json.load(json_file)
+
+    figs = []
+
+    number_of_graphs = len(data_keys.keys())
+
+    rows = LAYOUTS[number_of_graphs][0]
+    columns = LAYOUTS[number_of_graphs][1]
+
+    width = 5
+    height = 4
+
+    heights = [height for _ in range(rows)]
+    widths = [width for _ in range(columns)]
+
+    for r in range(1):
+
+        step_list = list(range(0, scale_axes, 250))
+
+        for s, step in enumerate(step_list):
+
+            fig = plt.figure(constrained_layout=False, figsize=(columns * width, rows * height))
+
+            spec = gridspec.GridSpec(nrows=rows, ncols=columns, width_ratios=widths, height_ratios=heights)
+
+            key_index = 0
+
+            for row in range(rows):
+                for column in range(columns):
+
+                    if key_index < number_of_graphs:
+
+                        fig_sub = fig.add_subplot(spec[row, column])
+
+                        plot_index = list(data_keys.keys())[key_index]
+                        i_data_keys = data_keys[plot_index]
+
+                        if i_data_keys['image']:
+
+                            # import pdb; pdb.set_trace()
+                            
+                            key_body_prefix, teacher_index, im_dim = i_data_keys['keys'].split('/')
+                            key_body_suffix, x, y = im_dim.split('_')
+                            x, y = int(x), int(y)
+                            xy_tuples = list(itertools.product(list(range(x)), list(range(y))))
+
+                            all_keys = {(xi, yi): "{}/{}/{}_{}_{}".format(key_body_prefix, teacher_index, key_body_suffix, xi, yi) 
+                                        for (xi, yi) in xy_tuples}
+
+                            matrix = np.zeros((x, y))
+
+                            for xi in range(x):
+                                for yi in range(y):
+                                    general_y_data = data[all_keys[(xi, yi)]]['general']['seed_{}'.format(r)]
+                                    num_data_points = len(general_y_data)
+
+                                    cutoff = int(num_data_points * (s / len(step_list)))
+                                    # if cutoff == len(general_y_data):
+                                    #     cutoff -= 1
+                        
+                                    matrix[xi][yi] = general_y_data[cutoff]
+
+                            im = fig_sub.imshow(matrix, vmin=0, vmax=1) 
+
+                            # colorbar
+                            divider = make_axes_locatable(fig_sub)
+                            cax = divider.append_axes('right', size='5%', pad=0.05)
+                            fig.colorbar(im, cax=cax, orientation='vertical')
+
+                            # title and ticks
+                            fig_sub.set_ylabel(i_data_keys["title"])
+                            fig_sub.set_xticks([])
+                            fig_sub.set_yticks([])
+                        
+                        else:
+                            
+                            for key in i_data_keys['keys']:
+
+                                if i_data_keys["general"]:
+
+                                    general_y_data = data[key]['general']['seed_{}'.format(r)]
+                                    num_data_points = len(general_y_data)
+
+                                    # scale axes
+                                    if scale_axes:
+                                        scaling = scale_axes / len(general_y_data)
+                                        x_data = [i * scaling for i in range(len(general_y_data))]
+                                    else:
+                                        x_data = range(len(general_y_data))
+                                    
+                                    # crop
+                                    full_dataset_range = len(x_data)
+                                    start_index = int(0.01 * start * full_dataset_range)
+                                    end_index = int(0.01 * end * full_dataset_range)
+                                    
+                                    # plot
+                                    cutoff = int(num_data_points * (s / len(step_list)))
+                                    fig_sub.plot(x_data[start_index: end_index][:cutoff], general_y_data[start_index: end_index][:cutoff])
+
+                                else:
+
+                                    t1_y_data = data[key]['teacher1']['seed_{}'.format(r)]
+                                    t2_y_data = data[key]['teacher2']['seed_{}'.format(r)]
+
+                                    num_data_points = len(t1_y_data)
+
+                                    # scale axes
+                                    if scale_axes:
+                                        scaling = scale_axes / len(t1_y_data)
+                                        x_data = [i * scaling for i in range(len(t1_y_data))]
+                                    else:
+                                        x_data = range(len(t1_y_data))
+                                    
+                                    # crop
+                                    full_dataset_range = len(x_data)
+                                    start_index = int(0.01 * start * full_dataset_range)
+                                    end_index = int(0.01 * end * full_dataset_range)
+                                    
+                                    # plot
+                                    cutoff = int(num_data_points * (s / len(step_list)))
+                                    fig_sub.plot(x_data[start_index: end_index][:cutoff], t1_y_data[start_index: end_index][:cutoff], label='Teacher 1')
+                                    fig_sub.plot(x_data[start_index: end_index][:cutoff], t2_y_data[start_index: end_index][:cutoff], label='Teacher 2')
+
+                                    fig_sub.legend()
+
+                                # labelling
+                                fig_sub.set_xlabel("Step")
+                                fig_sub.set_ylabel(i_data_keys["title"])
+                                # column.set_xticklabels(["{:.3e}".format(t) for t in column.get_xticks()])
+
+                                # grids
+                                fig_sub.minorticks_on()
+                                fig_sub.grid(which='major', linestyle='-', linewidth='0.5', color='red', alpha=0.5)
+                                fig_sub.grid(which='minor', linestyle=':', linewidth='0.5', color='black', alpha=0.5)
+
+                                # limits
+                                fig_sub.set_xlim([0, scale_axes])
+                                fig_sub.set_ylim(i_data_keys["ylimits"])
+                        
+                        key_index += 1
+            
+            fig.suptitle("Summary Plot: {}".format(figure_title))
+
+            fig.savefig("{}/image{}.png".format(save_path, f"{s:06d}"), dpi=500)
+            plt.close()
+
+def make_mp4(image_dir: str):
+
+    os.chdir(image_dir)
+
+    subprocess.call(["ffmpeg", "-f", "image2", "-r", "5", "-i", "image%06d.png", "-vcodec", "mpeg4", "-y", "summary_plot.mp4"])
+
+    pngs = [f for f in os.listdir(os.getcwd()) if f.endswith('png')]
+
+    for png in pngs:
+        os.remove(png)
         
 if __name__ == "__main__":
     eR = eventReader(event_file_directory=args.path_to_dir, multiple_experiments=args.multiple_experiments)
     
     attributes = []
-    with open(args.attribute_list_path) as f:
-        for attribute_line in f:
-            attribute_info = attribute_line.rstrip()
-            attribute, general = attribute_info.split(",")
-            attributes.append((attribute, int(general)))
+    with open(args.attribute_list_path) as json_file:
+        attribute_info = json.load(json_file)
+        for key in attribute_info.keys():
+            attributes.append((key, attribute_info[key]["general"], attribute_info[key]["type"]))
+
+    # with open(args.attribute_list_path) as f:
+    #     for attribute_line in f:
+    #         attribute_info = attribute_line.rstrip()
+    #         attribute, general = attribute_info.split(",")
+    #         attributes.append((attribute, int(general)))
             
     print(attributes)
     value_dict = eR.get_values(attributes)
 
+    if args.save_figs:
+        os.makedirs("{}/figures".format(args.path_to_dir), exist_ok=True)
+
     if args.summary_plot_attributes:
-        summary_plots = summary_plot(
-            value_dict[list(value_dict.keys())[0]], args.summary_plot_attributes, scale_axes=args.steps, 
-            start=args.start_percentile, end=args.end_percentile, figure_title=list(value_dict.keys())[0]
-            )
+        if args.animate:
+            os.makedirs("{}/figures/animate".format(args.path_to_dir), exist_ok=True)
+            summary_plots = summary_plot_animate(
+                value_dict[list(value_dict.keys())[0]], args.summary_plot_attributes, scale_axes=args.steps, 
+                start=args.start_percentile, end=args.end_percentile, figure_title=list(value_dict.keys())[0],
+                save_path=os.path.join(args.path_to_dir, 'figures', 'animate')
+                )
+        else:
+            summary_plots = summary_plot(
+                value_dict[list(value_dict.keys())[0]], args.summary_plot_attributes, scale_axes=args.steps, 
+                start=args.start_percentile, end=args.end_percentile, figure_title=list(value_dict.keys())[0]
+                )
 
     averaged_plots = eR.generate_plots(value_dict, average=True, scale_axes=args.steps, start=args.start_percentile, end=args.end_percentile)
     unaveraged_plots = eR.generate_plots(value_dict, average=False, scale_axes=args.steps, start=args.start_percentile, end=args.end_percentile)
 
     if args.save_figs:
-        os.makedirs("{}/figures".format(args.path_to_dir), exist_ok=True)
 
         figure_path = os.path.join(args.path_to_dir, 'figures')
         existing_pdfs = [os.path.join(figure_path, f) for f in os.listdir(figure_path) if f.endswith('pdf')]
@@ -399,10 +581,17 @@ if __name__ == "__main__":
             save_dir = os.path.join(args.path_to_dir, 'figures', figtitle_mod)
             unaveraged_plots[figtitle].savefig("{}.pdf".format(save_dir), dpi=1000)
 
-        for r, fig in enumerate(summary_plots):
-            save_dir = os.path.join(args.path_to_dir, 'figures', 'summary_plot_{}.pdf'.format(r))
-            fig.savefig(save_dir, dpi=1000)
-            existing_pdfs.append(save_dir)
+        cwd = os.getcwd()
+
+        if summary_plots:
+            for r, fig in enumerate(summary_plots):
+                save_dir = os.path.join(args.path_to_dir, 'figures', 'summary_plot_{}.pdf'.format(r))
+                fig.savefig(save_dir, dpi=1000)
+                existing_pdfs.append(save_dir)
+        else:
+            make_mp4(os.path.join(args.path_to_dir, 'figures', 'animate'))
+
+        os.chdir(cwd)
 
         _concatenate_pdfs(
             os.path.join(args.path_to_dir, 'figures'), 
