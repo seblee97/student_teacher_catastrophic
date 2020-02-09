@@ -8,9 +8,9 @@ from typing import Dict
 
 class Teacher(Model):
 
-    def __init__(self, config: Dict) -> None:
+    def __init__(self, config: Dict, index: int) -> None:
 
-        Model.__init__(self, config=config, model_type='teacher')
+        Model.__init__(self, config=config, model_type='teacher_{}'.format(str(index)))
         self.noisy = False
 
     def get_output_statistics(self, repeats=5000):

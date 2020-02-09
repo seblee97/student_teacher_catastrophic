@@ -8,9 +8,9 @@ from typing import Dict
 
 class DriftingTeacher(Teacher):
 
-    def __init__(self, config: Dict) -> None:
+    def __init__(self, config: Dict, index: int) -> None:
 
-        Teacher.__init__(self, config=config)
+        Teacher.__init__(self, config=config, index=index)
         self.drift_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([config.get(["task", "drift_size"])]))
         self.forward_count = 0
     
