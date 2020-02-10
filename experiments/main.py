@@ -23,6 +23,8 @@ parser.add_argument('-fixed_period', '--fp', type=int, help="time between teache
 parser.add_argument('-loss_threshold', '--lt', type=str, help="how low loss for current teacher goes before switching (used with threshold)", default=None)
 parser.add_argument('-student_nonlinearity', '--snl', type=str, help="which non linearity to use for student", default=None)
 parser.add_argument('-teacher_nonlinearities', '--tnl', type=str, help="which non linearity to use for teacher", default=None)
+parser.add_argument('-teacher_hidden', '--th', type=str, help="dimension of hidden layer in teacher", default=None)
+parser.add_argument('-student_hidden', '--sh', type=str, help="dimension of hidden layer in student", default=None)
 parser.add_argument('-total_steps', '--ts', type=int, help="total timesteps to run algorithm", default=None)
 parser.add_argument('-experiment_name', '--en', type=str, help="name to give to experiment", default=None)
 parser.add_argument('-verbose', '--v', type=int, help="whether to display prints", default=None)
@@ -57,10 +59,6 @@ if __name__ == "__main__":
         student_teacher_parameters._config["curriculum"]["fixed_period"] = args.fp
     if args.lt:
         student_teacher_parameters._config["curriculum"]["loss_threshold"] = args.lt
-    if args.snl:
-        student_teacher_parameters._config["model"]["student_nonlinearity"] = args.snl
-    if args.tnl:
-        student_teacher_parameters._config["model"]["teacher_nonlinearities"] = args.tnl
     if args.ts:
         student_teacher_parameters._config["training"]["total_training_steps"] = args.ts
     if args.en:
@@ -101,6 +99,17 @@ if __name__ == "__main__":
     if args.to:
         overlaps = [int(op) for op in "".join(args.to).strip('[]').split(',')]
         student_teacher_parameters._config["task"]["overlap_percentages"] = overlaps
+    if args.snl:
+        student_teacher_parameters._config["model"]["student_nonlinearity"] = args.snl
+    if args.tnl:
+        teacher_nonlinearities = [str(nl).strip() for nl in "".join(args.tnl).strip('[]').split(',')]
+        student_teacher_parameters._config["model"]["teacher_nonlinearities"] = teacher_nonlinearities
+    if args.th:
+        student_hidden = [int(h) for h in "".join(args.th).strip('[]').split(',')]
+        student_teacher_parameters._config["model"]["student_hidden_layers"] = student_hidden
+    if args.sh:
+        teacher_hidden = [int(h) for h in "".join(args.sh).strip('[]').split(',')]
+        student_teacher_parameters._config["model"]["teacher_hidden_layers"] = teacher_hidden
 
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
