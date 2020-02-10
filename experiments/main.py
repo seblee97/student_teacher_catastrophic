@@ -104,11 +104,11 @@ if __name__ == "__main__":
     if args.tnl:
         teacher_nonlinearities = [str(nl).strip() for nl in "".join(args.tnl).strip('[]').split(',')]
         student_teacher_parameters._config["model"]["teacher_nonlinearities"] = teacher_nonlinearities
-    if args.th:
-        student_hidden = [int(h) for h in "".join(args.th).strip('[]').split(',')]
-        student_teacher_parameters._config["model"]["student_hidden_layers"] = student_hidden
     if args.sh:
-        teacher_hidden = [int(h) for h in "".join(args.sh).strip('[]').split(',')]
+        student_hidden = [int(h) for h in "".join(args.sh).strip('[]').split(',')]
+        student_teacher_parameters._config["model"]["student_hidden_layers"] = student_hidden
+    if args.th:
+        teacher_hidden = [int(h) for h in "".join(args.th).strip('[]').split(',')]
         student_teacher_parameters._config["model"]["teacher_hidden_layers"] = teacher_hidden
 
     # establish experiment name / log path etc.
