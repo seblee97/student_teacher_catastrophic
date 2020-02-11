@@ -53,3 +53,10 @@ tmux send-keys -t tensorboard_3 "source ~/envs/cata/bin/activate" C-m
 tmux send-keys -t tensorboard_4 "source ~/envs/cata/bin/activate" C-m
 tmux send-keys -t tensorboard_5 "source ~/envs/cata/bin/activate" C-m
 tmux send-keys -t tensorboard_6 "source ~/envs/cata/bin/activate" C-m
+
+tmux send-keys -t tensorboard_1 "cd results/2020*/schedule_1; tensorboard --logdir . --port=6006" C-m
+tmux send-keys -t tensorboard_2 "cd results/2020*/schedule_2; tensorboard --logdir . --port=6007" C-m
+tmux send-keys -t tensorboard_3 "cd results/2020*/big_hidden_relu_1; tensorboard --logdir . --port=6008" C-m
+tmux send-keys -t tensorboard_4 "cd results/2020*/big_hidden_relu_2; tensorboard --logdir . --port=6009" C-m
+tmux send-keys -t tensorboard_5 "cd results/2020*/big_hidden_lin_1; tensorboard --logdir . --port=6010" C-m
+tmux send-keys -t tensorboard_6 "cd results/2020*/big_hidden_lin_2; tensorboard --logdir . --port=6011" C-m
