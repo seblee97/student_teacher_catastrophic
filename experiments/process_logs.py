@@ -223,15 +223,30 @@ class eventReader:
         
     def get_values(self, attributes: List[Tuple[str, bool]]):
         value_dict = {experiment: {} for experiment in self.experiment_folders}
-        for attribute, general_attribute, data_type in attributes:
+        for a, (attribute, general_attribute, key_format) in enumerate(attributes):
             for e, experiment_name in enumerate(self.experiment_folders):
-                if general_attribute:
-                    values = {"general": {"seed_{}".format(repeat): _read_events_file(event_file_path[0], attribute) for repeat, event_file_path in enumerate(self.general_event_file_paths[e])}}
+                if key_format == 'recursive':
+                    key_body_prefix, teacher_index, im_dim = attribute.split('/')
+                    key_body_suffix, x, y = im_dim.split('_')
+                    x, y = int(x), int(y)
+                    xy_tuples = list(itertools.product(list(range(x)), list(range(y))))
+
+                    all_keys = ["{}/{}/{}_{}_{}".format(key_body_prefix, teacher_index, key_body_suffix, xi, yi) for (xi, yi) in xy_tuples]
+
+                    for sub_attribute in all_keys:
+                        values = {"general": {"seed_{}".format(repeat): _read_events_file(event_file_path[0], sub_attribute) for repeat, event_file_path in enumerate(self.general_event_file_paths[e])}}
+                        value_dict[experiment_name][sub_attribute] = values
+                    
                 else:
-                    teacher_1_values = {"teacher1": {"seed_{}".format(repeat): _read_events_file(event_file_path[0], attribute) for repeat, event_file_path in enumerate(self.teacher1_event_file_paths[e])}}
-                    teacher_2_values = {"teacher2": {"seed_{}".format(repeat): _read_events_file(event_file_path[0], attribute) for repeat, event_file_path in enumerate(self.teacher2_event_file_paths[e])}}
-                    values = dict(teacher_1_values, **teacher_2_values)
-                value_dict[experiment_name][attribute] = values
+                    if general_attribute:
+                        values = {"general": {"seed_{}".format(repeat): _read_events_file(event_file_path[0], attribute) for repeat, event_file_path in enumerate(self.general_event_file_paths[e])}}
+                    else:
+                        teacher_1_values = {"teacher1": {"seed_{}".format(repeat): _read_events_file(event_file_path[0], attribute) for repeat, event_file_path in enumerate(self.teacher1_event_file_paths[e])}}
+                        teacher_2_values = {"teacher2": {"seed_{}".format(repeat): _read_events_file(event_file_path[0], attribute) for repeat, event_file_path in enumerate(self.teacher2_event_file_paths[e])}}
+                        values = dict(teacher_1_values, **teacher_2_values)
+                    value_dict[experiment_name][attribute] = values
+            print("Attributes read: ", attributes[:a + 1])
+            print("Attributes still to read: ", attributes[a + 1:])
         return value_dict
     
 
@@ -308,9 +323,38 @@ def summary_plot(data: Dict, path: str, scale_axes: int, start: float, end: floa
                     plot_index = list(data_keys.keys())[key_index]
                     i_data_keys = data_keys[plot_index]
 
-                    for k, key in enumerate(i_data_keys['keys']):
+                    if i_data_keys['image']:
 
-                        if not i_data_keys['image']:
+                        key_body_prefix, teacher_index, im_dim = i_data_keys['keys'].split('/')
+                        key_body_suffix, x, y = im_dim.split('_')
+                        x, y = int(x), int(y)
+                        xy_tuples = list(itertools.product(list(range(x)), list(range(y))))
+
+                        all_keys = {(xi, yi): "{}/{}/{}_{}_{}".format(key_body_prefix, teacher_index, key_body_suffix, xi, yi) 
+                                    for (xi, yi) in xy_tuples}
+
+                        matrix = np.zeros((x, y))
+
+                        for xi in range(x):
+                            for yi in range(y):
+                                general_y_data = data[all_keys[(xi, yi)]]['general']['seed_{}'.format(r)]
+                                matrix[xi][yi] = general_y_data[-1]
+
+                        im = fig_sub.imshow(matrix, vmin=0, vmax=1) 
+
+                        # colorbar
+                        divider = make_axes_locatable(fig_sub)
+                        cax = divider.append_axes('right', size='5%', pad=0.05)
+                        fig.colorbar(im, cax=cax, orientation='vertical')
+
+                        # title and ticks
+                        fig_sub.set_ylabel(i_data_keys["title"])
+                        fig_sub.set_xticks([])
+                        fig_sub.set_yticks([])
+                    
+                    else:
+
+                        for k, key in enumerate(i_data_keys['keys']):
 
                             if i_data_keys["general"]:
 
@@ -362,8 +406,8 @@ def summary_plot(data: Dict, path: str, scale_axes: int, start: float, end: floa
                             fig_sub.minorticks_on()
                             fig_sub.grid(which='major', linestyle='-', linewidth='0.5', color='red', alpha=0.5)
                             fig_sub.grid(which='minor', linestyle=':', linewidth='0.5', color='black', alpha=0.5)
-                    
-                    key_index += 1
+                        
+                        key_index += 1
         
         fig.suptitle("Summary Plot: {}".format(figure_title))
 
@@ -539,7 +583,7 @@ if __name__ == "__main__":
     with open(args.attribute_list_path) as json_file:
         attribute_info = json.load(json_file)
         for key in attribute_info.keys():
-            attributes.append((key, attribute_info[key]["general"], attribute_info[key]["type"]))
+            attributes.append((key, attribute_info[key]["general"], attribute_info[key]["key_format"]))
 
     # with open(args.attribute_list_path) as f:
     #     for attribute_line in f:
