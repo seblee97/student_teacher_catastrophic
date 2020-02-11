@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-path_to_dir", type=str, help="path to directory of experimental results")
 parser.add_argument("-attribute_list_path", type=str, help="path to file containing list of attributes to process")
 parser.add_argument("-summary_plot_attributes", type=str, help="path to file containing list of attributes to plot for summary", default=None)
-parser.add_argument("-animate", action='store_false')
+parser.add_argument("-animate", action='store_true')
 parser.add_argument("-steps", type=int, default=100000)
 parser.add_argument("-pdf_name", type=str)
 parser.add_argument("-save_figs", action='store_false')
@@ -308,57 +308,60 @@ def summary_plot(data: Dict, path: str, scale_axes: int, start: float, end: floa
                     plot_index = list(data_keys.keys())[key_index]
                     i_data_keys = data_keys[plot_index]
 
-                    for key in i_data_keys['keys']:
-                        if i_data_keys["general"]:
+                    for k, key in enumerate(i_data_keys['keys']):
 
-                            general_y_data = data[key]['general']['seed_{}'.format(r)]
+                        if not i_data_keys['image']:
 
-                            # scale axes
-                            if scale_axes:
-                                scaling = scale_axes / len(general_y_data)
-                                x_data = [i * scaling for i in range(len(general_y_data))]
+                            if i_data_keys["general"]:
+
+                                general_y_data = data[key]['general']['seed_{}'.format(r)]
+
+                                # scale axes
+                                if scale_axes:
+                                    scaling = scale_axes / len(general_y_data)
+                                    x_data = [i * scaling for i in range(len(general_y_data))]
+                                else:
+                                    x_data = range(len(general_y_data))
+                                
+                                # crop
+                                full_dataset_range = len(x_data)
+                                start_index = int(0.01 * start * full_dataset_range)
+                                end_index = int(0.01 * end * full_dataset_range)
+                                
+                                # plot
+                                fig_sub.plot(x_data[start_index: end_index], general_y_data[start_index: end_index], label=i_data_keys['labels'][k])
+
                             else:
-                                x_data = range(len(general_y_data))
-                            
-                            # crop
-                            full_dataset_range = len(x_data)
-                            start_index = int(0.01 * start * full_dataset_range)
-                            end_index = int(0.01 * end * full_dataset_range)
-                            
-                            # plot
-                            fig_sub.plot(x_data[start_index: end_index], general_y_data[start_index: end_index])
 
-                        else:
+                                t1_y_data = data[key]['teacher1']['seed_{}'.format(r)]
+                                t2_y_data = data[key]['teacher2']['seed_{}'.format(r)]
 
-                            t1_y_data = data[key]['teacher1']['seed_{}'.format(r)]
-                            t2_y_data = data[key]['teacher2']['seed_{}'.format(r)]
+                                # scale axes
+                                if scale_axes:
+                                    scaling = scale_axes / len(t1_y_data)
+                                    x_data = [i * scaling for i in range(len(t1_y_data))]
+                                else:
+                                    x_data = range(len(t1_y_data))
+                                
+                                # crop
+                                full_dataset_range = len(x_data)
+                                start_index = int(0.01 * start * full_dataset_range)
+                                end_index = int(0.01 * end * full_dataset_range)
+                                
+                                # plot
+                                fig_sub.plot(x_data[start_index: end_index], t1_y_data[start_index: end_index], label='Teacher 1')
+                                fig_sub.plot(x_data[start_index: end_index], t2_y_data[start_index: end_index], label='Teacher 2')
 
-                            # scale axes
-                            if scale_axes:
-                                scaling = scale_axes / len(t1_y_data)
-                                x_data = [i * scaling for i in range(len(t1_y_data))]
-                            else:
-                                x_data = range(len(t1_y_data))
-                            
-                            # crop
-                            full_dataset_range = len(x_data)
-                            start_index = int(0.01 * start * full_dataset_range)
-                            end_index = int(0.01 * end * full_dataset_range)
-                            
-                            # plot
-                            fig_sub.plot(x_data[start_index: end_index], t1_y_data[start_index: end_index], label='Teacher 1')
-                            fig_sub.plot(x_data[start_index: end_index], t2_y_data[start_index: end_index], label='Teacher 2')
+                            # labelling
+                            fig_sub.set_xlabel("Step")
+                            fig_sub.set_ylabel(i_data_keys["title"])
+                            # column.set_xticklabels(["{:.3e}".format(t) for t in column.get_xticks()])
+                            fig_sub.legend()
 
-                        # labelling
-                        fig_sub.set_xlabel("Step")
-                        fig_sub.set_ylabel(i_data_keys["title"])
-                        # column.set_xticklabels(["{:.3e}".format(t) for t in column.get_xticks()])
-                        fig_sub.legend()
-
-                        # grids
-                        fig_sub.minorticks_on()
-                        fig_sub.grid(which='major', linestyle='-', linewidth='0.5', color='red', alpha=0.5)
-                        fig_sub.grid(which='minor', linestyle=':', linewidth='0.5', color='black', alpha=0.5)
+                            # grids
+                            fig_sub.minorticks_on()
+                            fig_sub.grid(which='major', linestyle='-', linewidth='0.5', color='red', alpha=0.5)
+                            fig_sub.grid(which='minor', linestyle=':', linewidth='0.5', color='black', alpha=0.5)
                     
                     key_index += 1
         
@@ -448,7 +451,7 @@ def summary_plot_animate(data: Dict, path: str, scale_axes: int, start: float, e
                         
                         else:
                             
-                            for key in i_data_keys['keys']:
+                            for k, key in enumerate(i_data_keys['keys']):
 
                                 if i_data_keys["general"]:
 
@@ -469,7 +472,7 @@ def summary_plot_animate(data: Dict, path: str, scale_axes: int, start: float, e
                                     
                                     # plot
                                     cutoff = int(num_data_points * (s / len(step_list)))
-                                    fig_sub.plot(x_data[start_index: end_index][:cutoff], general_y_data[start_index: end_index][:cutoff])
+                                    fig_sub.plot(x_data[start_index: end_index][:cutoff], general_y_data[start_index: end_index][:cutoff], label=i_data_keys['labels'][k])
 
                                 else:
 
