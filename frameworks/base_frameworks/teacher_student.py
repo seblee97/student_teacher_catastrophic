@@ -1,6 +1,7 @@
 import numpy as np 
 import copy
 import itertools
+import pandas as pd
 
 import torch 
 import torch.nn as nn 
@@ -52,6 +53,9 @@ class Framework(ABC):
         # initialise separate tb writers for each teacher
         self.teacher_writers = [SummaryWriter("{}/teacher_{}".format(self.checkpoint_path, t)) for t in range(self.num_teachers)]
 
+        # initialise dataframe to log metrics
+        self.logger_df = pd.DataFrame()
+
         # initialise objects containing metrics of interest
         self._initialise_metrics()
 
@@ -63,6 +67,8 @@ class Framework(ABC):
         self.verbose = config.get("verbose")
         self.checkpoint_path = config.get("checkpoint_path")
         self.device = config.get("device")
+        self.logfile_path = config.get("logfile_path")
+        self.checkpoint_frequency = config.get("checkpoint_frequency")
 
         self.total_training_steps = config.get(["training", "total_training_steps"])
 
@@ -189,12 +195,16 @@ class Framework(ABC):
             classification_accuracy = self._compute_generalisation_errors(teacher_index=teacher_index).get('accuracy')
 
             # log average generalisation losses over teachers
+            mean_generalisation_error_per_teacher = np.mean(generalisation_error_per_teacher)
             self.writer.add_scalar(
-                'mean_generalisation_error/linear', np.mean(generalisation_error_per_teacher), total_step_count
+                'mean_generalisation_error/linear', mean_generalisation_error_per_teacher, total_step_count
                 )
             self.writer.add_scalar(
-                'mean_generalisation_error/log', np.log10(np.mean(generalisation_error_per_teacher)), total_step_count
+                'mean_generalisation_error/log', np.log10(mean_generalisation_error_per_teacher), total_step_count
                 )
+            self.logger_df.at[total_step_count, 'mean_generalisation_error/linear'] = mean_generalisation_error_per_teacher
+            self.logger_df.at[total_step_count, 'mean_generalisation_error/log'] = np.log10(mean_generalisation_error_per_teacher)
+
 
             for i, error in enumerate(generalisation_error_per_teacher):
                 self.generalisation_errors[i].append(error)
@@ -202,9 +212,12 @@ class Framework(ABC):
                 # log generalisation loss per teacher
                 self.teacher_writers[i].add_scalar('generalisation_error/linear', error, total_step_count)
                 self.teacher_writers[i].add_scalar('generalisation_error/log', np.log10(error), total_step_count)
+                self.logger_df.at[total_step_count, 'teacher_{}_generalisation_error/linear'.format(i)] = error
+                self.logger_df.at[total_step_count, 'teacher_{}_generalisation_error/log'.format(i)] = np.log10(error)
 
                 if classification_accuracy:
                     self.teacher_writers[i].add_scalar('classification_accuracy', classification_accuracy[i], total_step_count)
+                    self.logger_df.at[total_step_count, 'teacher_{}_classification_accuracy'.format(i)] = classification_accuracy[i]
 
                 if len(self.generalisation_errors[i]) > 1:
                     last_error = copy.deepcopy(self.generalisation_errors[i][-2])
@@ -213,6 +226,8 @@ class Framework(ABC):
                         # log generalisation loss delta per teacher
                         self.teacher_writers[i].add_scalar('error_change/linear', error_delta, total_step_count)
                         self.teacher_writers[i].add_scalar('error_change/log', np.sign(error_delta) * np.log10(abs(error_delta)), total_step_count)
+                        self.logger_df.at[total_step_count, 'teacher_{}_error_change/linear'.format(i)] = error_delta
+                        self.logger_df.at[total_step_count, 'teacher_{}_error_change/log'.format(i)] = np.sign(error_delta) * np.log10(abs(error_delta))
 
             if self.verbose and task_step_count % 500 == 0:
                 print("Generalisation errors @ step {} ({}'th step training on teacher {}):".format(total_step_count, task_step_count, teacher_index))
@@ -243,6 +258,7 @@ class Framework(ABC):
             flattened_weights = torch.flatten(head)
             for w, weight in enumerate(flattened_weights):
                 self.writer.add_scalar('student_head_{}_weight_{}'.format(h, w), float(weight), step_count)
+                self.logger_df.at[step_count, 'student_head_{}_weight_{}'.format(h, w)] = float(weight)
 
     @abstractmethod
     def _compute_overlap_matrices(self, step_count: int) -> None:
@@ -358,6 +374,8 @@ class StudentTeacher(Framework):
 
                 # log training loss
                 self.writer.add_scalar('training_loss', float(loss), total_step_count)
+                self.logger_df.at[total_step_count, 'training_loss'] = float(loss)
+                
 
                 # test
                 if total_step_count % self.test_frequency == 0 and total_step_count != 0:
@@ -379,8 +397,13 @@ class StudentTeacher(Framework):
 
                 if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
                     self.writer.add_scalar('steps_per_task', task_step_count, total_step_count)
+                    self.logger_df.at[total_step_count, "steps_per_task"] = task_step_count
                     steps_per_task.append(task_step_count)
                     break
+
+                # checkpoint dataframe
+                if self.logfile_path and total_step_count % self.checkpoint_frequency == 0:
+                    self.logger_df.to_csv(self.logfile_path)
 
     def _compute_overlap_matrices(self, step_count: int) -> None:
 
@@ -417,6 +440,7 @@ class StudentTeacher(Framework):
             for i in range(matrix_shape[0]):
                 for j in range(matrix_shape[1]):
                     self.writer.add_scalar("layer_{}_{}/values_{}_{}".format(layer, log_name, i, j), matrix[i][j], step_count)
+                    self.logger_df.at[step_count, "layer_{}_{}/values_{}_{}".format(layer, log_name, i, j)] = matrix[i][j]
         
         log_matrix_values("student_self_overlap", student_self_overlap)
         for s, student_teacher_overlap in enumerate(student_teacher_overlaps):
@@ -504,6 +528,7 @@ class MNIST(Framework):
 
                 # log training loss
                 self.writer.add_scalar('training_loss', float(loss), total_step_count)
+                self.logger_df.at[total_step_count, 'training_loss'] = float(loss)
 
                 # test
                 if total_step_count % self.test_frequency == 0 and total_step_count != 0:
@@ -518,6 +543,7 @@ class MNIST(Framework):
 
                 if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
                     self.writer.add_scalar('steps_per_task', task_step_count, total_step_count)
+                    self.logger_df.at[total_step_count, 'steps_per_task'] = task_step_count
                     steps_per_task.append(task_step_count)
                     break
 
