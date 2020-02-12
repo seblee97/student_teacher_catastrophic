@@ -40,10 +40,10 @@ class SummaryPlot:
 
         self.plot_keys = list(self.plot_config["data"].keys())
 
-        number_of_graphs = len(self.plot_keys)
+        self.number_of_graphs = len(self.plot_keys)
 
-        self.rows = LAYOUTS[number_of_graphs][0]
-        self.columns = LAYOUTS[number_of_graphs][1]
+        self.rows = LAYOUTS[self.number_of_graphs][0]
+        self.columns = LAYOUTS[self.number_of_graphs][1]
 
         width = self.plot_config['config']['width']
         height = self.plot_config['config']['height']
@@ -61,11 +61,16 @@ class SummaryPlot:
 
         for d, dataset in enumerate(plot_data):
             fig_sub.plot(range(len(dataset)), dataset, label=labels[d])
-
-        # title and ticks
+        
+        # labelling
+        fig_sub.set_xlabel("Step")
+        fig_sub.legend()
         fig_sub.set_ylabel(title)
-        fig_sub.set_xticks([])
-        fig_sub.set_yticks([])
+
+        # grids
+        fig_sub.minorticks_on()
+        fig_sub.grid(which='major', linestyle='-', linewidth='0.5', color='red', alpha=0.5)
+        fig_sub.grid(which='minor', linestyle=':', linewidth='0.5', color='black', alpha=0.5)
 
     def add_image(self, plot_data, matrix_dimensions, row_index: int, column_index: int, title: str):
 
@@ -93,54 +98,68 @@ class SummaryPlot:
 
         for row in range(self.rows):
             for col in range(self.columns):
+        
+                graph_index = (row) * self.columns + col
 
-                graph_index = (row) * self.rows + col
+                if graph_index < self.number_of_graphs:
 
-                print(graph_index)
+                    print(graph_index)
 
-                attribute_title = self.plot_keys[graph_index]
-                attribute_config = self.plot_config["data"][attribute_title]
-                attribute_plot_type = attribute_config['plot_type']
-                attribute_key_format = attribute_config['key_format']
+                    attribute_title = self.plot_keys[graph_index]
+                    attribute_config = self.plot_config["data"][attribute_title]
+                    attribute_plot_type = attribute_config['plot_type']
+                    attribute_key_format = attribute_config['key_format']
 
-                if attribute_key_format == 'uniform':
+                    if attribute_key_format == 'uniform':
 
-                    attribute_keys = attribute_config['keys']
-                    attribute_ylimits = attribute_config['ylimits']
-                    attribute_labels = attribute_config['labels']
+                        attribute_keys = attribute_config['keys']
+                        attribute_ylimits = attribute_config['ylimits']
+                        attribute_labels = attribute_config['labels']
 
-                elif attribute_key_format == 'recursive':
-                    
-                    # import pdb; pdb.set_trace()
-                    base_attribute_key = attribute_config['keys']
-                    fill_ranges = [list(range(r)) for r in attribute_config['key_format_ranges']]
-                    fill_combos = list(itertools.product(*fill_ranges))
+                    elif attribute_key_format == 'recursive':
+                        
+                        # import pdb; pdb.set_trace()
+                        base_attribute_key = attribute_config['keys']
+                        fill_ranges = [list(range(r)) for r in attribute_config['key_format_ranges']]
+                        fill_combos = list(itertools.product(*fill_ranges))
 
-                    attribute_keys = {}
-                    for fill_combo in fill_combos:
-                        attribute_key = copy.deepcopy(base_attribute_key)
-                        for i, fill in enumerate(fill_combo):
-                            attribute_key = attribute_key.replace('%', str(fill), 1)
-                        attribute_keys[tuple(fill_combo)] = attribute_key
+                        if attribute_plot_type == "scalar":
+                            attribute_keys = []
+                            attribute_labels = []
+                            for fill_combo in fill_combos:
+                                attribute_key = copy.deepcopy(base_attribute_key)
+                                for i, fill in enumerate(fill_combo):
+                                    attribute_key = attribute_key.replace('%', str(fill), 1)
+                                attribute_keys.append(attribute_key)
+                                attribute_labels.append(tuple(fill_combo))
+                        
+                        elif attribute_plot_type == 'image':
 
-                else:
-                    raise ValueError("Key format {} not recognized".format(attribute_key_format))
+                            attribute_keys = {}
+                            for fill_combo in fill_combos:
+                                attribute_key = copy.deepcopy(base_attribute_key)
+                                for i, fill in enumerate(fill_combo):
+                                    attribute_key = attribute_key.replace('%', str(fill), 1)
+                                attribute_keys[tuple(fill_combo)] = attribute_key
 
-                if attribute_plot_type == 'scalar':
-                    plot_data = [self.data[attribute_key].dropna().tolist() for attribute_key in attribute_keys]
-                    self.add_subplot(
-                        plot_data=plot_data, row_index=row, column_index=col, title=attribute_title, 
-                        labels=attribute_labels, ylimits=attribute_ylimits
+                    else:
+                        raise ValueError("Key format {} not recognized".format(attribute_key_format))
+
+                    if attribute_plot_type == 'scalar':
+                        plot_data = [self.data[attribute_key].dropna().tolist() for attribute_key in attribute_keys]
+                        self.add_subplot(
+                            plot_data=plot_data, row_index=row, column_index=col, title=attribute_title, 
+                            labels=attribute_labels, ylimits=attribute_ylimits
+                            )
+
+                    elif attribute_plot_type == 'image':
+                        plot_data = {index: self.data[attribute_keys[index]].dropna().tolist() for index in attribute_keys}
+                        self.add_image(
+                            plot_data=plot_data, matrix_dimensions=tuple(attribute_config['key_format_ranges']), row_index=row, column_index=col, title=attribute_title
                         )
 
-                elif attribute_plot_type == 'image':
-                    plot_data = {index: self.data[attribute_keys[index]].dropna().tolist() for index in attribute_keys}
-                    self.add_image(
-                        plot_data=plot_data, matrix_dimensions=tuple(attribute_config['key_format_ranges']), row_index=row, column_index=col, title=attribute_title
-                    )
-
-                else:
-                    raise ValueError("Plot type {} not recognized".format(attribute_plot_type))
+                    else:
+                        raise ValueError("Plot type {} not recognized".format(attribute_plot_type))
 
         self.fig.suptitle("Summary Plot: {}".format(self.experiment_name))
 
