@@ -3,6 +3,7 @@ use_gpu:                            True                      # whether to use a
 seed:                               0                         # random seed 
 resume:        
 verbose:                            True                      # whether to print
+checkpoint_frequency:               500                       # how often to checkpoint logging dataframe
 
 task:
   label_task_boundaries:            True                      # whether or not to add the task index to the input (extra supervision)
