@@ -33,12 +33,14 @@ class Framework(ABC):
 
         # extract curriculum from config
         self._set_curriculum(config)
-        
-        trainable_parameters = self.student_network.parameters()
+
+        trainable_parameters = [{'params': layer.parameters()} for layer in self.student_network.layers]
         # trainable_parameters = filter(lambda param: param.requires_grad, self.student_network.parameters())
+        if not self.soft_committee:
+            trainable_parameters += [{'params': head.parameters(), 'lr': self.learning_rate / self.input_dimension} for head in self.student_network.heads]
 
         # initialise optimiser with trainable parameters of student        
-        self.optimiser = optim.SGD(trainable_parameters, lr=self.learning_rate)
+        self.optimiser = optim.SGD(trainable_parameters, lr=self.learning_rate) 
         
         # initialise loss function
         if config.get(["training", "loss_function"]) == 'mse':
