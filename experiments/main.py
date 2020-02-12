@@ -12,6 +12,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml')
 parser.add_argument('-gpu_id', type=int, help='id of gpu to use if more than 1 available', default=0)
+parser.add_argument('-log_ext', action='store_false', help='whether to write evaluation data to external file as well as tensorboard')
 
 parser.add_argument('-seed', '--s', type=int, help='seed to use for packages with prng', default=None)
 parser.add_argument('-learner_configuration', '--lc', type=str, help="meta or continual", default=None)
@@ -154,6 +155,10 @@ if __name__ == "__main__":
 
     # write copy of config_yaml in model_checkpoint_folder
     student_teacher_parameters.save_configuration(checkpoint_path)
+
+    if args.log_ext:
+        log_path = '{}data_logger.csv'.format(checkpoint_path)
+        student_teacher_parameters.set_property("logfile_path", log_path)
 
     learner_configuration = student_teacher_parameters.get(["task", "learner_configuration"])
 
