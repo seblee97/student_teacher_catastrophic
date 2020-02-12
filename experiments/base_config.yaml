@@ -15,7 +15,7 @@ training:
   total_training_steps:             100000                    # total number of training steps to take
   train_batch_size:                 1                         # number of tasks sampled per meta-update (per outer loop)
   test_batch_size:                  50000                     # number of samples to use for generalisatio error
-  learning_rate:                    0.2                       # learning rate for sgd update of student
+  learning_rate:                    5                         # learning rate for sgd update of student
   loss_function:                    mse                       # function to use for loss
   input_source:                     iid_gaussian              # whether to have inputs drawn randomly or (e.g. from mnist)
   pca_input:                        -1                        # number of principle components to reduce data to (no PCA if -1)                         
