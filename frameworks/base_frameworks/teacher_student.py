@@ -2,6 +2,7 @@ import numpy as np
 import copy
 import itertools
 import pandas as pd
+import time
 
 import torch 
 import torch.nn as nn 
@@ -397,15 +398,18 @@ class StudentTeacher(Framework):
                 self._signal_step_boundary_to_learner(step=task_step_count, current_task=teacher_index)
                 self._signal_step_boundary_to_teacher(step=task_step_count, current_task=teacher_index)
 
+                # checkpoint dataframe
+                if self.logfile_path and total_step_count % self.checkpoint_frequency == 0:
+                    print("Checkpointing Dataframe...")
+                    t0 = time.time()
+                    self.logger_df.to_csv(self.logfile_path)
+                    print("Dataframe checkpointed in {}s".format(round(time.time() - t0, 5)))
+
                 if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
                     self.writer.add_scalar('steps_per_task', task_step_count, total_step_count)
                     self.logger_df.at[total_step_count, "steps_per_task"] = task_step_count
                     steps_per_task.append(task_step_count)
                     break
-
-                # checkpoint dataframe
-                if self.logfile_path and total_step_count % self.checkpoint_frequency == 0:
-                    self.logger_df.to_csv(self.logfile_path)
 
     def _compute_overlap_matrices(self, step_count: int) -> None:
 
