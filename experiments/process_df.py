@@ -55,12 +55,19 @@ class SummaryPlot:
 
         self.spec = gridspec.GridSpec(nrows=self.rows, ncols=self.columns, width_ratios=widths, height_ratios=heights)
 
-    def add_subplot(self, plot_data, row_index: int, column_index: int, title: str, labels: List, ylimits: List):
+    def add_subplot(self, plot_data, row_index: int, column_index: int, title: str, labels: List, ylimits: List, scale_axes: int):
 
         fig_sub = self.fig.add_subplot(self.spec[row_index, column_index])
 
         for d, dataset in enumerate(plot_data):
-            fig_sub.plot(range(len(dataset)), dataset, label=labels[d])
+            # scale axes
+            if scale_axes:
+                scaling = scale_axes / len(dataset)
+                x_data = [i * scaling for i in range(len(dataset))]
+            else:
+                x_data = range(len(dataset))
+
+            fig_sub.plot(x_data, dataset, label=labels[d])
         
         # labelling
         fig_sub.set_xlabel("Step")
@@ -109,6 +116,7 @@ class SummaryPlot:
                     attribute_config = self.plot_config["data"][attribute_title]
                     attribute_plot_type = attribute_config['plot_type']
                     attribute_key_format = attribute_config['key_format']
+                    attribute_scale_axes = attribute_config.get("scale_axes")
 
                     if attribute_key_format == 'uniform':
 
@@ -149,7 +157,7 @@ class SummaryPlot:
                         plot_data = [self.data[attribute_key].dropna().tolist() for attribute_key in attribute_keys]
                         self.add_subplot(
                             plot_data=plot_data, row_index=row, column_index=col, title=attribute_title, 
-                            labels=attribute_labels, ylimits=attribute_ylimits
+                            labels=attribute_labels, ylimits=attribute_ylimits, scale_axes=attribute_scale_axes
                             )
 
                     elif attribute_plot_type == 'image':
