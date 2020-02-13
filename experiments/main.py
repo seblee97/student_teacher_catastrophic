@@ -26,10 +26,12 @@ parser.add_argument('-student_nonlinearity', '--snl', type=str, help="which non 
 parser.add_argument('-teacher_nonlinearities', '--tnl', type=str, help="which non linearity to use for teacher", default=None)
 parser.add_argument('-teacher_hidden', '--th', type=str, help="dimension of hidden layer in teacher", default=None)
 parser.add_argument('-student_hidden', '--sh', type=str, help="dimension of hidden layer in student", default=None)
+parser.add_argument('-learning_rate', '--lr', type=float, help="base learning rate", default=None)
 parser.add_argument('-total_steps', '--ts', type=int, help="total timesteps to run algorithm", default=None)
 parser.add_argument('-experiment_name', '--en', type=str, help="name to give to experiment", default=None)
 parser.add_argument('-verbose', '--v', type=int, help="whether to display prints", default=None)
 parser.add_argument('-checkpoint_path', '--cp', type=str, help="where to log results", default=None)
+parser.add_argument('-checkpoint_frequency', '--cf', type=float, help="how often to log results", default=None) 
 parser.add_argument('-teacher_overlaps', '--to', type=str, help="per layer overlaps between teachers. Must be in format '[30, 20, etc.]'", default=None)
 
 args = parser.parse_args()
@@ -64,6 +66,10 @@ if __name__ == "__main__":
         student_teacher_parameters._config["training"]["total_training_steps"] = args.ts
     if args.en:
         student_teacher_parameters._config["experiment_name"] = args.en
+    if args.lr:
+        student_teacher_parameters._config["training"]["learning_rate"] = args.lr
+    if args.cf:
+        student_teacher_parameters._config["checkpoint_frequency"] = args.cf
     if args.v is not None:
         student_teacher_parameters._config["verbose"] = bool(args.v)
 
