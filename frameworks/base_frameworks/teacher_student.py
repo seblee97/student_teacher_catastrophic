@@ -68,6 +68,7 @@ class Framework(ABC):
         """
 
         self.verbose = config.get("verbose")
+        self.verbose_tb = config.get("verbose_tb")
         self.checkpoint_path = config.get("checkpoint_path")
         self.device = config.get("device")
         self.logfile_path = config.get("logfile_path")
@@ -260,8 +261,40 @@ class Framework(ABC):
         for h, head in enumerate(student_output_layer_weights):
             flattened_weights = torch.flatten(head)
             for w, weight in enumerate(flattened_weights):
-                self.writer.add_scalar('student_head_{}_weight_{}'.format(h, w), float(weight), step_count)
+                if self.verbose_tb:
+                    self.writer.add_scalar('student_head_{}_weight_{}'.format(h, w), float(weight), step_count)
                 self.logger_df.at[step_count, 'student_head_{}_weight_{}'.format(h, w)] = float(weight)
+
+    def _checkpoint_df(self, step: int):
+        print("Checkpointing Dataframe...")
+        t0 = time.time()
+
+        # check for existing dataframe
+        if step > self.checkpoint_frequency:
+            repeated_index = step - self.checkpoint_frequency
+            previous_df = pd.read_csv(self.logfile_path, index_col=0)
+            merged_df = pd.concat([previous_df, self.logger_df])
+            merged_row = merged_df.loc[repeated_index].groupby(level=0).max()
+            merged_df.drop([repeated_index])
+            merged_df = pd.concat([merged_df, merged_row]).sort_index()
+        else:
+            merged_df = self.logger_df
+
+        merged_df.to_csv(self.logfile_path)
+        self.logger_df = pd.DataFrame()
+        print("Dataframe checkpointed in {}s".format(round(time.time() - t0, 5)))
+
+    def _consolidate_dfs(self):
+        print("Consolidating/Merging all dataframes..")
+        import pdb; pdb.set_trace()
+        all_df_paths = [os.path.join(self.checkpoint_path, f) for f in os.listdir(self.checkpoint_path) if f.endswith('.csv')]
+        all_dfs = [pd.read_csv(df_path) for df_path in all_df_paths]
+        merged_df = pd.concat(all_dfs)
+        merged_df.to_csv("{}.csv".format(self.logfile_path))
+
+        # remove indiviudal dataframes
+        for df in all_df_paths:
+            os.remove(df)
 
     @abstractmethod
     def _compute_overlap_matrices(self, step_count: int) -> None:
@@ -334,7 +367,11 @@ class StudentTeacher(Framework):
         total_step_count = 0
         steps_per_task = []
 
+        iter_time = time.time()
+
         while total_step_count < self.total_training_steps:
+
+            self.logger_df.append(pd.Series(name=total_step_count))
             
             teacher_index = next(self.curriculum)
             task_step_count = 0
@@ -398,18 +435,22 @@ class StudentTeacher(Framework):
                 self._signal_step_boundary_to_learner(step=task_step_count, current_task=teacher_index)
                 self._signal_step_boundary_to_teacher(step=task_step_count, current_task=teacher_index)
 
+                if total_step_count % 500 == 0:
+                    current_time = time.time()
+                    print("Time taken for last {} steps: {}".format(500, current_time - iter_time))
+                    iter_time = current_time
+
                 # checkpoint dataframe
                 if self.logfile_path and total_step_count % self.checkpoint_frequency == 0:
-                    print("Checkpointing Dataframe...")
-                    t0 = time.time()
-                    self.logger_df.to_csv(self.logfile_path)
-                    print("Dataframe checkpointed in {}s".format(round(time.time() - t0, 5)))
+                    self._checkpoint_df(step=total_step_count)
 
                 if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
                     self.writer.add_scalar('steps_per_task', task_step_count, total_step_count)
-                    self.logger_df.at[total_step_count, "steps_per_task"] = task_step_count
+                    # self.logger_df.at[total_step_count, "steps_per_task"] = task_step_count
                     steps_per_task.append(task_step_count)
                     break
+
+        self._consolidate_dfs()
 
     def _compute_overlap_matrices(self, step_count: int) -> None:
 
@@ -445,7 +486,8 @@ class StudentTeacher(Framework):
             matrix_shape = matrix.shape
             for i in range(matrix_shape[0]):
                 for j in range(matrix_shape[1]):
-                    self.writer.add_scalar("layer_{}_{}/values_{}_{}".format(layer, log_name, i, j), matrix[i][j], step_count)
+                    if self.verbose_tb:
+                        self.writer.add_scalar("layer_{}_{}/values_{}_{}".format(layer, log_name, i, j), matrix[i][j], step_count)
                     self.logger_df.at[step_count, "layer_{}_{}/values_{}_{}".format(layer, log_name, i, j)] = matrix[i][j]
         
         log_matrix_values("student_self_overlap", student_self_overlap)
@@ -457,29 +499,31 @@ class StudentTeacher(Framework):
             log_matrix_values("teacher_teacher_overlaps/{}_{}".format(i, j), teacher_teacher_overlaps[(i, j)])
 
         # generate visualisations
-        student_self_fig = visualise_matrix(student_self_overlap, fig_title=r"$Q_{ik}^\mu$")
-        teacher_cross_figs = {(i, j):
-            visualise_matrix(teacher_teacher_overlaps[(i, j)], fig_title=r"$T_{nm}$") \
-            for (i, j) in teacher_teacher_overlaps
-        }
-        teacher_self_figs = [
-            visualise_matrix(teacher_self_overlap, fig_title=r"$T_{nm}$") \
-            for teacher_self_overlap in teacher_self_overlaps
-        ]
-        student_teacher_figs = [
-            visualise_matrix(student_teacher_overlap, fig_title=r"$R_{in}^\mu$") \
-            for t, student_teacher_overlap in enumerate(student_teacher_overlaps)
-        ]
+        if self.verbose_tb:
+            student_self_fig = visualise_matrix(student_self_overlap, fig_title=r"$Q_{ik}^\mu$")
+            teacher_cross_figs = {(i, j):
+                visualise_matrix(teacher_teacher_overlaps[(i, j)], fig_title=r"$T_{nm}$") \
+                for (i, j) in teacher_teacher_overlaps
+            }
+            teacher_self_figs = [
+                visualise_matrix(teacher_self_overlap, fig_title=r"$T_{nm}$") \
+                for teacher_self_overlap in teacher_self_overlaps
+            ]
+            student_teacher_figs = [
+                visualise_matrix(student_teacher_overlap, fig_title=r"$R_{in}^\mu$") \
+                for t, student_teacher_overlap in enumerate(student_teacher_overlaps)
+            ]
 
         # log visualisations
-        self.writer.add_figure("layer_{}_student_self_overlap".format(str(layer)), student_self_fig, step_count)
-        for t, student_teacher_fig in enumerate(student_teacher_figs):
-            self.writer.add_figure("layer_{}_student_teacher_overlaps/teacher_{}".format(layer, t), student_teacher_fig, step_count)
-        for t, teacher_self_fig in enumerate(teacher_self_figs):
-            self.writer.add_figure("layer_{}_teacher_self_overlaps/teacher_{}".format(layer, t), teacher_self_fig, step_count)
-        for (i, j), teacher_cross_fig in list(teacher_cross_figs.items()):
-            self.writer.add_figure("layer_{}_teacher_cross_overlaps/teacher{}x{}".format(layer, i, j), teacher_cross_fig, step_count)
-        
+        if self.verbose_tb:
+            self.writer.add_figure("layer_{}_student_self_overlap".format(str(layer)), student_self_fig, step_count)
+            for t, student_teacher_fig in enumerate(student_teacher_figs):
+                self.writer.add_figure("layer_{}_student_teacher_overlaps/teacher_{}".format(layer, t), student_teacher_fig, step_count)
+            for t, teacher_self_fig in enumerate(teacher_self_figs):
+                self.writer.add_figure("layer_{}_teacher_self_overlaps/teacher_{}".format(layer, t), teacher_self_fig, step_count)
+            for (i, j), teacher_cross_fig in list(teacher_cross_figs.items()):
+                self.writer.add_figure("layer_{}_teacher_cross_overlaps/teacher{}x{}".format(layer, i, j), teacher_cross_fig, step_count)
+            
     def _compute_loss(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         loss = 0.5 * self.loss_function(prediction, target)
         return loss
