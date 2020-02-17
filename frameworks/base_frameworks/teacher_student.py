@@ -341,12 +341,16 @@ class StudentTeacher(Framework):
         elif self.input_source == 'mnist':
             # load mnist test data
             self.data_path = config.get("data_path")
+
             test_input_data = iter(load_mnist_data_as_dataloader(
                 data_path=self.data_path, train=False, batch_size=self.test_batch_size, pca=self.pca_input)
                 ).next()[0]
 
             self.data_mu = torch.mean(test_input_data, axis=0)
             self.data_sigma = torch.std(test_input_data, axis=0)
+
+            # edge case of zero sigma (all value equal - no discriminative power)
+            self.data_sigma[self.data_sigma==0] = 1
 
             # standardise test inputs
             self.test_input_data = torch.stack([(d - self.data_mu) / self.data_sigma for d in test_input_data])
@@ -450,7 +454,7 @@ class StudentTeacher(Framework):
                     steps_per_task.append(task_step_count)
                     break
 
-        self._consolidate_dfs()
+        # self._consolidate_dfs()
 
     def _compute_overlap_matrices(self, step_count: int) -> None:
 
