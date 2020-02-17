@@ -48,6 +48,8 @@ class Model(nn.Module, ABC):
             self.nonlinear_function = torch.sigmoid
         elif self.nonlinearity_name == 'linear': 
             self.nonlinear_function = linear_function
+        elif self.nonlinearity_name == 'leaky_relu':
+            self.nonlinear_function = F.leaky_relu
         else:
             raise ValueError("Unknown non-linearity. Please use 'relu' or 'sigmoid' or 'linear'")
 
