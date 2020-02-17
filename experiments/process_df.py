@@ -57,6 +57,11 @@ class SummaryPlot:
 
     def add_subplot(self, plot_data, row_index: int, column_index: int, title: str, labels: List, ylimits: List, scale_axes: int):
 
+        if len(labels) > 10:
+            linewidth = 0.05
+        else:
+            linewidth = 1
+
         fig_sub = self.fig.add_subplot(self.spec[row_index, column_index])
 
         for d, dataset in enumerate(plot_data):
@@ -67,12 +72,13 @@ class SummaryPlot:
             else:
                 x_data = range(len(dataset))
 
-            fig_sub.plot(x_data, dataset, label=labels[d])
+            fig_sub.plot(x_data, dataset, label=labels[d], linewidth=linewidth)
         
         # labelling
         fig_sub.set_xlabel("Step")
-        fig_sub.legend()
         fig_sub.set_ylabel(title)
+        if len(labels) < 9:
+            fig_sub.legend()
 
         # grids
         fig_sub.minorticks_on()
