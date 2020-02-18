@@ -115,18 +115,37 @@ def load_mnist_data(data_path: str, flatten: bool=False, pca: int=-1):
 
     return mnist_train_x, mnist_train_y, mnist_test_x, mnist_test_y
 
-def get_binary_classification_datasets(x_data: List, y_data: List, task_classes: List[int]) -> List[Tuple]:
+def tensor_rotate(tensor, degree):
+    if degree == 0:
+        rotated_tensor = tensor
+    elif degree == 90:
+        rotated_tensor = torch.from_numpy(np.rot90(tensor.detach().numpy(), k=1).copy())
+    elif degree == 180:
+        rotated_tensor = torch.from_numpy(np.rot90(tensor.detach().numpy(), k=1).copy())
+    elif degree == 270:
+        rotated_tensor = torch.from_numpy(np.rot90(tensor.detach().numpy(), k=1).copy())
+    elif degree == 360:
+        rotated_tensor = torch.from_numpy(np.rot90(tensor.detach().numpy(), k=1).copy())
+    else:
+        raise ValueError("Invalid rotation degree")
+    return rotated_tensor
+
+def get_binary_classification_datasets(x_data: List, y_data: List, task_classes: List[int], rotations: List[int]=None) -> List[Tuple]:
     """
     Filter dataset for specific labels
 
     :param x_data: mnist image input
     :param y_data: corresponding labels
     :param task_classes: list of label indices defining the task
+    :param rotations: list of angles by which to rotate images
     :return task_data: filtered dataset
-    """
-
-    d1_train = [(torch.flatten(x).type(torch.FloatTensor), torch.Tensor([0]).type(torch.LongTensor)) for (i, x) in enumerate(x_data) if y_data[i] == task_classes[0]]
-    d2_train = [(torch.flatten(x).type(torch.FloatTensor), torch.Tensor([1]).type(torch.LongTensor)) for (i, x) in enumerate(x_data) if y_data[i] == task_classes[1]]
+    """ 
+    if rotations:
+        d1_train = [(torch.flatten(tensor_rotate(x, rotations[0])).type(torch.FloatTensor), torch.Tensor([0]).type(torch.LongTensor)) for (i, x) in enumerate(x_data) if y_data[i] == task_classes[0]]
+        d2_train = [(torch.flatten(tensor_rotate(x, rotations[1])).type(torch.FloatTensor), torch.Tensor([1]).type(torch.LongTensor)) for (i, x) in enumerate(x_data) if y_data[i] == task_classes[1]]
+    else:
+        d1_train = [(torch.flatten(x).type(torch.FloatTensor), torch.Tensor([0]).type(torch.LongTensor)) for (i, x) in enumerate(x_data) if y_data[i] == task_classes[0]]
+        d2_train = [(torch.flatten(x).type(torch.FloatTensor), torch.Tensor([1]).type(torch.LongTensor)) for (i, x) in enumerate(x_data) if y_data[i] == task_classes[1]]
     task_data = d1_train + d2_train
     random.shuffle(task_data)
     return task_data
