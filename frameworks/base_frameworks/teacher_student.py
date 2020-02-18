@@ -97,6 +97,7 @@ class Framework(ABC):
 
         self.input_source = config.get(["training", "input_source"])
         self.pca_input = config.get(["training", "pca_input"])
+        self.rotations = config.get(["training", "rotations"])
 
         if self.pca_input > 0:
             if self.pca_input != self.input_dimension:
@@ -560,7 +561,7 @@ class MNIST(Framework):
                 
                 for _ in range(self.train_batch_size):
                     if len(self.teachers[teacher_index]) == 0:
-                        task_data = get_binary_classification_datasets(self.mnist_x_data, self.mnist_y_data, self.mnist_teacher_classes[teacher_index])
+                        task_data = get_binary_classification_datasets(self.mnist_train_x, self.mnist_train_y, self.mnist_teacher_classes[teacher_index], rotations=self.rotations[teacher_index])
                         self.teachers[teacher_index] = task_data
                     training_data_point = self.teachers[teacher_index].pop()
                     training_batch.append(training_data_point)
