@@ -2,6 +2,7 @@ from models.base_network import Model
 
 import torch.nn as nn
 import torch
+import torch.nn.functional as F
 
 import numpy as np
 
@@ -12,6 +13,13 @@ class MetaStudent(Model):
     def __init__(self, config: Dict) -> None:
 
         Model.__init__(self, config=config, model_type='student')
+
+        if config.get(["task", "loss_type"]) == "classification":
+            self.classification_output = True
+        elif config.get(["task", "loss_type"]) == 'regression':
+            self.classification_output = False
+        else:
+            raise ValueError("Unknown loss type given in base config")
 
     def _construct_output_layers(self):
 
@@ -32,11 +40,16 @@ class MetaStudent(Model):
     def test_all_tasks(self, x: torch.Tensor):
         for layer in self.layers:
             x = self.nonlinear_function(layer(x) / np.sqrt(self.input_dimension))
-        task_outputs = self.output_layer(x)
+        task_outputs = self._output_forward(x)
         return task_outputs
 
     def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
         y = self.output_layer(x)
+        if self.classification_output:
+            sigmoid_y = F.sigmoid(y)
+            negative_class_probabilities = 1 - sigmoid_y
+            log_softmax = torch.log(torch.cat((negative_class_probabilities, sigmoid_y), axis=1))
+            return log_softmax
         return y
 
     def _get_head_weights(self):

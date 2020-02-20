@@ -3,15 +3,27 @@ from models.base_network import Model
 import torch
 import torch.distributions as tdist
 import torch.nn as nn
+import torch.nn.functional as F
+
+import numpy as np
 
 from typing import Dict
 
 class Teacher(Model):
 
+    """Regression"""
+
     def __init__(self, config: Dict, index: int) -> None:
 
         Model.__init__(self, config=config, model_type='teacher_{}'.format(str(index)))
         self.noisy = False
+
+        if config.get(["task", "loss_type"]) == "classification":
+            self.classification_output = True
+        elif config.get(["task", "loss_type"]) == 'regression':
+            self.classification_output = False
+        else:
+            raise ValueError("Unknown loss type given in base config")
 
     def get_output_statistics(self, repeats=5000):
         with torch.no_grad():
@@ -44,4 +56,30 @@ class Teacher(Model):
         if self.noisy:
             noise = self.noise_distribution.sample((y.shape[0],))
             y = y + noise
+        if self.classification_output: # think about taking this into separate teacher class as below
+            sigmoid_y = F.sigmoid(y)
+            return (sigmoid_y > 0.5).type(torch.LongTensor).reshape(len(sigmoid_y),)
         return y
+
+
+class ClassificationTeacher(Teacher):
+
+    """Classification - sign output"""
+
+    def __init__(self, config: Dict, index: int) -> None:
+
+        Teacher.__init__(self, config=config, model_type='teacher_{}'.format(str(index)))
+
+    def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Override teacher output forward, add sign output
+        """
+        y = self.output_layer(x)
+        if self.noisy:
+            noise = self.noise_distribution.sample((y.shape[0],))
+            y = y + noise
+        # y = np.sign(y)
+        if y > 0:
+            return 1
+        else:
+            return 0

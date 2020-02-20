@@ -2,6 +2,7 @@ from models.base_network import Model
 
 import torch.nn as nn
 import torch
+import torch.nn.functional as F
 
 import numpy as np
 
@@ -13,6 +14,13 @@ class ContinualStudent(Model):
 
         Model.__init__(self, config=config, model_type='student')
         self._current_teacher = None
+        
+        if config.get(["task", "loss_type"]) == "classification":
+            self.classification_output = True
+        elif config.get(["task", "loss_type"]) == 'regression':
+            self.classification_output = False
+        else:
+            raise ValueError("Unknown loss type given in base config")
 
     def _construct_output_layers(self):
         # create one head per teacher
@@ -43,11 +51,19 @@ class ContinualStudent(Model):
     def test_all_tasks(self, x: torch.Tensor):
         for layer in self.layers:
             x = self.nonlinear_function(layer(x) / np.sqrt(self.input_dimension))
-        task_outputs = [self.heads[t](x) for t in range(self.num_teachers)]
+        task_outputs = [self._output_forward(x, teacher_index=t) for t in range(self.num_teachers)]
         return task_outputs
 
-    def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
-        y = self.heads[self._current_teacher](x)
+    def _output_forward(self, x: torch.Tensor, teacher_index: int=None) -> torch.Tensor:
+        if teacher_index:
+            y = self.heads[teacher_index](x)
+        else:
+            y = self.heads[self._current_teacher](x)
+        if self.classification_output:
+            sigmoid_y = F.sigmoid(y)
+            negative_class_probabilities = 1 - sigmoid_y
+            log_softmax = torch.log(torch.cat((negative_class_probabilities, sigmoid_y), axis=1))
+            return log_softmax
         return y
 
     def _get_head_weights(self) -> List[torch.Tensor]:
