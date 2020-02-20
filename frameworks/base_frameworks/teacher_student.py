@@ -48,6 +48,8 @@ class Framework(ABC):
             self.loss_function = nn.MSELoss()
         elif config.get(["training", "loss_function"]) == 'cross_entropy':
             self.loss_function = nn.CrossEntropyLoss()
+        elif config.get(["training", "loss_function"]) == 'nll':
+            self.loss_function = nn.NLLLoss()
         else:
             raise NotImplementedError("{} is not currently supported, please use mse loss or cross_entropy for mnist".format(config.get("loss")))
 
