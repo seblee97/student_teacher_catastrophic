@@ -99,12 +99,19 @@ class Framework(ABC):
 
         self.input_source = config.get(["training", "input_source"])
         self.pca_input = config.get(["training", "pca_input"])
-        self.rotations = config.get(["training", "rotations"])
 
         if self.pca_input > 0:
             if self.pca_input != self.input_dimension:
                 raise ValueError("Please ensure that if PCA is applied that the number of principal components\
                     matches the input dimension for the network.")
+
+        # framework specific parameters
+        self.extract_parameters(config)
+
+    @abstractmethod
+    def extract_parameters(self, config: Dict) -> None:
+        """Framework specific parameters"""
+        raise NotImplementedError("Base class method")
 
     @abstractmethod
     def _setup_teachers(self, config: Dict):
@@ -368,6 +375,9 @@ class StudentTeacher(Framework):
 
         self.test_teacher_outputs = [teacher(self.test_input_data) for teacher in self.teachers]
 
+    def extract_parameters(self, config: Dict) -> None:
+        pass
+
     def train(self) -> None:
 
         training_losses = []
@@ -603,6 +613,9 @@ class MNIST(Framework):
                     self.logger_df.at[total_step_count, 'steps_per_task'] = task_step_count
                     steps_per_task.append(task_step_count)
                     break
+
+    def extract_parameters(self, config: Dict) -> None:
+        self.rotations = config.get(["training, rotations"])
 
     def _compute_overlap_matrices(self, step_count: int) -> None:
         pass
