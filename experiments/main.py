@@ -18,6 +18,7 @@ parser.add_argument('-seed', '--s', type=int, help='seed to use for packages wit
 parser.add_argument('-learner_configuration', '--lc', type=str, help="meta or continual", default=None)
 parser.add_argument('-teacher_configuration', '--tc', type=str, help="noisy or independent or mnist", default=None)
 parser.add_argument('-num_teachers', '--nt', type=int, default=None)
+parser.add_argument('-loss_type', '--lty', type=str, default=None)
 parser.add_argument('-selection_type', '--st', type=str, help="random or cyclical", default=None)
 parser.add_argument('-stopping_condition', '--sc', type=str, help="threshold or fixed_period", default=None)
 parser.add_argument('-fixed_period', '--fp', type=int, help="time between teacher change", default=None)
@@ -54,6 +55,8 @@ if __name__ == "__main__":
         student_teacher_parameters._config["task"]["teacher_configuration"] = args.tc
     if args.nt:
         student_teacher_parameters._config["task"]["num_teachers"] = args.nt
+    if args.lty:
+        student_teacher_parameters._config["task"]["loss_type"] = args.lty
     if args.st:
         student_teacher_parameters._config["curriculum"]["selection_type"] = args.st
     if args.sc:
@@ -117,6 +120,15 @@ if __name__ == "__main__":
     if args.th:
         teacher_hidden = [int(h) for h in "".join(args.th).strip('[]').split(',')]
         student_teacher_parameters._config["model"]["teacher_hidden_layers"] = teacher_hidden
+
+    # check for consistency in loss specification of config
+    if (student_teacher_parameters.get(["task", "loss_type"]) == "classification" and \
+        student_teacher_parameters.get(["training", "loss_function"]) == "nll") or \
+        (student_teacher_parameters.get(["task", "loss_type"]) == "regression" and\
+        student_teacher_parameters.get(["training", "loss_function"]) == "mse"):
+        pass
+    else:
+        raise ValueError("Potential inconsistency in config specification for loss type and loss function. Please check")
 
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
