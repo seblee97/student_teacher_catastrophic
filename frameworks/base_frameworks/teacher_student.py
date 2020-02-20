@@ -325,8 +325,7 @@ class Framework(ABC):
         :return generalisation_errors: list of generalisation errors of student against all teachers specified
         """
         raise NotImplementedError("Base class method")
-    
-    @abstractmethod
+
     def _compute_loss(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """
         Calculates loss of prediction of student vs. target from teacher
@@ -337,7 +336,13 @@ class Framework(ABC):
 
         :return loss: loss between target (from teacher) and prediction (from student)
         """
-        raise NotImplementedError("Base class method")
+        loss = 0.5 * self.loss_function(prediction, target)
+        return loss
+
+    def _compute_classification_acc(self, prediction: torch.Tensor, target: torch.Tensor):
+        class_predictions = torch.argmax(prediction, axis=1)
+        accuracy = int(sum(class_predictions == target)) / len(target)
+        return accuracy
 
 
 class StudentTeacher(Framework):
@@ -540,10 +545,6 @@ class StudentTeacher(Framework):
                 self.writer.add_figure("layer_{}_teacher_self_overlaps/teacher_{}".format(layer, t), teacher_self_fig, step_count)
             for (i, j), teacher_cross_fig in list(teacher_cross_figs.items()):
                 self.writer.add_figure("layer_{}_teacher_cross_overlaps/teacher{}x{}".format(layer, i, j), teacher_cross_fig, step_count)
-            
-    def _compute_loss(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        loss = 0.5 * self.loss_function(prediction, target)
-        return loss
 
 
 class MNIST(Framework):
@@ -604,9 +605,23 @@ class MNIST(Framework):
                 total_step_count += 1
                 task_step_count += 1
 
+                # overlap matrices
+                if total_step_count % self.overlap_frequency == 0 and total_step_count != 0:
+                    self._compute_overlap_matrices(step_count=total_step_count)
+
+                total_step_count += 1
+                task_step_count += 1
+
+                # output layer weights
+                self._log_output_weights(step_count=total_step_count)
+
                 # alert learner/teacher(s) of step e.g. to drift teacher
                 self._signal_step_boundary_to_learner(step=task_step_count, current_task=teacher_index)
                 self._signal_step_boundary_to_teacher(step=task_step_count, current_task=teacher_index)
+
+                # checkpoint dataframe
+                if self.logfile_path and total_step_count % self.checkpoint_frequency == 0:
+                    self._checkpoint_df(step=total_step_count)
 
                 if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
                     self.writer.add_scalar('steps_per_task', task_step_count, total_step_count)
@@ -618,20 +633,33 @@ class MNIST(Framework):
         self.rotations = config.get(["training, rotations"])
 
     def _compute_overlap_matrices(self, step_count: int) -> None:
-        pass
 
-    def _compute_loss(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        """
-        Cross-entropy loss
-        """
-        loss = self.loss_function(prediction, target)
-        return loss
+        for layer in range(len(self.student_hidden)):
+            self._compute_layer_overlaps(layer=str(layer), step_count=step_count, head=None)
 
-    def _compute_classification_acc(self, prediction: torch.Tensor, target: torch.Tensor):
-        class_predictions = torch.argmax(prediction, axis=1)
-        accuracy = int(sum(class_predictions == target)) / len(target)
-        return accuracy
+        self._compute_layer_overlaps(layer="output", step_count=step_count, head=0)
+        self._compute_layer_overlaps(layer="output", step_count=step_count, head=1)
 
-        
+    def _compute_layer_overlaps(self, layer: str, step_count: int, head: int):
+        # extract layer weights
+        if head is None:
+            student_layer = self.student_network.state_dict()['layers.{}.weight'.format(layer)].data
+            teacher_layers = [teacher.state_dict()['layers.{}.weight'.format(layer)].data for teacher in self.teachers]
+        else:
+            student_layer = self.student_network.state_dict()['heads.{}.weight'.format(str(head))].data
+            teacher_layers = [teacher.state_dict()['output_layer.weight'].data for teacher in self.teachers]
+            layer = layer + "_head_{}".format(str(head))
 
-        
+        # compute overlap matrices
+        student_self_overlap = (student_layer.mm(student_layer.t()) / self.input_dimension).cpu().numpy()
+
+        # log overlap values (scalars vs image graphs below)
+        def log_matrix_values(log_name: str, matrix):
+            matrix_shape = matrix.shape
+            for i in range(matrix_shape[0]):
+                for j in range(matrix_shape[1]):
+                    if self.verbose_tb:
+                        self.writer.add_scalar("layer_{}_{}/values_{}_{}".format(layer, log_name, i, j), matrix[i][j], step_count)
+                    self.logger_df.at[step_count, "layer_{}_{}/values_{}_{}".format(layer, log_name, i, j)] = matrix[i][j]
+
+        log_matrix_values("student_self_overlap", student_self_overlap)
