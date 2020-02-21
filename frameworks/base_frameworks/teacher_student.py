@@ -479,8 +479,8 @@ class StudentTeacher(Framework):
         for layer in range(len(self.student_hidden)):
             self._compute_layer_overlaps(layer=str(layer), step_count=step_count, head=None)
 
-        self._compute_layer_overlaps(layer="output", step_count=step_count, head=0)
-        self._compute_layer_overlaps(layer="output", step_count=step_count, head=1)
+        for head_index in range(self.num_teachers):
+            self._compute_layer_overlaps(layer="output", step_count=step_count, head=head_index)
 
     def _compute_layer_overlaps(self, layer: str, step_count: int, head: int):
 
@@ -630,7 +630,7 @@ class MNIST(Framework):
                     break
 
     def extract_parameters(self, config: Dict) -> None:
-        self.rotations = config.get(["training, rotations"])
+        self.rotations = config.get(["training", "rotations"])
 
     def _compute_overlap_matrices(self, step_count: int) -> None:
 
