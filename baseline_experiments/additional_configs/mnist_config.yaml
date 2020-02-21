@@ -1,0 +1,19 @@
+data_path:                "../data/"
+
+training:
+  test_batch_size:        10000
+  teachers:               [[0, 1]]
+  rotations:              [[0, 0]]
+  loss_function:          cross_entropy
+  learning_rate:          0.001
+
+model:
+  input_dimension:        784
+  student_hidden_layers:  [1024, 64]
+  output_dimension:       2                       # binary classification
+  initialise_student_outputs:       True 
+  student_initialisation_std:       1                     # std of normal initialisation for student network   
+  bias_parameters:                  True                     # whether or not to have bias parameters on linaer layers
+
+task:
+  loss_type:                        "not_applicable"          # whether loss is classification or regression (whether we take sigmoid and sign of teacher output)

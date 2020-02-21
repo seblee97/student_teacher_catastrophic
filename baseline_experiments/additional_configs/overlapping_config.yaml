@@ -1,0 +1,3 @@
+task:
+  overlap_percentages:                         [0, 0]                       # percentage of weights to copy between teachers per layer. 
+  teacher_noise:                               0
