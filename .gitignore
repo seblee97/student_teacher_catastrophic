@@ -4,3 +4,4 @@ experiments/results/
 .DS_Store
 data/
 baseline_experiments/results/
+baseline_experiments/__pycache__/
