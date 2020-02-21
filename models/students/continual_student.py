@@ -19,6 +19,8 @@ class ContinualStudent(Model):
             self.classification_output = True
         elif config.get(["task", "loss_type"]) == 'regression':
             self.classification_output = False
+        elif config.get(["task", "loss_type"]) == 'not_applicable':
+            self.classification_output = False
         else:
             raise ValueError("Unknown loss type given in base config")
 
