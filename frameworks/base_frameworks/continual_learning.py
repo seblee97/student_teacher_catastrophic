@@ -26,7 +26,14 @@ class ContinualLearner(StudentTeacher):
         with torch.no_grad():
             student_outputs = self.student_network.test_all_tasks(self.test_input_data)
             generalisation_errors = [float(self._compute_loss(student_output, teacher_output)) for student_output, teacher_output in zip(student_outputs, self.test_teacher_outputs)]
-            return {'generalisation_error': generalisation_errors}
+
+            return_dict = {'generalisation_error': generalisation_errors}
+
+            if self.student_network.classification_output:
+                accuracies = [float(self._compute_classification_acc(student_output, teacher_output)) for student_output, teacher_output in zip(student_outputs, self.test_teacher_outputs)]
+                return_dict['accuracy'] = accuracies
+
+            return return_dict
 
 class MNISTContinualLearner(MNIST):
 
