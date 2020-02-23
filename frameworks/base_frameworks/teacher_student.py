@@ -34,14 +34,19 @@ class Framework(ABC):
 
         # extract curriculum from config
         self._set_curriculum(config)
+        
+        if self.scale_output_backward:
+            trainable_parameters = [{'params': layer.parameters()} for layer in self.student_network.layers]
+            # trainable_parameters = filter(lambda param: param.requires_grad, self.student_network.parameters())
+            if not self.soft_committee:
+                trainable_parameters += [{'params': head.parameters(), 'lr': self.learning_rate / self.input_dimension} for head in self.student_network.heads]
 
-        trainable_parameters = [{'params': layer.parameters()} for layer in self.student_network.layers]
-        # trainable_parameters = filter(lambda param: param.requires_grad, self.student_network.parameters())
-        if not self.soft_committee:
-            trainable_parameters += [{'params': head.parameters(), 'lr': self.learning_rate / self.input_dimension} for head in self.student_network.heads]
-
-        # initialise optimiser with trainable parameters of student        
-        self.optimiser = optim.SGD(trainable_parameters, lr=self.learning_rate) 
+            # initialise optimiser with trainable parameters of student        
+            self.optimiser = optim.SGD(trainable_parameters, lr=self.learning_rate) 
+        
+        else:
+            trainable_parameters = self.student_network.parameters()       
+            self.optimiser = optim.SGD(trainable_parameters, lr=self.learning_rate)
         
         # initialise loss function
         if config.get(["training", "loss_function"]) == 'mse':
@@ -87,6 +92,7 @@ class Framework(ABC):
         self.train_batch_size = config.get(["training", "train_batch_size"])
         self.test_batch_size = config.get(["training", "test_batch_size"])
         self.learning_rate = config.get(["training", "learning_rate"])
+        self.scale_output_backward = config.get(["training", "scale_output_backward"])
 
         self.test_all_teachers = config.get(["testing", "test_all_teachers"])
         self.test_frequency = config.get(["testing", "test_frequency"])
@@ -204,9 +210,11 @@ class Framework(ABC):
         :return generalisation_error_wrt_current_teacher: generalisation_error for current teacher 
         """
         with torch.no_grad():
-
-            generalisation_error_per_teacher = self._compute_generalisation_errors(teacher_index=teacher_index).get('generalisation_error')
-            classification_accuracy = self._compute_generalisation_errors(teacher_index=teacher_index).get('accuracy')
+            
+            generalisation_metrics = self._compute_generalisation_errors(teacher_index=teacher_index)
+            
+            generalisation_error_per_teacher = generalisation_metrics.get('generalisation_error')
+            classification_accuracy = generalisation_metrics.get('accuracy')
 
             # log average generalisation losses over teachers
             mean_generalisation_error_per_teacher = np.mean(generalisation_error_per_teacher)
@@ -218,7 +226,6 @@ class Framework(ABC):
                 )
             self.logger_df.at[total_step_count, 'mean_generalisation_error/linear'] = mean_generalisation_error_per_teacher
             self.logger_df.at[total_step_count, 'mean_generalisation_error/log'] = np.log10(mean_generalisation_error_per_teacher)
-
 
             for i, error in enumerate(generalisation_error_per_teacher):
                 self.generalisation_errors[i].append(error)
