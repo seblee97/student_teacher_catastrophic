@@ -480,7 +480,7 @@ class StudentTeacher(Framework):
                     iter_time = current_time
 
                 # checkpoint dataframe
-                if self.logfile_path and total_step_count % self.checkpoint_frequency == 0:
+                if self.logfile_path and total_step_count % self.checkpoint_frequency == 0 and self.log_to_df:
                     self._checkpoint_df(step=total_step_count)
 
                 if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
@@ -527,7 +527,8 @@ class StudentTeacher(Framework):
                 for j in range(matrix_shape[1]):
                     if self.verbose_tb:
                         self.writer.add_scalar("layer_{}_{}/values_{}_{}".format(layer, log_name, i, j), matrix[i][j], step_count)
-                    self.logger_df.at[step_count, "layer_{}_{}/values_{}_{}".format(layer, log_name, i, j)] = matrix[i][j]
+                    if self.log_to_df:
+                        self.logger_df.at[step_count, "layer_{}_{}/values_{}_{}".format(layer, log_name, i, j)] = matrix[i][j]
         
         log_matrix_values("student_self_overlap", student_self_overlap)
         for s, student_teacher_overlap in enumerate(student_teacher_overlaps):
@@ -613,7 +614,8 @@ class MNIST(Framework):
 
                 # log training loss
                 self.writer.add_scalar('training_loss', float(loss), total_step_count)
-                self.logger_df.at[total_step_count, 'training_loss'] = float(loss)
+                if self.log_to_df:
+                    self.logger_df.at[total_step_count, 'training_loss'] = float(loss)
 
                 # test
                 if total_step_count % self.test_frequency == 0 and total_step_count != 0:
@@ -642,7 +644,8 @@ class MNIST(Framework):
 
                 if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
                     self.writer.add_scalar('steps_per_task', task_step_count, total_step_count)
-                    self.logger_df.at[total_step_count, 'steps_per_task'] = task_step_count
+                    if self.log_to_df:
+                        self.logger_df.at[total_step_count, 'steps_per_task'] = task_step_count
                     steps_per_task.append(task_step_count)
                     break
 
@@ -677,6 +680,7 @@ class MNIST(Framework):
                 for j in range(matrix_shape[1]):
                     if self.verbose_tb:
                         self.writer.add_scalar("layer_{}_{}/values_{}_{}".format(layer, log_name, i, j), matrix[i][j], step_count)
-                    self.logger_df.at[step_count, "layer_{}_{}/values_{}_{}".format(layer, log_name, i, j)] = matrix[i][j]
+                    if self.log_to_df:
+                        self.logger_df.at[step_count, "layer_{}_{}/values_{}_{}".format(layer, log_name, i, j)] = matrix[i][j]
 
         log_matrix_values("student_self_overlap", student_self_overlap)
