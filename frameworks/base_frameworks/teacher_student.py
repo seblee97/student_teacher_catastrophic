@@ -64,7 +64,8 @@ class Framework(ABC):
         self.teacher_writers = [SummaryWriter("{}/teacher_{}".format(self.checkpoint_path, t)) for t in range(self.num_teachers)]
 
         # initialise dataframe to log metrics
-        self.logger_df = pd.DataFrame()
+        if self.log_to_df:
+            self.logger_df = pd.DataFrame()
 
         # initialise objects containing metrics of interest
         self._initialise_metrics()
@@ -80,6 +81,7 @@ class Framework(ABC):
         self.device = config.get("device")
         self.logfile_path = config.get("logfile_path")
         self.checkpoint_frequency = config.get("checkpoint_frequency")
+        self.log_to_df = config.get("log_to_df")
 
         self.total_training_steps = config.get(["training", "total_training_steps"])
 
@@ -224,8 +226,9 @@ class Framework(ABC):
             self.writer.add_scalar(
                 'mean_generalisation_error/log', np.log10(mean_generalisation_error_per_teacher), total_step_count
                 )
-            self.logger_df.at[total_step_count, 'mean_generalisation_error/linear'] = mean_generalisation_error_per_teacher
-            self.logger_df.at[total_step_count, 'mean_generalisation_error/log'] = np.log10(mean_generalisation_error_per_teacher)
+            if self.log_to_df:
+                self.logger_df.at[total_step_count, 'mean_generalisation_error/linear'] = mean_generalisation_error_per_teacher
+                self.logger_df.at[total_step_count, 'mean_generalisation_error/log'] = np.log10(mean_generalisation_error_per_teacher)
 
             for i, error in enumerate(generalisation_error_per_teacher):
                 self.generalisation_errors[i].append(error)
@@ -233,12 +236,14 @@ class Framework(ABC):
                 # log generalisation loss per teacher
                 self.teacher_writers[i].add_scalar('generalisation_error/linear', error, total_step_count)
                 self.teacher_writers[i].add_scalar('generalisation_error/log', np.log10(error), total_step_count)
-                self.logger_df.at[total_step_count, 'teacher_{}_generalisation_error/linear'.format(i)] = error
-                self.logger_df.at[total_step_count, 'teacher_{}_generalisation_error/log'.format(i)] = np.log10(error)
+                if self.log_to_df:
+                    self.logger_df.at[total_step_count, 'teacher_{}_generalisation_error/linear'.format(i)] = error
+                    self.logger_df.at[total_step_count, 'teacher_{}_generalisation_error/log'.format(i)] = np.log10(error)
 
                 if classification_accuracy:
                     self.teacher_writers[i].add_scalar('classification_accuracy', classification_accuracy[i], total_step_count)
-                    self.logger_df.at[total_step_count, 'teacher_{}_classification_accuracy'.format(i)] = classification_accuracy[i]
+                    if self.log_to_df:
+                        self.logger_df.at[total_step_count, 'teacher_{}_classification_accuracy'.format(i)] = classification_accuracy[i]
 
                 if len(self.generalisation_errors[i]) > 1:
                     last_error = copy.deepcopy(self.generalisation_errors[i][-2])
@@ -247,8 +252,9 @@ class Framework(ABC):
                         # log generalisation loss delta per teacher
                         self.teacher_writers[i].add_scalar('error_change/linear', error_delta, total_step_count)
                         self.teacher_writers[i].add_scalar('error_change/log', np.sign(error_delta) * np.log10(abs(error_delta)), total_step_count)
-                        self.logger_df.at[total_step_count, 'teacher_{}_error_change/linear'.format(i)] = error_delta
-                        self.logger_df.at[total_step_count, 'teacher_{}_error_change/log'.format(i)] = np.sign(error_delta) * np.log10(abs(error_delta))
+                        if self.log_to_df
+                            self.logger_df.at[total_step_count, 'teacher_{}_error_change/linear'.format(i)] = error_delta
+                            self.logger_df.at[total_step_count, 'teacher_{}_error_change/log'.format(i)] = np.sign(error_delta) * np.log10(abs(error_delta))
 
             if self.verbose and task_step_count % 500 == 0:
                 print("Generalisation errors @ step {} ({}'th step training on teacher {}):".format(total_step_count, task_step_count, teacher_index))
@@ -280,7 +286,8 @@ class Framework(ABC):
             for w, weight in enumerate(flattened_weights):
                 if self.verbose_tb:
                     self.writer.add_scalar('student_head_{}_weight_{}'.format(h, w), float(weight), step_count)
-                self.logger_df.at[step_count, 'student_head_{}_weight_{}'.format(h, w)] = float(weight)
+                if self.log_to_df:
+                    self.logger_df.at[step_count, 'student_head_{}_weight_{}'.format(h, w)] = float(weight)
 
     def _checkpoint_df(self, step: int):
         print("Checkpointing Dataframe...")
@@ -298,7 +305,8 @@ class Framework(ABC):
             merged_df = self.logger_df
 
         merged_df.to_csv(self.logfile_path)
-        self.logger_df = pd.DataFrame()
+        if self.log_to_df:
+            self.logger_df = pd.DataFrame()
         print("Dataframe checkpointed in {}s".format(round(time.time() - t0, 5)))
 
     def _consolidate_dfs(self):
@@ -399,8 +407,9 @@ class StudentTeacher(Framework):
         iter_time = time.time()
 
         while total_step_count < self.total_training_steps:
-
-            self.logger_df.append(pd.Series(name=total_step_count))
+            
+            if self.log_to_df:
+                self.logger_df.append(pd.Series(name=total_step_count))
             
             teacher_index = next(self.curriculum)
             task_step_count = 0
@@ -443,7 +452,8 @@ class StudentTeacher(Framework):
 
                 # log training loss
                 self.writer.add_scalar('training_loss', float(loss), total_step_count)
-                self.logger_df.at[total_step_count, 'training_loss'] = float(loss)
+                if self.log_to_df:
+                    self.logger_df.at[total_step_count, 'training_loss'] = float(loss)
                 
 
                 # test
