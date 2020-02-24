@@ -3,6 +3,7 @@ import copy
 import itertools
 import pandas as pd
 import time
+import logging
 
 import torch 
 import torch.nn as nn 
@@ -67,6 +68,18 @@ class Framework(ABC):
         if self.log_to_df:
             self.logger_df = pd.DataFrame()
 
+        # initialise logger
+        self.logger = logging.getLogger(__name__)
+        logging.basicConfig(level=logging.INFO)
+
+        # create handlers
+        # std_handler = logging.StreamHandler()
+        file_handler = logging.FileHandler('{}/experiment.log'.format(self.checkpoint_path))
+
+        # Add handlers to the logger
+        # self.logger.addHandler(std_handler)
+        self.logger.addHandler(file_handler)
+        
         # initialise objects containing metrics of interest
         self._initialise_metrics()
 
@@ -257,18 +270,16 @@ class Framework(ABC):
                             self.logger_df.at[total_step_count, 'teacher_{}_error_change/log'.format(i)] = np.sign(error_delta) * np.log10(abs(error_delta))
 
             if self.verbose and task_step_count % 500 == 0:
-                print("Generalisation errors @ step {} ({}'th step training on teacher {}):".format(total_step_count, task_step_count, teacher_index))
+                self.logger.info("Generalisation errors @ step {} ({}'th step training on teacher {}):".format(total_step_count, task_step_count, teacher_index))
                 for i, error in enumerate(generalisation_error_per_teacher):
-                    print(
-                        "{}Teacher {}: {}".format("".rjust(10), i, error),
-                        sep="\n"
+                    self.logger.info(
+                        "{}Teacher {}: {}\n".format("".rjust(10), i, error)
                     )
                 if classification_accuracy:
-                    print("Classification accuracies @ step {} ({}'th step training on teacher {}):".format(total_step_count, task_step_count, teacher_index))
+                    self.logger.info("Classification accuracies @ step {} ({}'th step training on teacher {}):".format(total_step_count, task_step_count, teacher_index))
                     for i, acc in enumerate(classification_accuracy):
-                        print(
-                            "{}Teacher {}: {}".format("".rjust(10), i, acc),
-                            sep="\n"
+                        self.logger.info(
+                            "{}Teacher {}: {}\n".format("".rjust(10), i, acc),
                         )
 
             generalisation_error_wrt_current_teacher = generalisation_error_per_teacher[teacher_index]
@@ -290,7 +301,7 @@ class Framework(ABC):
                     self.logger_df.at[step_count, 'student_head_{}_weight_{}'.format(h, w)] = float(weight)
 
     def _checkpoint_df(self, step: int):
-        print("Checkpointing Dataframe...")
+        self.logger.info("Checkpointing Dataframe...")
         t0 = time.time()
 
         # check for existing dataframe
@@ -307,10 +318,10 @@ class Framework(ABC):
         merged_df.to_csv(self.logfile_path)
         if self.log_to_df:
             self.logger_df = pd.DataFrame()
-        print("Dataframe checkpointed in {}s".format(round(time.time() - t0, 5)))
+        self.logger.info("Dataframe checkpointed in {}s".format(round(time.time() - t0, 5)))
 
     def _consolidate_dfs(self):
-        print("Consolidating/Merging all dataframes..")
+        self.logger.info("Consolidating/Merging all dataframes..")
         import pdb; pdb.set_trace()
         all_df_paths = [os.path.join(self.checkpoint_path, f) for f in os.listdir(self.checkpoint_path) if f.endswith('.csv')]
         all_dfs = [pd.read_csv(df_path) for df_path in all_df_paths]
@@ -441,7 +452,7 @@ class StudentTeacher(Framework):
                 student_output = self.student_network(batch_input)
 
                 if self.verbose and task_step_count % 1000 == 0:
-                    print("Training step {}".format(task_step_count))
+                    self.logger.info("Training step {}".format(task_step_count))
 
                 # training iteration
                 self.optimiser.zero_grad()
@@ -476,7 +487,7 @@ class StudentTeacher(Framework):
 
                 if total_step_count % 500 == 0:
                     current_time = time.time()
-                    print("Time taken for last {} steps: {}".format(500, current_time - iter_time))
+                    self.logger.info("Time taken for last {} steps: {}".format(500, current_time - iter_time))
                     iter_time = current_time
 
                 # checkpoint dataframe
@@ -603,7 +614,7 @@ class MNIST(Framework):
                 student_output = self.student_network(image_input)  
 
                 if self.verbose and task_step_count % 1000 == 0:
-                    print("Training step {}".format(task_step_count))
+                    self.logger.info("Training step {}".format(task_step_count))
 
                 # training iteration
                 self.optimiser.zero_grad()
