@@ -252,7 +252,7 @@ class Framework(ABC):
                         # log generalisation loss delta per teacher
                         self.teacher_writers[i].add_scalar('error_change/linear', error_delta, total_step_count)
                         self.teacher_writers[i].add_scalar('error_change/log', np.sign(error_delta) * np.log10(abs(error_delta)), total_step_count)
-                        if self.log_to_df
+                        if self.log_to_df:
                             self.logger_df.at[total_step_count, 'teacher_{}_error_change/linear'.format(i)] = error_delta
                             self.logger_df.at[total_step_count, 'teacher_{}_error_change/log'.format(i)] = np.sign(error_delta) * np.log10(abs(error_delta))
 
