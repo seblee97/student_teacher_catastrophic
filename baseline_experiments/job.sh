@@ -38,8 +38,4 @@ echo "------------------------------------------------"
 
 # source /well/saxe/users/rfl568/Envs/cata/bin/activate
 
-experiment_base_path="/well/saxe/users/rfl568/repos/student_teacher_cont/experiments/"
-
-"python $experiment_base_path$1"
-
-# End of job script
+python /well/saxe/users/rfl568/repos/student_teacher_cont/experiments/
