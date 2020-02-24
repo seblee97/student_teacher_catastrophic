@@ -55,9 +55,10 @@ class ContinualStudent(Model):
             x = self.nonlinear_function(layer(x) / np.sqrt(self.input_dimension))
         task_outputs = [self.heads[t](x) for t in range(self.num_teachers)]
         if self.classification_output:
-            sigmoid_outputs = F.sigmoid(task_outputs)
-            negative_class_probabilities = 1 - sigmoid_outputs
-            log_softmax = torch.log(torch.cat((negative_class_probabilities, sigmoid_outputs), axis=1))
+            sigmoid_outputs = [F.sigmoid(task_output) for task_output in task_outputs]
+            negative_class_probabilities = [1 - sigmoid_output for sigmoid_output in sigmoid_outputs]
+            log_softmax = [torch.log(torch.cat((neg_prob, sigmoid_output), axis=1)) for 
+                    (neg_prob, sigmoid_output) in zip(negative_class_probabilities, sigmoid_outputs)]
             return log_softmax
         return task_outputs
 
