@@ -23,10 +23,8 @@ import pdb; pdb.set_trace()
 
 for job in list_of_jobs:
     job_file_copy = os.path.join(current_file_path, 'job_copy.sh')
+    print(job_file_copy)
     copyfile(args.job_script_path, job_file_copy)
     with open(job_file_copy, 'a') as file:
         file.write(job)
-        subprocess.call(["qsub -P saxe.prjc -q long.qc {}".format(job_file_copy)])
-
-
-
+        subprocess.call("qsub -P saxe.prjc -q long.qc job_copy.sh", shell=True)
