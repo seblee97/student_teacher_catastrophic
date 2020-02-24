@@ -19,8 +19,6 @@ with open(args.list_path) as file:
 
 current_file_path = os.path.dirname(os.path.realpath(__file__))
 
-import pdb; pdb.set_trace()
-
 for job in list_of_jobs:
     job_file_copy = os.path.join(current_file_path, 'job_copy.sh')
     print(job_file_copy)
