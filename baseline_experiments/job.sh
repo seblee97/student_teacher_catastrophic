@@ -36,6 +36,5 @@ echo "------------------------------------------------"
 
 # Begin writing your script here
 
-# source /well/saxe/users/rfl568/Envs/cata/bin/activate
-
-python /well/saxe/users/rfl568/repos/student_teacher_cont/experiments/
+source /well/saxe/users/rfl568/Envs/cata/bin/activate
+cd /well/saxe/users/rfl568/repos/student_teacher_cont/experiments/
