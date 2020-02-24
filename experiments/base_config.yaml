@@ -5,6 +5,7 @@ resume:
 verbose:                            True                      # whether to print
 verbose_tb:                         False                     # whether to log everything (overlaps etc.) to tb
 checkpoint_frequency:               500                       # how often to checkpoint logging dataframe
+log_to_df:                          False
 
 task:
   label_task_boundaries:            True                      # whether or not to add the task index to the input (extra supervision)
