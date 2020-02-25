@@ -20,6 +20,7 @@ parser.add_argument('-learner_configuration', '--lc', type=str, help="meta or co
 parser.add_argument('-teacher_configuration', '--tc', type=str, help="noisy or independent or mnist", default=None)
 parser.add_argument('-num_teachers', '--nt', type=int, default=None)
 parser.add_argument('-loss_type', '--lty', type=str, default=None)
+parser.add_argument('-loss_function', '--lf', type=str, default=None)
 parser.add_argument('-selection_type', '--st', type=str, help="random or cyclical", default=None)
 parser.add_argument('-stopping_condition', '--sc', type=str, help="threshold or fixed_period", default=None)
 parser.add_argument('-fixed_period', '--fp', type=int, help="time between teacher change", default=None)
@@ -61,6 +62,8 @@ if __name__ == "__main__":
         student_teacher_parameters._config["task"]["num_teachers"] = args.nt
     if args.lty:
         student_teacher_parameters._config["task"]["loss_type"] = args.lty
+    if args.lf:
+        student_teacher_parameters._config["training"]["loss_function"] = args.lf
     if args.st:
         student_teacher_parameters._config["curriculum"]["selection_type"] = args.st
     if args.sc:
