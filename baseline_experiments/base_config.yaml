@@ -11,7 +11,7 @@ task:
   label_task_boundaries:            True                      # whether or not to add the task index to the input (extra supervision)
   learner_configuration:            continual                 # meta or continual - specifies whether student has separate heads for each teacher (continual) or not (meta)
   teacher_configuration:            overlapping               # 'noisy': each teacher has same initialisation, each with different levels of noise added, 'independent': all randomly initialised, 'drifting': all randomly initialised but drifting over time, 'overlapping': structured similarity in teacher weights
-  num_teachers:                     2                         # number of teachers to use
+  num_teachers:                     1                         # number of teachers to use
   loss_type:                        "regression"              # whether loss is classification or regression (whether we take sigmoid and sign of teacher output)
 
 training:
@@ -47,6 +47,6 @@ curriculum:
   selection_type:                   cyclical                  # how to determine next task (random or cyclical)
   stopping_condition:               fixed_period              # condition on which to switch task (fixed_period or threshold)
 
-  fixed_period:                     5000                      # period for changing tasks 
+  fixed_period:                     100000                    # period for changing tasks 
   loss_threshold:                   0.0001                    # loss threshold under which teacher is changed 
   custom:                           [0, 1]                    # curriculum defined manually. Each entry defines next teacher index
