@@ -18,6 +18,7 @@ parser.add_argument('-log_ext', action='store_false', help='whether to write eva
 parser.add_argument('-seed', '--s', type=int, help='seed to use for packages with prng', default=None)
 parser.add_argument('-learner_configuration', '--lc', type=str, help="meta or continual", default=None)
 parser.add_argument('-teacher_configuration', '--tc', type=str, help="noisy or independent or mnist", default=None)
+parser.add_argument('-input_source', '--inp_s', type=str, help="mnist or iid_gaussian", default=None)
 parser.add_argument('-num_teachers', '--nt', type=int, default=None)
 parser.add_argument('-loss_type', '--lty', type=str, default=None)
 parser.add_argument('-loss_function', '--lf', type=str, default=None)
@@ -58,6 +59,8 @@ if __name__ == "__main__":
         student_teacher_parameters._config["task"]["learner_configuration"] = args.lc
     if args.tc:
         student_teacher_parameters._config["task"]["teacher_configuration"] = args.tc
+    if args.inp_s:
+        student_teacher_parameters._config["training"]["input_source"] = args.inp_s
     if args.nt:
         student_teacher_parameters._config["task"]["num_teachers"] = args.nt
     if args.lty:
