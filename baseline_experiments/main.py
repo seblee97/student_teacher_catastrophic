@@ -40,8 +40,11 @@ args = parser.parse_args()
 
 if __name__ == "__main__":
 
+    main_file_path = os.path.dirname(os.path.realpath(__file__))
+
     # read base-parameters from base-config
-    with open(args.config, 'r') as yaml_file:
+    base_config_full_path = os.path.join(main_file_path, args.config)
+    with open(base_config_full_path, 'r') as yaml_file:
         params = yaml.load(yaml_file, yaml.SafeLoader)
 
     # create object in which to store experiment parameters
@@ -101,7 +104,8 @@ if __name__ == "__main__":
 
     # specific parameters
     for additional_configuration in additional_configurations:
-        with open(additional_configuration, 'r') as yaml_file:
+        additional_configuration_full_path = os.path.join(main_file_path, additional_configuration)
+        with open(additional_configuration_full_path, 'r') as yaml_file:
             specific_params = yaml.load(yaml_file, yaml.SafeLoader)
     
         # update base-parameters with specific parameters
@@ -126,11 +130,8 @@ if __name__ == "__main__":
     # check for consistency in loss specification of config
     if (student_teacher_parameters.get(["task", "loss_type"]) == "classification" and \
         student_teacher_parameters.get(["training", "loss_function"]) == "nll") or \
-        (student_teacher_parameters.get(["task", "loss_type"]) == "regression" and \
-        student_teacher_parameters.get(["training", "loss_function"]) == "mse") or \
-        (student_teacher_parameters.get(["task", "teacher_configuration"]) == "mnist" and \
-        student_teacher_parameters.get(["training", "loss_function"]) == "cross_entropy" and \
-        student_teacher_parameters.get(["task", "loss_type"]) == "not_applicable"):
+        (student_teacher_parameters.get(["task", "loss_type"]) == "regression" and\
+        student_teacher_parameters.get(["training", "loss_function"]) == "mse"):
         pass
     else:
         raise ValueError("Potential inconsistency in config specification for loss type and loss function. Please check")
@@ -145,9 +146,9 @@ if __name__ == "__main__":
         results_folder_base = 'results/'
         
     if experiment_name:
-        checkpoint_path = '{}/{}/{}/'.format(results_folder_base, exp_timestamp, experiment_name)
+        checkpoint_path = '{}/{}/{}/{}/'.format(main_file_path, results_folder_base, exp_timestamp, experiment_name)
     else:
-        checkpoint_path = '{}/{}/'.format(results_folder_base, exp_timestamp)
+        checkpoint_path = '{}/{}/{}/'.format(main_file_path, results_folder_base, exp_timestamp)
 
     student_teacher_parameters.set_property("checkpoint_path", checkpoint_path)
     student_teacher_parameters.set_property("experiment_timestamp", exp_timestamp)
