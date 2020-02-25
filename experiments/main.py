@@ -136,8 +136,10 @@ if __name__ == "__main__":
     # check for consistency in loss specification of config
     if (student_teacher_parameters.get(["task", "loss_type"]) == "classification" and \
         student_teacher_parameters.get(["training", "loss_function"]) == "nll") or \
-        (student_teacher_parameters.get(["task", "loss_type"]) == "regression" and\
-        student_teacher_parameters.get(["training", "loss_function"]) == "mse"):
+        (student_teacher_parameters.get(["task", "loss_type"]) == "regression" and \
+        student_teacher_parameters.get(["training", "loss_function"]) == "mse") or \
+        (student_teacher_parameters.get(["task", "loss_type"]) == "not_applicable" and \
+        student_teacher_parameters.get(["training", "loss_function"]) == "cross_entropy"):
         pass
     else:
         raise ValueError("Potential inconsistency in config specification for loss type and loss function. Please check")
