@@ -53,6 +53,10 @@ def load_mnist_data_as_dataloader(data_path: str, batch_size: int, train:bool=Tr
     :param pca: whether to perform pca (> 0 = number of principle components)
     :return dataloader: pytorch dataloader for mnist training dataset
     """
+
+    file_path = os.path.dirname(os.path.realpath(__file__))
+    full_data_path = os.path.join(file_path, data_path)
+
     # transforms to add to data
     transform = torchvision.transforms.Compose([
         torchvision.transforms.Grayscale(),
@@ -63,7 +67,7 @@ def load_mnist_data_as_dataloader(data_path: str, batch_size: int, train:bool=Tr
 
     if pca > 0:
         # note always using train data to generate pca
-        mnist_data = torchvision.datasets.MNIST(data_path, transform=transform, train=True)
+        mnist_data = torchvision.datasets.MNIST(full_data_path, transform=transform, train=True)
         raw_data = mnist_data.train_data.reshape((len(mnist_data), -1))
         pca_output = get_pca(raw_data, num_principal_components=pca)
 
@@ -76,7 +80,7 @@ def load_mnist_data_as_dataloader(data_path: str, batch_size: int, train:bool=Tr
             custom_torch_transforms.ToFloat(),
         ])
 
-    mnist_data = torchvision.datasets.MNIST(data_path, transform=transform, train=train)
+    mnist_data = torchvision.datasets.MNIST(full_data_path, transform=transform, train=train)
 
     dataloader = torch.utils.data.DataLoader(mnist_data, batch_size=batch_size, shuffle=True)
 
@@ -95,17 +99,21 @@ def load_mnist_data(data_path: str, flatten: bool=False, pca: int=-1):
     :return mnist_train_x: list of test images
     :return mnist_test_y: list of labels for test images
     """
+
+    file_path = os.path.dirname(os.path.realpath(__file__))
+    full_data_path = os.path.join(file_path, data_path)
+
     # transforms to add to data
     transform = torchvision.transforms.Compose([
         torchvision.transforms.Grayscale(),
         torchvision.transforms.ToTensor()
     ])
 
-    mnist_train = torchvision.datasets.MNIST(data_path, transform=transform, train=True)
+    mnist_train = torchvision.datasets.MNIST(full_data_path, transform=transform, train=True)
     mnist_train_x = mnist_train.train_data
     mnist_train_y = mnist_train.train_labels
 
-    mnist_test = torchvision.datasets.MNIST(data_path, transform=transform, train=False)
+    mnist_test = torchvision.datasets.MNIST(full_data_path, transform=transform, train=False)
     mnist_test_x = mnist_test.test_data
     mnist_test_y = mnist_test.test_labels
 
