@@ -1,5 +1,6 @@
 import numpy as np
-import matplotlib.pyplot as plt
+import os
+#import matplotlib.pyplot as plt
 import random
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import normalize
