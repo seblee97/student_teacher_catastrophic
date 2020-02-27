@@ -367,7 +367,7 @@ class Framework(ABC):
 
     def _compute_classification_acc(self, prediction: torch.Tensor, target: torch.Tensor):
         class_predictions = torch.argmax(prediction, axis=1)
-        accuracy = int(sum(class_predictions == target)) / len(target)
+        accuracy = int(torch.sum(class_predictions == target)) / len(target)
         return accuracy
 
 
@@ -587,6 +587,8 @@ class MNIST(Framework):
         total_step_count = 0
         steps_per_task = []
 
+        iter_time = time.time()
+
         while total_step_count < self.total_training_steps:
             
             teacher_index = next(self.curriculum)
@@ -648,6 +650,11 @@ class MNIST(Framework):
                 # alert learner/teacher(s) of step e.g. to drift teacher
                 self._signal_step_boundary_to_learner(step=task_step_count, current_task=teacher_index)
                 self._signal_step_boundary_to_teacher(step=task_step_count, current_task=teacher_index)
+
+                if total_step_count % 500 == 0:
+                    current_time = time.time()
+                    self.logger.info("Time taken for last {} steps: {}".format(500, current_time - iter_time))
+                    iter_time = current_time
 
                 # checkpoint dataframe
                 if self.logfile_path and total_step_count % self.checkpoint_frequency == 0:
