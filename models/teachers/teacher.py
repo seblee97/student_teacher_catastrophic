@@ -57,8 +57,9 @@ class Teacher(Model):
             noise = self.noise_distribution.sample((y.shape[0],))
             y = y + noise
         if self.classification_output: # think about taking this into separate teacher class as below
-            sigmoid_y = F.sigmoid(y)
-            return (sigmoid_y > 0.5).type(torch.LongTensor).reshape(len(sigmoid_y),)
+            # threshold
+            tanh_y = F.tanh(y)
+            return (torch.abs(tanh_y) > 0.5).type(torch.LongTensor).reshape(len(tanh_y),)
         return y
 
 
