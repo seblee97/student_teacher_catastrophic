@@ -430,7 +430,7 @@ class StudentTeacher(Framework):
             self._signal_task_boundary_to_learner(new_task=teacher_index)
             self._signal_task_boundary_to_teacher(new_task=teacher_index)
 
-            while True:
+            while total_step_count < self.total_training_steps:
                 
                 if self.input_source == 'iid_gaussian':
                     batch_input = torch.randn(self.train_batch_size, self.input_dimension).to(self.device)
