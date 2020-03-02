@@ -2,7 +2,7 @@ data_path:                "../data/"
 
 training:
   test_batch_size:        10000
-  teachers:               [[4, 5], [4, 5]]
+  teachers:               [[0, 1], [4, 5]]
   rotations:              [[0, 0], [90, 90]]
   loss_function:          cross_entropy
   learning_rate:          0.001
