@@ -423,6 +423,9 @@ class StudentTeacher(Framework):
 
         iter_time = time.time()
 
+        # explicitly set model to training mode
+        self.student_network = self.student_network.train()
+
         while total_step_count < self.total_training_steps:
             
             if self.log_to_df:
@@ -472,10 +475,16 @@ class StudentTeacher(Framework):
                 if self.log_to_df:
                     self.logger_df.at[total_step_count, 'training_loss'] = float(loss)
                 
-
                 # test
                 if total_step_count % self.test_frequency == 0 and total_step_count != 0:
+
+                    # explicitly set model to evaluation mode
+                    self.student_network = self.student_network.eval()
+
                     latest_task_generalisation_error = self._perform_test_loop(teacher_index, task_step_count, total_step_count)
+
+                    # explicitly set model back to training mode
+                    self.student_network = self.student_network.train()
 
                 # overlap matrices
                 if total_step_count % self.overlap_frequency == 0 and total_step_count != 0:
