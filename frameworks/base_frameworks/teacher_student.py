@@ -50,12 +50,18 @@ class Framework(ABC):
             self.optimiser = optim.SGD(trainable_parameters, lr=self.learning_rate)
         
         # initialise loss function
-        if config.get(["training", "loss_function"]) == 'mse':
+        config_loss = config.get(["training", "loss_function"])
+
+        if config_loss == 'mse':
             self.loss_function = nn.MSELoss()
-        elif config.get(["training", "loss_function"]) == 'cross_entropy':
+        elif config_loss == 'cross_entropy':
             self.loss_function = nn.CrossEntropyLoss()
-        elif config.get(["training", "loss_function"]) == 'nll':
+        elif config_loss == 'nll':
             self.loss_function = nn.NLLLoss()
+        elif config_loss == 'l1':
+            self.loss_function = nn.L1Loss()
+        elif config_loss == 'smooth_l1':
+            self.loss_function = nn.SmoothL1Loss()
         else:
             raise NotImplementedError("{} is not currently supported, please use mse loss or cross_entropy for mnist".format(config.get("loss")))
 
