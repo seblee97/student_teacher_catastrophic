@@ -50,7 +50,7 @@ class ContinualStudent(Model):
             param.requires_grad = True
         self._current_teacher = task_index
 
-    def test_all_tasks(self, x: torch.Tensor):
+    def forward_all(self, x: torch.Tensor):
         for layer in self.layers:
             x = self.nonlinear_function(layer(x) / np.sqrt(self.input_dimension))
         task_outputs = [self.heads[t](x) for t in range(self.num_teachers)]
