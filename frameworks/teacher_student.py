@@ -116,7 +116,7 @@ class StudentTeacherRunner:
         else:
             raise ValueError("Input source type {} not recognised. Please use either iid_gaussian or mnist".format(self.input_source))
         
-        self.test_input_data = self.data_module.get_test_set()
+        self.test_input_data, self.test_data_labels = self.data_module.get_test_set() # labels will be None if using student-teacher networks
         self.test_teacher_outputs = self.teachers.forward_all(self.test_input_data)
         
     def _setup_logger(self, config: Dict):
