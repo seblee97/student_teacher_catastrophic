@@ -58,7 +58,7 @@ class BaseLogger(ABC):
         self._logger_df.append(pd.Series(name=row_label))
 
     def write_scalar_tb(self, tag: str, scalar: float, step: int, teacher_index=None):
-        if teacher_index:
+        if teacher_index is not None:
             self._teacher_writers[teacher_index].add_scalar(tag, scalar, step)
         else:
             self._writer.add_scalar(tag, scalar, step)
