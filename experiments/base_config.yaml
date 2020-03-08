@@ -12,7 +12,7 @@ task:
   learner_configuration:            continual                 # meta or continual - specifies whether student has separate heads for each teacher (continual) or not (meta)
   teacher_configuration:            overlapping               # 'noisy': each teacher has same initialisation, each with different levels of noise added, 'independent': all randomly initialised, 'drifting': all randomly initialised but drifting over time, 'overlapping': structured similarity in teacher weights
   num_teachers:                     2                         # number of teachers to use
-  loss_type:                        "regression"              # whether loss is classification or regression (whether we take sigmoid and sign of teacher output)
+  loss_type:                        regression              # whether loss is classification or regression (whether we take sigmoid and sign of teacher output)
 
 training:
   total_training_steps:             100000                    # total number of training steps to take
@@ -20,7 +20,7 @@ training:
   test_batch_size:                  50000                     # number of samples to use for generalisatio error
   learning_rate:                    5                         # learning rate for sgd update of student
   loss_function:                    mse                       # function to use for loss
-  input_source:                     iid_gaussian              # whether to have inputs drawn randomly or (e.g. from mnist)
+  input_source:                     iid_gaussian                     # whether to have inputs drawn randomly or (e.g. from mnist)
   pca_input:                        -1                        # number of principle components to reduce data to (no PCA if -1)                         
   scale_output_backward:            True                      # whether to add 1/N factor in lr of output layer  
   
@@ -30,7 +30,7 @@ testing:
   test_all_teachers:                True                      # whether to compute generalisation losses for all teachers or just one currently teaching
 
 model:
-  input_dimension:                  500                       # dimension of network input 
+  input_dimension:                  784                       # dimension of network input 
   student_hidden_layers:            [2]                       # dimension of hidden layers to be used in student network
   teacher_hidden_layers:            [1]                       # dimension of hidden layers to be used in teacher network(s)
   output_dimension:                 1                         # dimension of network output
