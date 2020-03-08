@@ -17,6 +17,19 @@ class ToFloat(object):
 
         return torch.Tensor(image).type(torch.FloatTensor)
 
+class Standardize(object):
+    """Normalise (for tensor) input[channel] = (input[channel] - mean[channel]) / std[channel]"""
+
+    def __init__(self, mean, std):
+        self.mean = mean 
+        self.std = std
+
+        self.nan_mask = torch.Tensor([1 if ch != 0 else 0 for ch in std])
+        self.std = torch.Tensor([ch if ch != 0 else 1 for ch in std])
+
+    def __call__(self, tensor):
+        return self.nan_mask * ((tensor - self.mean) / self.std)
+
 
 class ApplyPCA(object):
 
