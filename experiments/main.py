@@ -194,29 +194,7 @@ if __name__ == "__main__":
     if args.log_ext:
         log_path = '{}data_logger.csv'.format(checkpoint_path)
         student_teacher_parameters.set_property("logfile_path", log_path)
-
-    learner_configuration = student_teacher_parameters.get(["task", "learner_configuration"])
-
-    if teacher_configuration == 'noisy' and learner_configuration == 'meta':
-        student_teacher = frameworks.MetaNoisy(config=student_teacher_parameters)
-    elif teacher_configuration == 'independent' and learner_configuration == 'meta':
-        student_teacher = frameworks.MetaIndependent(config=student_teacher_parameters)
-    elif teacher_configuration == 'noisy' and learner_configuration == 'continual':
-        student_teacher = frameworks.ContinualNoisy(config=student_teacher_parameters)
-    elif teacher_configuration == 'independent' and learner_configuration == 'continual':
-        student_teacher = frameworks.ContinualIndependent(config=student_teacher_parameters)
-    elif teacher_configuration == 'drifting' and learner_configuration == 'continual':
-        student_teacher = frameworks.ContinualDrifting(config=student_teacher_parameters)
-    elif teacher_configuration == 'drifting' and learner_configuration == 'meta':
-        student_teacher = frameworks.MetaDrifting(config=student_teacher_parameters)
-    elif teacher_configuration == 'overlapping' and learner_configuration == 'continual':
-        student_teacher = frameworks.ContinualOverlapping(config=student_teacher_parameters)
-    elif teacher_configuration == 'overlapping' and learner_configuration == 'meta':
-        student_teacher = frameworks.MetaOverlapping(config=student_teacher_parameters)
-    elif teacher_configuration == 'mnist' and learner_configuration == 'continual':
-        student_teacher = frameworks.ContinualMNIST(config=student_teacher_parameters)
-    elif teacher_configuration == 'mnist' and learner_configuration == 'meta':
-        student_teacher = frameworks.MetaMNIST(config=student_teacher_parameters)
     
+    student_teacher = frameworks.StudentTeacherRunner(config=student_teacher_parameters)
     student_teacher.train()
     
