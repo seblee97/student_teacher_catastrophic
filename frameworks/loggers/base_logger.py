@@ -25,7 +25,7 @@ class _BaseLogger(ABC):
         self._teacher_writers = [SummaryWriter("{}/teacher_{}".format(self._checkpoint_path, t)) for t in range(self._num_teachers)]
 
         # initialise dataframe to log metrics
-        if self.log_to_df:
+        if self._log_to_df:
             self._logger_df = pd.DataFrame()
 
         # initialise logger
@@ -95,7 +95,7 @@ class _BaseLogger(ABC):
             for w, weight in enumerate(flattened_weights):
                 if self._verbose_tb:
                     self._writer.add_scalar('student_head_{}_weight_{}'.format(h, w), float(weight), step_count)
-                if self.log_to_df:
+                if self._log_to_df:
                     self._logger_df.at[step_count, 'student_head_{}_weight_{}'.format(h, w)] = float(weight)
 
     def _compute_overlap_matrices(self, student_network: nn.Module, teacher_networks: List[nn.Module], step_count: int) -> None:
@@ -106,10 +106,10 @@ class _BaseLogger(ABC):
         :param teacher_networks: list of teacher network modules
         :param step_count: current step of training
         """
-        for layer in range(len(self.student_hidden)):
+        for layer in range(len(self._student_hidden)):
             self._compute_layer_overlaps(layer=str(layer), student_network=student_network, teacher_networks=teacher_networks, head=None, step_count=step_count)
 
-        for head_index in range(self.num_teachers):
+        for head_index in range(self._num_teachers):
             self._compute_layer_overlaps(layer="output", student_network=student_network, teacher_networks=teacher_networks, head=head_index, step_count=step_count)
 
     @abstractmethod
