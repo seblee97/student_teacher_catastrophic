@@ -4,6 +4,8 @@ from typing import Dict, List
 
 class StudentMNISTLogger(_BaseLogger):
 
+    """logging class for when teachers are MNIST tasks"""
+
     def __init__(self, config: Dict):
         _BaseLogger.__init__(self, config)
 
