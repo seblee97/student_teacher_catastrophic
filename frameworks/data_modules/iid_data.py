@@ -11,7 +11,7 @@ class IIDData(_BaseData):
     def __init__(self, config):
         _BaseData.__init__(self, config)
 
-    def get_test_set(self) -> List[torch.Tensor, None]:
+    def get_test_set(self) -> (torch.Tensor, None):
         """
         returns fixed test data set (data and labels)
         
