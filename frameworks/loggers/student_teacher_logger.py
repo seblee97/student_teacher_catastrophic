@@ -8,6 +8,8 @@ from utils import visualise_matrix
 
 class StudentTeacherLogger(_BaseLogger):
 
+    """logging class for when teachers are initialised networks, regardless of input (standard student-teacher setup)"""
+
     def __init__(self, config: Dict):
         _BaseLogger.__init__(self, config)
 
