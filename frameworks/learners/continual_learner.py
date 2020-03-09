@@ -1,23 +1,19 @@
-from models import Teacher, MetaStudent, ContinualStudent, MNISTContinualStudent, MNISTMetaStudent
+from models import ContinualStudent
 
-from .base_learner import BaseLearner
+from .base_learner import _BaseLearner
 
-import copy
+from typing import Dict
 
-import torch
-
-class ContinualLearner(BaseLearner):
+class ContinualLearner(_BaseLearner):
 
     def __init__(self, config):
-        # super(ContinualLearner, self).__init__(config)
-        BaseLearner.__init__(self, config)
+        _BaseLearner.__init__(self, config)
 
-    def _setup_student(self, config):
+    def _setup_student(self, config: Dict) -> None:
         """Instantiate student"""
-        # initialise student network
-        self._student_network = ContinualStudent(config=config).to(self.device)
+        self._student_network = ContinualStudent(config=config).to(self._device)
 
-    def signal_task_boundary_to_learner(self, new_task: int):
+    def signal_task_boundary_to_learner(self, new_task: int) -> None:
         self._student_network.set_task(new_task)
 
     def signal_step_boundary_to_learner(self, step: int, current_task: int):
