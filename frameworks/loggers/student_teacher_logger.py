@@ -4,13 +4,22 @@ from typing import Dict, List
 
 import itertools
 
+from utils import visualise_matrix
+
 class StudentTeacherLogger(BaseLogger):
 
     def __init__(self, config: Dict):
         BaseLogger.__init__(self, config)
 
     def _compute_layer_overlaps(self, layer: str, student_network, teacher_networks: List, head: int, step_count: int):
+        """
+        computes overlap of given layer of student_network and teacher networks.
 
+        :param layer: index of layer to compute overlap matrices for
+        :param student_network: student_network_module
+        :param teacher_networks: list of teacher network modules
+        :param step_count: current step of training
+        """
         # extract layer weights
         if head is None:
             student_layer = student_network.state_dict()['layers.{}.weight'.format(layer)].data
@@ -66,10 +75,10 @@ class StudentTeacherLogger(BaseLogger):
 
         # log visualisations
         if self.verbose_tb:
-            self.writer.add_figure("layer_{}_student_self_overlap".format(str(layer)), student_self_fig, step_count)
+            self._writer.add_figure("layer_{}_student_self_overlap".format(str(layer)), student_self_fig, step_count)
             for t, student_teacher_fig in enumerate(student_teacher_figs):
-                self.writer.add_figure("layer_{}_student_teacher_overlaps/teacher_{}".format(layer, t), student_teacher_fig, step_count)
+                self._writer.add_figure("layer_{}_student_teacher_overlaps/teacher_{}".format(layer, t), student_teacher_fig, step_count)
             for t, teacher_self_fig in enumerate(teacher_self_figs):
-                self.writer.add_figure("layer_{}_teacher_self_overlaps/teacher_{}".format(layer, t), teacher_self_fig, step_count)
+                self._writer.add_figure("layer_{}_teacher_self_overlaps/teacher_{}".format(layer, t), teacher_self_fig, step_count)
             for (i, j), teacher_cross_fig in list(teacher_cross_figs.items()):
-                self.writer.add_figure("layer_{}_teacher_cross_overlaps/teacher{}x{}".format(layer, i, j), teacher_cross_fig, step_count)
+                self._writer.add_figure("layer_{}_teacher_cross_overlaps/teacher{}x{}".format(layer, i, j), teacher_cross_fig, step_count)
