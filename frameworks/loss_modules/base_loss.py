@@ -3,15 +3,17 @@ from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
 
+from typing import Dict
+
 class _BaseLoss(ABC):
 
-    def __init__(self, config):
+    def __init__(self, config: Dict):
         
         config_loss = config.get(["training", "loss_function"])
         self._setup_loss_function(config_loss)
 
-    def _setup_loss_function(self, loss_name: str):
-
+    def _setup_loss_function(self, loss_name: str) -> None:
+        """instantiate torch loss function"""
         if loss_name == 'mse':
             self.loss_function = nn.MSELoss()
         elif loss_name == 'cross_entropy':
@@ -24,10 +26,6 @@ class _BaseLoss(ABC):
             self.loss_function = nn.SmoothL1Loss()
         else:
             raise NotImplementedError("{} is not currently supported, please use mse loss or cross_entropy for mnist".format(loss_name))
-
-    # @abstractmethod
-    # def compute_loss(self):
-    #     raise NotImplementedError
 
     def compute_loss(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """
