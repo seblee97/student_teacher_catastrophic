@@ -6,6 +6,8 @@ from typing import Dict
 
 class MetaLearner(_BaseLearner):
 
+    """Orchestrates students in meta learning setting (one head only)"""
+
     def __init__(self, config):
         _BaseLearner.__init__(self, config)
 
