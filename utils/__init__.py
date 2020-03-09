@@ -1,2 +1,2 @@
 from .parameters import StudentTeacherParameters
-from .custom_functions import visualise_matrix, load_mnist_data, get_binary_classification_datasets, load_mnist_data_as_dataloader
+from .custom_functions import visualise_matrix, load_mnist_data, get_binary_classification_datasets, load_mnist_data_as_dataloader, get_pca
