@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 from typing import Dict
 
+import torch
+
 class _BaseData(ABC):
 
     """Class for handling data"""
@@ -15,12 +17,12 @@ class _BaseData(ABC):
         self._device = config.get("device")
     
     @abstractmethod
-    def get_test_set(self):
+    def get_test_set(self) -> List[torch.Tensor, torch.Tensor]:
         """returns fixed test data set (data and labels)"""
         raise NotImplementedError("Base class method")
 
     @abstractmethod
-    def get_batch(self):
+    def get_batch(self) -> torch.Tensor:
         """returns batch of training data"""
         raise NotImplementedError("Base class method")
                 
