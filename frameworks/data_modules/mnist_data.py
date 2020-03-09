@@ -50,11 +50,11 @@ class MNISTData(_BaseData):
 
         transform = torchvision.transforms.Compose(transform_list)
 
-        if self.pca_input > 0:
+        if self._pca_input > 0:
             # note always using train data to generate pca
             mnist_data = torchvision.datasets.MNIST(full_data_path, transform=transform, train=True)
             raw_data = mnist_data.train_data.reshape((len(mnist_data), -1))
-            pca_output = get_pca(raw_data, num_principal_components=self.pca_input)
+            pca_output = get_pca(raw_data, num_principal_components=self._pca_input)
 
             # add application of pca to transforms
             pca_transform = custom_torch_transforms.ApplyPCA(pca_output)
@@ -70,7 +70,7 @@ class MNISTData(_BaseData):
 
         self.test_dataloader = torch.utils.data.DataLoader(self.mnist_test_data, batch_size=self._test_batch_size)
 
-    def get_test_set(self) -> List[torch.Tensor, torch.Tensor]:
+    def get_test_set(self) -> (torch.Tensor, torch.Tensor):
         """
         returns fixed test data set (data and labels)
         
