@@ -17,7 +17,7 @@ class _BaseData(ABC):
         self._device = config.get("device")
     
     @abstractmethod
-    def get_test_set(self) -> List[torch.Tensor, torch.Tensor]:
+    def get_test_set(self) -> (torch.Tensor, torch.Tensor):
         """returns fixed test data set (data and labels)"""
         raise NotImplementedError("Base class method")
 
