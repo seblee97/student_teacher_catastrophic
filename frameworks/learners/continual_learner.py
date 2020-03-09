@@ -6,6 +6,8 @@ from typing import Dict
 
 class ContinualLearner(_BaseLearner):
 
+    """Orchestrates students in continual learning setting (one head per task)"""
+
     def __init__(self, config):
         _BaseLearner.__init__(self, config)
 
