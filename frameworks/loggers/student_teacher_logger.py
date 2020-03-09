@@ -1,4 +1,4 @@
-from .base_logger import BaseLogger
+from .base_logger import _BaseLogger
 
 from typing import Dict, List
 
@@ -6,10 +6,10 @@ import itertools
 
 from utils import visualise_matrix
 
-class StudentTeacherLogger(BaseLogger):
+class StudentTeacherLogger(_BaseLogger):
 
     def __init__(self, config: Dict):
-        BaseLogger.__init__(self, config)
+        _BaseLogger.__init__(self, config)
 
     def _compute_layer_overlaps(self, layer: str, student_network, teacher_networks: List, head: int, step_count: int):
         """
