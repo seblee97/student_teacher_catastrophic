@@ -2,7 +2,7 @@ from .base_data_module import _BaseData
 
 import torch
 
-from typing import List
+from typing import List, Dict
 
 class IIDData(_BaseData):
 
@@ -20,7 +20,10 @@ class IIDData(_BaseData):
         test_input_data = torch.randn(self._test_batch_size, self._input_dimension).to(self._device)
         return test_input_data, None 
 
-    def get_batch(self) -> torch.Tensor:
+    def get_batch(self) -> Dict[str, torch.Tensor]:
         """returns batch of training data"""
         batch = torch.randn(self._train_batch_size, self._input_dimension).to(self._device)
-        return batch
+        return {'x': batch}
+
+    def signal_task_boundary_to_data_generator(self, new_task: int) -> None:
+        pass
