@@ -1,1 +1,2 @@
 from .overlapping_teachers import OverlappingTeachers
+from .dummy_mnist_teachers import DummyMNISTTeachers
