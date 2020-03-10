@@ -16,10 +16,10 @@ from utils import visualise_matrix, get_binary_classification_datasets, load_mni
 
 from abc import ABC, abstractmethod
 
-from .learners import ContinualLearner
-from .teachers import OverlappingTeachers
+from .learners import ContinualLearner, MetaLearner
+from .teachers import OverlappingTeachers, DummyMNISTTeachers
 from .loggers import StudentMNISTLogger, StudentTeacherLogger
-from .data_modules import MNISTData, IIDData
+from .data_modules import IIDData, MNISTStreamData, PureMNISTData
 from .loss_modules import RegressionLoss, ClassificationLoss
 
 class StudentTeacherRunner:
@@ -95,16 +95,16 @@ class StudentTeacherRunner:
     def _setup_learner(self, config: Dict):
         if self.learner_configuration == "continual":
             self.learner = ContinualLearner(config=config)
+        elif self.learner_configuration == "meta":
+            self.learner = MetaLearner(config=config)
         else:
             raise ValueError("Learner configuration {} not recognised".format(self.learner_configuration))
-        # elif self.learner_configuration == "meta":
-        #     self.learner = MetaLearner(config=config)
 
     def _setup_teachers(self, config: Dict):
         if self.teacher_configuration == "overlapping":
             self.teachers = OverlappingTeachers(config=config)
         elif self.teacher_configuration == "mnist":
-            self.teachers = MNISTTeachers(config=config)
+            self.teachers = DummyMNISTTeachers(config=config) # 'teachers' are MNIST images with labels - provided by data module
         else:
             raise NotImplementedError("Teacher configuration {} not recognised".format(self.teacher_configuration))
 
@@ -112,7 +112,7 @@ class StudentTeacherRunner:
         if self.input_source == 'iid_gaussian':
             self.data_module = IIDData(config)
         elif self.input_source == 'mnist':
-            self.data_module = MNISTData(config)
+            self.data_module = MNISTStreamData(config)
         else:
             raise ValueError("Input source type {} not recognised. Please use either iid_gaussian or mnist".format(self.input_source))
         
@@ -190,12 +190,20 @@ class StudentTeacherRunner:
             # alert learner/teacher(s) of task change e.g. change output head of student to relevant task (if in continual setting)
             self.learner.signal_task_boundary_to_learner(new_task=teacher_index)
             self.teachers.signal_task_boundary_to_teacher(new_task=teacher_index)
+            self.data_module.signal_task_boundary_to_data_generator(new_task=teacher_index)
 
             while total_step_count < self.total_training_steps:
 
-                batch_input = self.data_module.get_batch()
+                batch = self.data_module.get_batch() # returns dictionary 
 
-                teacher_output = self.teachers.forward(teacher_index, batch_input)
+                batch_input = batch.get('x')
+                batch_labels = batch.get('y') # returns None unless using pure MNIST teachers
+
+                if batch_labels:
+                    teacher_output = batch_labels
+                else:
+                    teacher_output = self.teachers.forward(teacher_index, batch_input)
+      
                 student_output = self.learner.forward(batch_input)
 
                 if self.verbose and task_step_count % 1000 == 0:
