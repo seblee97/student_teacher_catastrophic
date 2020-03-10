@@ -22,7 +22,11 @@ class _BaseData(ABC):
         raise NotImplementedError("Base class method")
 
     @abstractmethod
-    def get_batch(self) -> torch.Tensor:
-        """returns batch of training data"""
+    def get_batch(self) -> Dict[str, torch.Tensor]:
+        """returns batch of training data (input data and label if relevant)"""
         raise NotImplementedError("Base class method")
-                
+
+    @abstractmethod        
+    def signal_task_boundary_to_data_generator(self, new_task: int) -> None:
+        """for use in cases where data generation changes with task (e.g. pure MNIST)"""
+        raise NotImplementedError("Base class method")
