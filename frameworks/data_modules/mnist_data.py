@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 from .base_data_module import _BaseData
 
 from typing import Dict
@@ -9,7 +11,7 @@ import torchvision
 
 from utils import custom_torch_transforms, get_pca
 
-class MNISTData(_BaseData):
+class _MNISTData(_BaseData, ABC):
 
     """Class for dealing with data generated from MNIST images"""
 
@@ -23,8 +25,19 @@ class MNISTData(_BaseData):
 
     def _load_mnist_data(self) -> None:
 
+        self._preprocess_data()
+        self._generate_dataloaders()
+
+    @abstractmethod
+    def _generate_dataloaders(self) -> None:
+        raise NotImplementedError("Base class method")
+
+    def _preprocess_data(self) -> None:
+
+        # TODO: Docs
+
         file_path = os.path.dirname(os.path.realpath(__file__))
-        full_data_path = os.path.join(file_path, self._data_path)
+        self._full_data_path = os.path.join(file_path, self._data_path)
 
         # transforms to add to data
         transform_list = [
@@ -36,11 +49,23 @@ class MNISTData(_BaseData):
 
         base_transform = torchvision.transforms.Compose(transform_list)
 
-        # load dataset to compute channel statistics
-        mnist_train_data = torchvision.datasets.MNIST(full_data_path, transform=base_transform, train=True)
-        mnist_train_dataloader = torch.utils.data.DataLoader(mnist_train_data, batch_size=60000)
+        if self._pca_input > 0:
+            # note always using train data to generate pca
+            mnist_data = torchvision.datasets.MNIST(self._full_data_path, transform=base_transform, train=True)
+            raw_data = next(iter(mnist_data))[0].reshape((len(mnist_data), -1))
+            pca_output = get_pca(raw_data, num_principal_components=self._pca_input)
 
-        # evaluate channel mean and std
+            # add application of pca to transforms
+            pca_transform = custom_torch_transforms.ApplyPCA(pca_output)
+
+            transform_list.append(pca_transform)
+            base_transform = torchvision.transforms.Compose(transform_list)
+
+        # load dataset to compute channel statistics
+        mnist_train_data = torchvision.datasets.MNIST(self._full_data_path, transform=base_transform, train=True)
+        mnist_train_dataloader = torch.utils.data.DataLoader(mnist_train_data, batch_size=len(mnist_train_data))
+
+        # evaluate channel mean and std (note MNIST small enough to load all in memory rather than computing over smaller batches)
         data_mu = torch.mean(next(iter(mnist_train_dataloader))[0], axis=0)
         data_sigma = torch.std(next(iter(mnist_train_dataloader))[0], axis=0)
 
@@ -50,25 +75,7 @@ class MNISTData(_BaseData):
 
         transform = torchvision.transforms.Compose(transform_list)
 
-        if self._pca_input > 0:
-            # note always using train data to generate pca
-            mnist_data = torchvision.datasets.MNIST(full_data_path, transform=transform, train=True)
-            raw_data = mnist_data.train_data.reshape((len(mnist_data), -1))
-            pca_output = get_pca(raw_data, num_principal_components=self._pca_input)
-
-            # add application of pca to transforms
-            pca_transform = custom_torch_transforms.ApplyPCA(pca_output)
-
-            transform_list.append(pca_transform)
-            transform = torchvision.transforms.Compose(transform_list)
-
-        self.mnist_train_data = torchvision.datasets.MNIST(full_data_path, transform=transform, train=True)
-        self.mnist_test_data = torchvision.datasets.MNIST(full_data_path, transform=transform, train=False)
-
-        self.training_dataloader = torch.utils.data.DataLoader(self.mnist_train_data, batch_size=self._train_batch_size, shuffle=True)
-        self.training_data_iterator = iter(self.training_dataloader)
-
-        self.test_dataloader = torch.utils.data.DataLoader(self.mnist_test_data, batch_size=self._test_batch_size)
+        self.transform = transform
 
     def get_test_set(self) -> (torch.Tensor, torch.Tensor):
         """
@@ -80,16 +87,11 @@ class MNISTData(_BaseData):
         data, labels = next(iter(self.test_dataloader))
         return data, labels
 
-    def get_batch(self) -> torch.Tensor:
-        """
-        returns batch of training data. Retrieves next batch from dataloader iterator.
-        If iterator is empty, it is reset.
+    @abstractmethod
+    def get_batch(self) -> Dict[str, torch.Tensor]:
+        raise NotImplementedError("Base class method")
 
-        return batch_input:  
-        """
-        try:
-            batch_input = next(self.training_data_iterator)[0]
-        except:
-            self.training_data_iterator = iter(self.training_dataloader)
-            batch_input = next(self.training_data_iterator)[0]
-        return batch_input
+    @abstractmethod        
+    def signal_task_boundary_to_data_generator(self, new_task: int) -> None:
+        """for use in cases where data generation changes with task (e.g. pure MNIST)"""
+        raise NotImplementedError("Base class method")
