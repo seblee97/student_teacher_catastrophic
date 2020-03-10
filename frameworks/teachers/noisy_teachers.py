@@ -1,15 +1,15 @@
-from models import Teacher, MetaStudent, ContinualStudent
+from models import Teacher
 
-from frameworks import StudentTeacher
+from .base_teacher import _BaseTeacher
 
-import copy
+from typing import Dict
 
-class NoisyTeachers(StudentTeacher):
+class NoisyTeachers(_BaseTeacher):
 
-    def __init__(self, config):
-        StudentTeacher.__init__(self, config)
+    def __init__(self, config: Dict):
+        _BaseTeacher.__init__(self, config)
 
-    def _setup_teachers(self, config):
+    def _setup_teachers(self, config: Dict):
         """
         Instantiate all teachers
 
@@ -27,6 +27,7 @@ class NoisyTeachers(StudentTeacher):
         base_teacher = Teacher(config=config, index=0).to(self.device)
         base_teacher.freeze_weights()
         base_teacher_output_std = base_teacher.get_output_statistics()
+
         for t in range(self.num_teachers):
             teacher = copy.deepcopy(base_teacher)
             if teacher_noises[t] != 0:
