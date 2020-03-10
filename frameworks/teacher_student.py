@@ -1,20 +1,12 @@
 import numpy as np 
 import copy
-import itertools
-import pandas as pd
 import time
 import logging
 
 import torch 
-import torch.nn as nn 
-import torch.nn.functional as F 
 import torch.optim as optim
 
 from typing import List, Tuple, Generator, Dict
-
-from utils import visualise_matrix, get_binary_classification_datasets, load_mnist_data, load_mnist_data_as_dataloader
-
-from abc import ABC, abstractmethod
 
 from .learners import ContinualLearner, MetaLearner
 from .teachers import OverlappingTeachers, DummyMNISTTeachers
@@ -382,102 +374,3 @@ class StudentTeacherRunner:
                 return_dict['accuracy'] = accuracies
 
             return return_dict
-
-
-# class MNIST(Framework):
-
-#     def __init__(self, config: Dict) -> None:
-#         Framework.__init__(self, config)
-
-#     def train(self) -> None:
-
-#         training_losses = []
-#         total_step_count = 0
-#         steps_per_task = []
-
-#         iter_time = time.time()
-
-#         while total_step_count < self.total_training_steps:
-            
-#             teacher_index = next(self.curriculum)
-#             task_step_count = 0
-#             latest_task_generalisation_error = np.inf
-            
-#             # alert learner/teacher(s) of task change e.g. change output head of student to relevant task (if in continual setting)
-#             self._signal_task_boundary_to_learner(new_task=teacher_index)
-#             self._signal_task_boundary_to_teacher(new_task=teacher_index)
-
-#             while True:
-
-#                 training_batch = []
-                
-#                 for _ in range(self.train_batch_size):
-#                     if len(self.teachers[teacher_index]) == 0:
-#                         task_data = get_binary_classification_datasets(self.mnist_train_x, self.mnist_train_y, self.mnist_teacher_classes[teacher_index], rotations=self.rotations[teacher_index])
-#                         self.teachers[teacher_index] = task_data
-#                     training_data_point = self.teachers[teacher_index].pop()
-#                     training_batch.append(training_data_point)
-
-#                 image_input = torch.stack([item[0] for item in training_batch]).to(self.device)
-
-#                 teacher_output = torch.flatten(torch.stack([item[1] for item in training_batch]).to(self.device))
-#                 student_output = self.student_network(image_input)  
-
-#                 if self.verbose and task_step_count % 1000 == 0:
-#                     self.logger.info("Training step {}".format(task_step_count))
-
-#                 import pdb; pdb.set_trace()
-
-#                 # training iteration
-#                 self.optimiser.zero_grad()
-#                 loss = self._compute_loss(student_output, teacher_output)
-#                 loss.backward()
-#                 self.optimiser.step()
-#                 training_losses.append(float(loss))
-
-#                 # log training loss
-#                 self.writer.add_scalar('training_loss', float(loss), total_step_count)
-#                 if self.log_to_df:
-#                     self.logger_df.at[total_step_count, 'training_loss'] = float(loss)
-
-#                 # test
-#                 if total_step_count % self.test_frequency == 0 and total_step_count != 0:
-#                     latest_task_generalisation_error = self._perform_test_loop(teacher_index, task_step_count, total_step_count)
-
-#                 total_step_count += 1
-#                 task_step_count += 1
-
-#                 # overlap matrices
-#                 if total_step_count % self.overlap_frequency == 0 and total_step_count != 0:
-#                     self._compute_overlap_matrices(step_count=total_step_count)
-
-#                 total_step_count += 1
-#                 task_step_count += 1
-
-#                 # output layer weights
-#                 self._log_output_weights(step_count=total_step_count)
-
-#                 # alert learner/teacher(s) of step e.g. to drift teacher
-#                 self._signal_step_boundary_to_learner(step=task_step_count, current_task=teacher_index)
-#                 self._signal_step_boundary_to_teacher(step=task_step_count, current_task=teacher_index)
-
-#                 if total_step_count % 500 == 0:
-#                     current_time = time.time()
-#                     self.logger.info("Time taken for last {} steps: {}".format(500, current_time - iter_time))
-#                     iter_time = current_time
-
-#                 # checkpoint dataframe
-#                 if self.logfile_path and total_step_count % self.checkpoint_frequency == 0:
-#                     self._checkpoint_df(step=total_step_count)
-
-#                 if self._switch_task(step=task_step_count, generalisation_error=latest_task_generalisation_error):
-#                     self.writer.add_scalar('steps_per_task', task_step_count, total_step_count)
-#                     if self.log_to_df:
-#                         self.logger_df.at[total_step_count, 'steps_per_task'] = task_step_count
-#                     steps_per_task.append(task_step_count)
-#                     break
-
-#     def extract_parameters(self, config: Dict) -> None:
-#         self.rotations = config.get(["training", "rotations"])
-
-   
