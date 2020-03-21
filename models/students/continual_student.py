@@ -1,4 +1,4 @@
-from models.base_network import Model
+from .base_student import _BaseStudent
 
 import torch.nn as nn
 import torch
@@ -8,21 +8,13 @@ import numpy as np
 
 from typing import Dict, List
 
-class ContinualStudent(Model):
+class ContinualStudent(_BaseStudent):
 
     def __init__(self, config: Dict) -> None:
 
-        Model.__init__(self, config=config, model_type='student')
+        _BaseStudent.__init__(self, config=config)
+
         self._current_teacher = None
-        
-        if config.get(["task", "loss_type"]) == "classification":
-            self.classification_output = True
-        elif config.get(["task", "loss_type"]) == 'regression':
-            self.classification_output = False
-        elif config.get(["task", "loss_type"]) == 'not_applicable':
-            self.classification_output = False
-        else:
-            raise ValueError("Unknown loss type given in base config")
 
     def _construct_output_layers(self):
         # create one head per teacher
@@ -55,45 +47,14 @@ class ContinualStudent(Model):
             x = self.nonlinear_function(layer(x) / np.sqrt(self.input_dimension))
         task_outputs = [self.heads[t](x) for t in range(self.num_teachers)]
         if self.classification_output:
-            sigmoid_outputs = [F.sigmoid(task_output) for task_output in task_outputs]
-            negative_class_probabilities = [1 - sigmoid_output for sigmoid_output in sigmoid_outputs]
-            log_softmax = [torch.log(torch.cat((neg_prob, sigmoid_output), axis=1)) for 
-                    (neg_prob, sigmoid_output) in zip(negative_class_probabilities, sigmoid_outputs)]
-            return log_softmax
+            return [self._threshold(t) for t in task_outputs]
         return task_outputs
 
-    def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
+    def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
         y = self.heads[self._current_teacher](x)
-        if self.classification_output:
-            sigmoid_y = F.sigmoid(y)
-            negative_class_probabilities = 1 - sigmoid_y
-            log_softmax = torch.log(torch.cat((negative_class_probabilities, sigmoid_y), axis=1))
-            return log_softmax
         return y
 
     def _get_head_weights(self) -> List[torch.Tensor]:
         # extract weights of output layer. Multi-headed for continual setting => one set per teacher
         head_weights = [self.state_dict()['heads.{}.weight'.format(h)] for h in range(self.num_teachers)] # could use self.heads directly
         return head_weights
-
-class MNISTContinualStudent(Model):
-
-    def __init__(self, config: Dict) -> None:
-
-        Model.__init__(self, config=config, model_type='student')
-        self._current_teacher = None
-
-    def _construct_output_layers(self):
-        raise NotImplementedError
-
-    def set_task(self, task_index: int):
-        raise NotImplementedError
-
-    def test_all_tasks(self, x: torch.Tensor):
-        raise NotImplementedError
-
-    def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError
-
-    def _get_head_weights(self):
-        raise NotImplementedError
