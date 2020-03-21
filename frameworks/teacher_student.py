@@ -48,35 +48,22 @@ class StudentTeacherRunner:
         Method to extract relevant parameters from config and make them attributes of this class
         """
         self.verbose = config.get("verbose")
-        self.verbose_tb = config.get("verbose_tb")
-        self.checkpoint_path = config.get("checkpoint_path")
-        self.device = config.get("device")
         self.logfile_path = config.get("logfile_path")
         self.checkpoint_frequency = config.get("checkpoint_frequency")
         self.log_to_df = config.get("log_to_df")
 
         self.total_training_steps = config.get(["training", "total_training_steps"])
-
-        self.input_dimension = config.get(["model", "input_dimension"])
-        self.output_dimension = config.get(["model", "output_dimension"])
-        self.soft_committee = config.get(["model", "soft_committee"])
-        self.student_hidden = config.get(["model", "student_hidden_layers"])
-
-        self.train_batch_size = config.get(["training", "train_batch_size"])
-        self.test_batch_size = config.get(["training", "test_batch_size"])
         self.learning_rate = config.get(["training", "learning_rate"])
-        self.scale_output_backward = config.get(["training", "scale_output_backward"])
-
-        self.test_all_teachers = config.get(["testing", "test_all_teachers"])
-        self.test_frequency = config.get(["testing", "test_frequency"])
-        self.overlap_frequency = config.get(["testing", "overlap_frequency"])
 
         self.num_teachers = config.get(["task", "num_teachers"])
-        self.label_task_bounaries = config.get(["task", "label_task_boundaries"])
         self.learner_configuration = config.get(["task", "learner_configuration"])
         self.teacher_configuration = config.get(["task", "teacher_configuration"])
         self.loss_type = config.get(["task", "loss_type"])
 
+        self.test_frequency = config.get(["testing", "test_frequency"])
+        self.overlap_frequency = config.get(["testing", "overlap_frequency"])
+
+        self.input_dimension = config.get(["model", "input_dimension"])
         self.input_source = config.get(["training", "input_source"])
         self.pca_input = config.get(["training", "pca_input"])
 
