@@ -1,14 +1,12 @@
-from models import Teacher
-
-from .base_teacher import _BaseTeacher
+from .base_teachers import _BaseTeachers
 
 import torch.optim as optim
 
-class AdversarialTeachers(_BaseTeacher):
+class AdversarialTeachers(_BaseTeachers):
 
     def __init__(self, config):
         raise NotImplementedError("Unsure how to supervise teacher i.e. should it know about scores from student and be trained to maximise student error?")
-        _BaseTeacher.__init__(self, config)
+        _BaseTeachers.__init__(self, config)
 
         trainable_parameters = [filter(lambda param: param.requires_grad, teacher.parameters()) for teacher in self._teachers]
         self.teacher_optimisers = [optim.SGD(teacher_parameters, lr=self.learning_rate) for teacher_parameters in trainable_parameters]
@@ -25,7 +23,7 @@ class AdversarialTeachers(_BaseTeacher):
 
         self.teachers = []
         for t in range(self._num_teachers):
-            teacher = Teacher(config=config, index=t).to(self._device)
+            teacher = self._init_teacher(config=config, index=t)
             if teacher_noises[t] != 0:
                 teacher.set_noise_distribution(mean=0, std=teacher_noises[t])
             self.teachers.append(teacher)
