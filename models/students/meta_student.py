@@ -1,4 +1,4 @@
-from models.base_network import Model
+from .base_student import _BaseStudent
 
 import torch.nn as nn
 import torch
@@ -8,18 +8,11 @@ import numpy as np
 
 from typing import Dict
 
-class MetaStudent(Model):
+class MetaStudent(_BaseStudent):
 
     def __init__(self, config: Dict) -> None:
 
-        Model.__init__(self, config=config, model_type='student')
-
-        if config.get(["task", "loss_type"]) == "classification":
-            self.classification_output = True
-        elif config.get(["task", "loss_type"]) == 'regression':
-            self.classification_output = False
-        else:
-            raise ValueError("Unknown loss type given in base config")
+        _BaseStudent.__init__(self, config=config)
 
     def _construct_output_layers(self):
 
@@ -35,44 +28,18 @@ class MetaStudent(Model):
                 param.requires_grad = False
 
     def set_task(self, task_index: int):
-        self._current_teacher = task_index
+        pass
 
-    def test_all_tasks(self, x: torch.Tensor):
+    def forward_all(self, x: torch.Tensor):
         for layer in self.layers:
             x = self.nonlinear_function(layer(x) / np.sqrt(self.input_dimension))
         task_outputs = self._output_forward(x)
         return task_outputs
 
-    def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
+    def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
         y = self.output_layer(x)
-        if self.classification_output:
-            sigmoid_y = F.sigmoid(y)
-            negative_class_probabilities = 1 - sigmoid_y
-            log_softmax = torch.log(torch.cat((negative_class_probabilities, sigmoid_y), axis=1))
-            return log_softmax
         return y
 
     def _get_head_weights(self):
         import pdb; pdb.set_trace()
-        raise NotImplementedError
-
-class MNISTMetaStudent(Model):
-
-    def __init__(self, config: Dict) -> None:
-
-        Model.__init__(self, config=config, model_type='student')
-
-    def _construct_output_layers(self):
-        raise NotImplementedError
-
-    def set_task(self, task_index: int):
-        raise NotImplementedError
-
-    def test_all_tasks(self, x: torch.Tensor):
-        raise NotImplementedError
-
-    def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError
-
-    def _get_head_weights(self):
         raise NotImplementedError
