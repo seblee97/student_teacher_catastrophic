@@ -5,12 +5,16 @@ import torch.nn as nn
 
 from typing import Dict, List
 
-class _BaseTeacher(ABC):
+from models import ClassificationTeacher, RegressionTeacher
+
+class _BaseTeachers(ABC):
 
     def __init__(self, config: Dict):
 
         self._num_teachers = config.get(["task", "num_teachers"])
         self._device = config.get("device")
+
+        self._loss_type = config.get(["task", "loss_type"])
 
         self._setup_teachers(config=config)
 
@@ -18,6 +22,12 @@ class _BaseTeacher(ABC):
     def _setup_teachers(self, config: Dict) -> None:
         """instantiate teacher network(s)"""
         raise NotImplementedError("Base class method")
+
+    def _init_teacher(self, config: Dict, index: int):
+        if self._loss_type == "classification":
+            return ClassificationTeacher(config=config, index=index).to(self._device)
+        elif self._loss_type == "regression":
+            return RegressionTeacher(config=config, index=index).to(self._device)
 
     def forward(self, teacher_index: int, x: torch.Tensor) -> torch.Tensor:
         """call to current teacher forward"""
