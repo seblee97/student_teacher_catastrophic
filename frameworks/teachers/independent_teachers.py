@@ -1,13 +1,11 @@
-from models import Teacher
-
-from .base_teacher import _BaseTeacher
+from .base_teachers import _BaseTeachers
 
 from typing import Dict
 
-class IndependentTeachers(_BaseTeacher):
+class IndependentTeachers(_BaseTeachers):
 
     def __init__(self, config: Dict):
-        _BaseTeacher.__init__(self, config)
+        _BaseTeachers.__init__(self, config)
 
     def _setup_teachers(self, config: Dict) -> None:
         """Instantiate all teachers"""
@@ -22,7 +20,7 @@ class IndependentTeachers(_BaseTeacher):
 
         self._teachers = []
         for t in range(self._num_teachers):
-            teacher = Teacher(config=config, index=t).to(self._device)
+            teacher = self._init_teacher(config=config, index=t)
             teacher.freeze_weights()
             if teacher_noises[t] != 0:
                 teacher_output_std = teacher.get_output_statistics()
