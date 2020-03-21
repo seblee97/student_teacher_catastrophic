@@ -1,13 +1,11 @@
-from models import Teacher
-
-from .base_teacher import _BaseTeacher
+from .base_teachers import _BaseTeachers
 
 from typing import Dict
 
-class NoisyTeachers(_BaseTeacher):
+class NoisyTeachers(_BaseTeachers):
 
     def __init__(self, config: Dict):
-        _BaseTeacher.__init__(self, config)
+        _BaseTeachers.__init__(self, config)
 
     def _setup_teachers(self, config: Dict):
         """
@@ -24,7 +22,7 @@ class NoisyTeachers(_BaseTeacher):
         "Provide one noise for each teacher. {} noises given, {} teachers specified".format(len(teacher_noises), self.num_teachers)
 
         self.teachers = []
-        base_teacher = Teacher(config=config, index=0).to(self.device)
+        base_teacher = self._init_teacher(config=config, index=0)
         base_teacher.freeze_weights()
         base_teacher_output_std = base_teacher.get_output_statistics()
 
