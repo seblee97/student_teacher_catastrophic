@@ -2,6 +2,7 @@ import numpy as np
 import copy
 import time
 import logging
+import itertools
 
 import torch 
 import torch.optim as optim
@@ -101,15 +102,22 @@ class StudentTeacherRunner:
             raise NotImplementedError("Teacher configuration {} not recognised".format(self.teacher_configuration))
 
     def _setup_data(self, config: Dict):
-        if self.input_source == 'iid_gaussian':
-            self.data_module = IIDData(config)
-        elif self.input_source == 'mnist':
-            self.data_module = MNISTStreamData(config)
+
+        if self.teacher_configuration == "mnist":
+            self.data_module = PureMNISTData(config)
+
         else:
-            raise ValueError("Input source type {} not recognised. Please use either iid_gaussian or mnist".format(self.input_source))
+            if self.input_source == 'iid_gaussian':
+                self.data_module = IIDData(config)
+            elif self.input_source == 'mnist':
+                self.data_module = MNISTStreamData(config)
+            else:
+                raise ValueError("Input source type {} not recognised. Please use either iid_gaussian or mnist".format(self.input_source))
         
-        self.test_input_data, self.test_data_labels = self.data_module.get_test_set() # labels will be None if using student-teacher networks
-        self.test_teacher_outputs = self.teachers.forward_all(self.test_input_data)
+        self.test_input_data, self.test_teacher_outputs = self.data_module.get_test_set() # labels will be None if using student-teacher networks
+
+        if self.test_teacher_outputs is None:
+            self.test_teacher_outputs = self.teachers.forward_all(self.test_input_data)
         
     def _setup_logger(self, config: Dict):
         if self.teacher_configuration == "mnist":
@@ -122,6 +130,8 @@ class StudentTeacherRunner:
             self.loss_module = RegressionLoss(config=config)
         elif self.loss_type == "classification":
             self.loss_module = ClassificationLoss(config=config)
+        elif self.loss_type == "not_applicable":
+            self.loss_module = RegressionLoss(config=config)
         else:
             raise NotImplementedError("Loss type {} not recognised".format(self.loss_type))
 
@@ -191,7 +201,7 @@ class StudentTeacherRunner:
                 batch_input = batch.get('x')
                 batch_labels = batch.get('y') # returns None unless using pure MNIST teachers
 
-                if batch_labels:
+                if batch_labels is not None:
                     teacher_output = batch_labels
                 else:
                     teacher_output = self.teachers.forward(teacher_index, batch_input)
@@ -363,6 +373,7 @@ class StudentTeacherRunner:
         return accuracy
 
     def _compute_generalisation_errors(self, teacher_index=None):
+        # import pdb; pdb.set_trace()
         with torch.no_grad():
             student_outputs = self.learner.forward_all(self.test_input_data)
             generalisation_errors = [float(self.loss_module.compute_loss(student_output, teacher_output)) for student_output, teacher_output in zip(student_outputs, self.test_teacher_outputs)]
