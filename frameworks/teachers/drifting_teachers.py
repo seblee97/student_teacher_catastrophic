@@ -1,16 +1,16 @@
 from models import DriftingTeacher
 
-from .base_teacher import _BaseTeacher
+from .base_teachers import _BaseTeachers
 
 import torch 
 import copy
 
 from typing import Dict
 
-class DriftingTeachers(_BaseTeacher):
+class DriftingTeachers(_BaseTeachers):
 
     def __init__(self, config: Dict):
-        _BaseTeacher.__init__(self, config)
+        _BaseTeachers.__init__(self, config)
         self._drift_frequency = config.get(["task", "drift_frequency"])
 
     def _setup_teachers(self, config: Dict):
