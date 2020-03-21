@@ -1,16 +1,14 @@
-from models import Teacher
-
-from .base_teacher import _BaseTeacher
+from .base_teachers import _BaseTeachers
 
 import torch 
 import copy
 
 from typing import Dict
 
-class OverlappingTeachers(_BaseTeacher):
+class OverlappingTeachers(_BaseTeachers):
 
     def __init__(self, config: Dict):
-        _BaseTeacher.__init__(self, config)
+        _BaseTeachers.__init__(self, config)
 
     def _setup_teachers(self, config: Dict) -> None:
         """
@@ -34,7 +32,7 @@ class OverlappingTeachers(_BaseTeacher):
 
         self._teachers = []
 
-        original_teacher = Teacher(config=config, index=0).to(self._device)
+        original_teacher = self._init_teacher(config=config, index=0)
         original_teacher.freeze_weights()
 
         # set noise for 'original' teacher
@@ -47,7 +45,7 @@ class OverlappingTeachers(_BaseTeacher):
         # setup remaining teachers
         for t in range(self._num_teachers - 1):
 
-            teacher = Teacher(config=config, index=t + 1).to(self._device)
+            teacher = self._init_teacher(config=config, index=t + 1)
 
             for l, layer in enumerate(teacher.state_dict()):
                 layer_shape = teacher.state_dict()[layer].shape 
