@@ -1,4 +1,4 @@
-data_path:                "../data/"
+data_path:                "../../data/"
 
 training:
   test_batch_size:        10000
