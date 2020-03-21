@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from .base_data_module import _BaseData
 
-from typing import Dict
+from typing import Dict, List
 
 import os
 
@@ -76,16 +76,16 @@ class _MNISTData(_BaseData, ABC):
         transform = torchvision.transforms.Compose(transform_list)
 
         self.transform = transform
-
-    def get_test_set(self) -> (torch.Tensor, torch.Tensor):
+    
+    @abstractmethod
+    def get_test_set(self) -> (torch.Tensor, List[torch.Tensor]):
         """
         returns fixed test data set (data and labels)
         
         return data: test data inputs
         return labels: corresponding labels for test data inputs
         """
-        data, labels = next(iter(self.test_dataloader))
-        return data, labels
+        raise NotImplementedError("Base class method")
 
     @abstractmethod
     def get_batch(self) -> Dict[str, torch.Tensor]:
