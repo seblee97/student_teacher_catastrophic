@@ -9,21 +9,14 @@ import numpy as np
 
 from typing import Dict
 
-class Teacher(Model):
+from abc import ABC, abstractmethod
 
-    """Regression"""
+class _Teacher(Model, ABC):
 
     def __init__(self, config: Dict, index: int) -> None:
 
         Model.__init__(self, config=config, model_type='teacher_{}'.format(str(index)))
         self.noisy = False
-
-        if config.get(["task", "loss_type"]) == "classification":
-            self.classification_output = True
-        elif config.get(["task", "loss_type"]) == 'regression':
-            self.classification_output = False
-        else:
-            raise ValueError("Unknown loss type given in base config")
 
     def get_output_statistics(self, repeats=5000):
         with torch.no_grad():
@@ -51,36 +44,6 @@ class Teacher(Model):
             for param in self.output_layer.parameters():
                 param.requires_grad = False
 
+    @abstractmethod
     def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
-        y = self.output_layer(x)
-        if self.noisy:
-            noise = self.noise_distribution.sample((y.shape[0],))
-            y = y + noise
-        if self.classification_output: # think about taking this into separate teacher class as below
-            # threshold
-            tanh_y = F.tanh(y)
-            return (torch.abs(tanh_y) > 0.5).type(torch.LongTensor).reshape(len(tanh_y),)
-        return y
-
-
-class ClassificationTeacher(Teacher):
-
-    """Classification - sign output"""
-
-    def __init__(self, config: Dict, index: int) -> None:
-
-        Teacher.__init__(self, config=config, model_type='teacher_{}'.format(str(index)))
-
-    def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Override teacher output forward, add sign output
-        """
-        y = self.output_layer(x)
-        if self.noisy:
-            noise = self.noise_distribution.sample((y.shape[0],))
-            y = y + noise
-        # y = np.sign(y)
-        if y > 0:
-            return 1
-        else:
-            return 0
+        raise NotImplementedError("Base class method")
