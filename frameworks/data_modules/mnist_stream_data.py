@@ -3,7 +3,7 @@ from .mnist_data import _MNISTData
 import torch
 import torchvision
 
-from typing import Dict
+from typing import Dict, List
 
 class MNISTStreamData(_MNISTData):
 
@@ -18,7 +18,11 @@ class MNISTStreamData(_MNISTData):
         self.training_dataloader = torch.utils.data.DataLoader(self.train_data, batch_size=self._train_batch_size, shuffle=True)
         self.training_data_iterator = iter(self.training_dataloader)
 
-        self.test_dataloader = torch.utils.data.DataLoader(self.test_data, batch_size=self._test_batch_size)
+        self.test_dataloader = torch.utils.data.DataLoader(self.test_data, batch_size=len(self.test_data))
+
+    def get_test_set(self) -> (torch.Tensor, List[torch.Tensor]):
+        data, labels = next(iter(self.test_dataloader))
+        return data, labels
 
     def get_batch(self) -> Dict[str, torch.Tensor]:
         """
