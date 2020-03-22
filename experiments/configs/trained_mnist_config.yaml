@@ -1,0 +1,25 @@
+data_path:                "../../data/"
+save_weight_path:         "../saved_model_weights/"
+
+trained_mnist:
+  convergence_criterion:                  0.001
+  learning_rate:                          0.01
+  output_dimension:                       1
+  batch_size:                             32
+
+task:
+  teacher_noise:                               0
+
+training:
+  test_batch_size:        10000
+  teachers:               [[0, 1], [4, 5]]
+  rotations:              [[0, 0], [0, 0]]
+  loss_function:          nll
+  learning_rate:          5
+
+model:
+  input_dimension:        784
+  output_dimension:       1                       # binary classification
+  initialise_student_outputs:       True 
+  student_initialisation_std:       1                     # std of normal initialisation for student network   
+  bias_parameters:                  True                     # whether or not to have bias parameters on linaer layers
