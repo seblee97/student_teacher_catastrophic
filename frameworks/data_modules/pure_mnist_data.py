@@ -68,8 +68,12 @@ class PureMNISTData(_MNISTData):
             task_test_datasets.append(test_task_dataset)
 
         self.task_test_dataloaders = [DataLoader(task_test_data, batch_size=len(task_test_data)) for task_test_data in task_test_datasets]
-
-        self.task_train_dataloaders = [DataLoader(task_train_data, batch_size=self._train_batch_size, shuffle=True) for task_train_data in task_train_datasets]
+        
+        if self.override_batch_size is not None:
+            bs = self.override_batch_size
+        else:
+            bs = self._train_batch_size
+        self.task_train_dataloaders = [DataLoader(task_train_data, batch_size=bs, shuffle=True) for task_train_data in task_train_datasets]
         self.task_train_iterators = [iter(training_dataloader) for training_dataloader in self.task_train_dataloaders]
         
         # train_dataset = Subset(dataset, train_idx)
