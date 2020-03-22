@@ -19,7 +19,7 @@ class OverlappingTeachers(_BaseTeachers):
         from original teacher to new teachers. Weight duplicates can be in input to hidden,
         hidden to output or both.
         """
-        # initialise teacher networks, freeze
+        # get noise configs if applicable
         teacher_noise = config.get(["task", "teacher_noise"])
         if type(teacher_noise) is int:
             teacher_noises = [teacher_noise for _ in range(self._num_teachers)]
