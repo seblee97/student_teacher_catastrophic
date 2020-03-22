@@ -98,7 +98,7 @@ class PureMNISTData(_MNISTData):
             batch = next(self.task_train_iterators[self._current_teacher_index])
         except:
             self.task_train_iterators[self._current_teacher_index] = iter(self.task_train_dataloaders[self._current_teacher_index])
-            batch = next(self.training_data_iterator)
+            batch = next(self.task_train_iterators[self._current_teacher_index])
 
         return {'x': batch[0], 'y': batch[1]}
 
