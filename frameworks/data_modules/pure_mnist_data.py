@@ -33,7 +33,7 @@ class PureMNISTData(_MNISTData):
         full_train_dataset_targets = full_train_data.targets
         full_test_dataset_targets = full_test_data.targets
 
-        def filter_dataset_by_target(target_to_keep: int, train: bool):
+        def filter_dataset_by_target(target_to_keep: int, train: bool, new_label: int=None):
             """generate subset of dataset filtered by target"""
             if train:
                 targets = full_train_dataset_targets
@@ -44,7 +44,10 @@ class PureMNISTData(_MNISTData):
             filtered_dataset_indices = np.arange(len(targets))[indices_to_keep]
 
             if train:
-                return Subset(full_train_data, filtered_dataset_indices)
+                train_dataset_copy = copy.deepcopy(full_train_data)
+                for ind in filtered_dataset_indices:
+                    train_dataset_copy.targets[ind] = torch.Tensor([new_label])
+                return Subset(train_dataset_copy, filtered_dataset_indices)
             else:
                 return Subset(full_test_data, filtered_dataset_indices)
 
@@ -54,7 +57,7 @@ class PureMNISTData(_MNISTData):
         for t, task_classes in enumerate(self._mnist_teacher_classes):
             
             # get filtered training sets
-            train_target_filtered_datasets = [filter_dataset_by_target(target_to_keep=target, train=True) for target in task_classes]
+            train_target_filtered_datasets = [filter_dataset_by_target(target_to_keep=target, train=True, new_label=st) for st, target in enumerate(task_classes)]
             train_task_dataset = ConcatDataset(train_target_filtered_datasets)
 
             # get filtered test sets
