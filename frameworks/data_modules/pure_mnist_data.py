@@ -7,10 +7,13 @@ import torchvision
 from torch.utils.data import Subset, ConcatDataset, DataLoader
 
 import numpy as np
+import copy
 
 class PureMNISTData(_MNISTData):
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict, override_batch_size: int=None):
+
+        self.override_batch_size = override_batch_size
 
         self._mnist_teacher_classes = config.get(['training', 'teachers'])
         self._current_teacher_index = None
