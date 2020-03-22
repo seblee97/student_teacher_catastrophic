@@ -10,7 +10,7 @@ import torch.optim as optim
 from typing import List, Tuple, Generator, Dict
 
 from .learners import ContinualLearner, MetaLearner
-from .teachers import OverlappingTeachers, DummyMNISTTeachers
+from .teachers import OverlappingTeachers, DummyMNISTTeachers, TrainedMNISTTeachers
 from .loggers import StudentMNISTLogger, StudentTeacherLogger
 from .data_modules import IIDData, MNISTStreamData, PureMNISTData
 from .loss_modules import RegressionLoss, ClassificationLoss
@@ -85,12 +85,14 @@ class StudentTeacherRunner:
             self.teachers = OverlappingTeachers(config=config)
         elif self.teacher_configuration == "mnist":
             self.teachers = DummyMNISTTeachers(config=config) # 'teachers' are MNIST images with labels - provided by data module
+        elif self.teacher_configuration == "trained_mnist":
+            self.teachers = TrainedMNISTTeachers(config=config)
         else:
             raise NotImplementedError("Teacher configuration {} not recognised".format(self.teacher_configuration))
 
     def _setup_data(self, config: Dict):
 
-        if self.teacher_configuration == "mnist":
+        if (self.teacher_configuration == "mnist") or (self.teacher_configuration == "trained_mnist"):
             self.data_module = PureMNISTData(config)
 
         else:
@@ -103,7 +105,7 @@ class StudentTeacherRunner:
         
         self.test_input_data, self.test_teacher_outputs = self.data_module.get_test_set() # labels will be None if using student-teacher networks
 
-        if self.test_teacher_outputs is None:
+        if self.test_teacher_outputs is None or self.teacher_configuration == "trained_mnist":
             self.test_teacher_outputs = self.teachers.forward_all(self.test_input_data)
         
     def _setup_logger(self, config: Dict):
