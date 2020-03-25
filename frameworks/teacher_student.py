@@ -38,7 +38,7 @@ class StudentTeacherRunner:
 
         # initialise optimiser with trainable parameters of student
         trainable_parameters = self.learner.get_trainable_parameters()
-        self.optimiser = optim.SGD(trainable_parameters, lr=self.learning_rate)
+        self.optimiser = optim.SGD(trainable_parameters, lr=self.learning_rate, weight_decay=self.weight_decay)
         
         # initialise objects containing metrics of interest
         self._initialise_metrics()
@@ -54,6 +54,7 @@ class StudentTeacherRunner:
 
         self.total_training_steps = config.get(["training", "total_training_steps"])
         self.learning_rate = config.get(["training", "learning_rate"])
+        self.weight_decay = config.get(["training", "weight_decay"])
 
         self.num_teachers = config.get(["task", "num_teachers"])
         self.learner_configuration = config.get(["task", "learner_configuration"])
@@ -119,8 +120,6 @@ class StudentTeacherRunner:
             self.loss_module = RegressionLoss(config=config)
         elif self.loss_type == "classification":
             self.loss_module = ClassificationLoss(config=config)
-        elif self.loss_type == "not_applicable":
-            self.loss_module = RegressionLoss(config=config)
         else:
             raise NotImplementedError("Loss type {} not recognised".format(self.loss_type))
 
@@ -190,7 +189,7 @@ class StudentTeacherRunner:
                 batch_input = batch.get('x')
                 batch_labels = batch.get('y') # returns None unless using pure MNIST teachers
 
-                if batch_labels is not None:
+                if (batch_labels is not None) and (self.teacher_configuration != "trained_mnist"):
                     teacher_output = batch_labels
                 else:
                     teacher_output = self.teachers.forward(teacher_index, batch_input)
@@ -213,7 +212,7 @@ class StudentTeacherRunner:
                     self.logger.write_scalar_df('training_loss', float(loss), total_step_count)
                 
                 # test
-                if total_step_count % self.test_frequency == 0 and total_step_count != 0:
+                if total_step_count % self.test_frequency == 0:
 
                     # explicitly set model to evaluation mode
                     self.learner.set_to_eval()
@@ -362,7 +361,6 @@ class StudentTeacherRunner:
         return accuracy
 
     def _compute_generalisation_errors(self, teacher_index=None):
-        # import pdb; pdb.set_trace()
         with torch.no_grad():
             student_outputs = self.learner.forward_all(self.test_input_data)
             generalisation_errors = [float(self.loss_module.compute_loss(student_output, teacher_output)) for student_output, teacher_output in zip(student_outputs, self.test_teacher_outputs)]
