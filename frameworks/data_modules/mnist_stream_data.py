@@ -22,7 +22,7 @@ class MNISTStreamData(_MNISTData):
 
     def get_test_set(self) -> (torch.Tensor, List[torch.Tensor]):
         data, labels = next(iter(self.test_dataloader))
-        return data, labels
+        return data, None
 
     def get_batch(self) -> Dict[str, torch.Tensor]:
         """
