@@ -19,8 +19,6 @@ class _BaseStudent(Model):
             self.classification_output = True
         elif config.get(["task", "loss_type"]) == 'regression':
             self.classification_output = False
-        elif config.get(["task", "loss_type"]) == 'not_applicable':
-            self.classification_output = False
         else:
             raise ValueError("Unknown loss type given in base config")
     
@@ -46,11 +44,7 @@ class _BaseStudent(Model):
         return y
 
     def _threshold(self, y):
-        # y = torch.Tensor([y, 1 - y])
-        sigmoid_y = torch.sigmoid(y)
-        negative_class_probabilities = 1 - sigmoid_y
-        log_softmax = torch.log(torch.cat((negative_class_probabilities, sigmoid_y), axis=1))
-        return log_softmax
+        return torch.sigmoid(y)
     
     @abstractmethod
     def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
