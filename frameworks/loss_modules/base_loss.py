@@ -16,10 +16,8 @@ class _BaseLoss(ABC):
         """instantiate torch loss function"""
         if loss_name == 'mse':
             self.loss_function = nn.MSELoss()
-        elif loss_name == 'cross_entropy':
-            self.loss_function = nn.CrossEntropyLoss()
-        elif loss_name == 'nll':
-            self.loss_function = nn.NLLLoss()
+        elif loss_name == 'bce':
+            self.loss_function = nn.BCELoss()
         elif loss_name == 'l1':
             self.loss_function = nn.L1Loss()
         elif loss_name == 'smooth_l1':
@@ -37,6 +35,6 @@ class _BaseLoss(ABC):
 
         :return loss: loss between target (from teacher) and prediction (from student)
         """
-        loss = 0.5 * self.loss_function(prediction, target)
+        loss = 0.5 * self.loss_function(prediction, target.type(torch.FloatTensor))
         return loss
 
