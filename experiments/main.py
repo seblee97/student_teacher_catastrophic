@@ -101,6 +101,9 @@ if __name__ == "__main__":
         additional_configurations.append(os.path.join(supplementary_configs_path, 'drifting_config.yaml'))
     elif teacher_configuration == 'overlapping':
         additional_configurations.append(os.path.join(supplementary_configs_path, 'overlapping_config.yaml'))
+    
+    elif teacher_configuration == "trained_mnist":
+        additional_configurations.append(os.path.join(supplementary_configs_path, 'trained_mnist_config.yaml'))
 
     elif teacher_configuration == 'mnist':
         additional_configurations.append(os.path.join(supplementary_configs_path, 'mnist_config.yaml'))
@@ -137,13 +140,15 @@ if __name__ == "__main__":
         student_teacher_parameters._config["model"]["teacher_hidden_layers"] = teacher_hidden
 
     # check for consistency in loss specification of config
-    if (student_teacher_parameters.get(["task", "loss_type"]) == "classification" and \
-        student_teacher_parameters.get(["training", "loss_function"]) == "nll") or \
-        (student_teacher_parameters.get(["task", "loss_type"]) == "regression" and \
-        student_teacher_parameters.get(["training", "loss_function"]) == "mse") or \
-        (student_teacher_parameters.get(["task", "loss_type"]) == "not_applicable" and \
-        student_teacher_parameters.get(["training", "loss_function"]) == "cross_entropy"):
-        pass
+    permissible_regression_losses = ["mse", "l1", "smooth_l1"]
+    permissible_classification_losses = ["bce"]
+
+    loss_type = student_teacher_parameters.get(["task", "loss_type"])
+    loss_function = student_teacher_parameters.get(["training", "loss_function"])
+
+    if (loss_type == "classification" and loss_function in permissible_classification_losses) or \
+       (loss_type == "regression" and loss_function in permissible_regression_losses):
+       pass
     else:
         raise ValueError("Potential inconsistency in config specification for loss type and loss function. Please check")
 
