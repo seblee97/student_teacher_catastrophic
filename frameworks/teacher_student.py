@@ -356,8 +356,8 @@ class StudentTeacherRunner:
             return generalisation_error_wrt_current_teacher
 
     def _compute_classification_acc(self, prediction: torch.Tensor, target: torch.Tensor):
-        class_predictions = torch.argmax(prediction, axis=1)
-        accuracy = int(torch.sum(class_predictions == target)) / len(target)
+        class_predictions = (prediction > 0.5).type(torch.LongTensor).squeeze()
+        accuracy = float((class_predictions == target).sum()) / len(target)
         return accuracy
 
     def _compute_generalisation_errors(self, teacher_index=None):
