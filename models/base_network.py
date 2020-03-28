@@ -62,7 +62,7 @@ class Model(nn.Module, ABC):
         self.output_dimension = config.get(["model", "output_dimension"])
         self.hidden_dimensions = config.get(["model", "{}_hidden_layers".format(self.model_type)])
         self.initialisation_std = config.get(["model", "{}_initialisation_std".format(self.model_type)])
-        self.bias = config.get(["model", "bias_parameters"])
+        self.bias = config.get(["model", "{}_bias_parameters".format(self.model_type)])
         self.soft_committee = config.get(["model", "soft_committee"])
         self.learner_configuration = config.get(["task", "learner_configuration"])
         self.num_teachers = config.get(["task", "num_teachers"])
