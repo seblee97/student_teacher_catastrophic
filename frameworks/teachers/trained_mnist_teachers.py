@@ -33,7 +33,7 @@ class TrainedMNISTTeachers(_BaseTeachers):
             config.get(["model", "input_dimension"]),
             config.get(["model", "teacher_hidden_layers"]),
             config.get(["model", "teacher_nonlinearities"]),
-            config.get(["model", "bias_parameters"]),
+            config.get(["model", "teacher_bias_parameters"]),
             config.get(["training", "teachers"]),
             config.get(["training", "rotations"]),
             config.get(["trained_mnist", "output_dimension"])
