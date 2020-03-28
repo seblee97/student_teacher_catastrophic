@@ -41,7 +41,8 @@ model:
   student_initialisation_std:       0.001                     # std of normal initialisation for student network
   initialise_student_outputs:       False                     # whether or not to initialise hidden -> output weights of student
   soft_committee:                   False                     # whether or not to freeze output layer (scm)
-  bias_parameters:                  False                     # whether or not to have bias parameters on linaer layers
+  teacher_bias_parameters:          True                     # whether or not to have bias parameters on linaer layers (teacher)
+  student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
 
 curriculum:
   type:                             custom                    # curriculum type (custom - declarative or standard - imperative)
