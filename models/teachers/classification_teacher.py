@@ -20,6 +20,16 @@ class ClassificationTeacher(_Teacher):
             noise = self.noise_distribution.sample((y.shape[0],))
             y = y + noise
         
-        # threshold
-        tanh_y = torch.tanh(y)
-        return (torch.abs(tanh_y) > 0.5).type(torch.LongTensor).reshape(len(tanh_y),)
+        # threshold differently depending on nonlinearity to ensure even class distributions
+        if self.nonlinearity_name == 'relu':
+            labels = torch.abs(y) > 0
+        elif self.nonlinearity_name == 'linear':
+            tanh_y = torch.tanh(y)
+            labels = tanh_y > 0
+        else: 
+            raise NotImplementedError("Teacher thresholding for {} nonlinearity not yet implemented".format(self.nonlinearity_name))
+
+        return labels.type(torch.LongTensor).reshape(len(labels),)
+
+        
+        
