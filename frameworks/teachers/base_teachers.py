@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from typing import Dict, List
 
-from models import ClassificationTeacher, RegressionTeacher
+from models import ClassificationTeacher, RegressionTeacher, TrainedClassificationTeacher
 
 class _BaseTeachers(ABC):
 
@@ -13,6 +13,7 @@ class _BaseTeachers(ABC):
 
         self._num_teachers = config.get(["task", "num_teachers"])
         self._device = config.get("device")
+        self._teacher_configuration = config.get(["task", "teacher_configuration"])
 
         self._loss_type = config.get(["task", "loss_type"])
 
@@ -25,7 +26,10 @@ class _BaseTeachers(ABC):
 
     def _init_teacher(self, config: Dict, index: int):
         if self._loss_type == "classification":
-            return ClassificationTeacher(config=config, index=index).to(self._device)
+            if self._teacher_configuration == "trained_mnist":
+                return TrainedClassificationTeacher(config=config, index=index).to(self._device)
+            else:
+                return ClassificationTeacher(config=config, index=index).to(self._device)
         elif self._loss_type == "regression":
             return RegressionTeacher(config=config, index=index).to(self._device)
 
