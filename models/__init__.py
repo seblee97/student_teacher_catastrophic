@@ -1,2 +1,2 @@
 from .students import ContinualStudent, MetaStudent
-from .teachers import RegressionTeacher, ClassificationTeacher 
+from .teachers import RegressionTeacher, ClassificationTeacher, TrainedClassificationTeacher
