@@ -27,6 +27,4 @@ class TrainedClassificationTeacher(_Teacher):
             raise NotImplementedError("Teacher thresholding for {} nonlinearity not yet implemented".format(self.nonlinearity_name))
 
         return labels.type(torch.LongTensor).reshape(len(labels),)
-
-        
         
