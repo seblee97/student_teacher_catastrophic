@@ -40,7 +40,7 @@ class _Teacher(Model, ABC):
     
     def load_weights(self, weights_path: str) -> None:
         """Load saved weights into model"""
-        sdtet = torch.load(weights_path)
+        torch.load(weights_path)
         self.load_state_dict(torch.load(weights_path))
 
     def _construct_output_layers(self):
