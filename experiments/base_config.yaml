@@ -10,9 +10,9 @@ log_to_df:                          True
 task:
   label_task_boundaries:            True                      
   learner_configuration:            continual                 # meta or continual - specifies whether student has separate heads for each teacher (continual) or not (meta)
-  teacher_configuration:            trained_mnist             # noisy, independent, overlapping, drifting, trained_mnist (see README)
+  teacher_configuration:            overlapping               # noisy, independent, overlapping, drifting, trained_mnist (see README)
   num_teachers:                     2                         
-  loss_type:                        classification            # classification or regression 
+  loss_type:                        regression                # classification or regression 
 
 training:
   total_training_steps:             100000                    
@@ -41,7 +41,7 @@ model:
   student_initialisation_std:       0.001                     # std of normal initialisation for student network
   initialise_student_outputs:       False                     # whether or not to initialise hidden -> output weights of student
   soft_committee:                   False                     # whether or not to freeze output layer (scm)
-  teacher_bias_parameters:          True                     # whether or not to have bias parameters on linaer layers (teacher)
+  teacher_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (teacher)
   student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
 
 curriculum:
