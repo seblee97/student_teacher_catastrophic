@@ -1,4 +1,4 @@
-from models import MetaStudent
+from frameworks.models import MetaStudent
 
 from .base_learner import _BaseLearner
 

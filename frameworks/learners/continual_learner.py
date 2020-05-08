@@ -1,4 +1,4 @@
-from models import ContinualStudent
+from frameworks.models import ContinualStudent
 
 from .base_learner import _BaseLearner
 

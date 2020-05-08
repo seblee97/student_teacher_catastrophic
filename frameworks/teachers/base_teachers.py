@@ -5,7 +5,7 @@ import torch.nn as nn
 
 from typing import Dict, List
 
-from models import ClassificationTeacher, RegressionTeacher, TrainedClassificationTeacher
+from frameworks.models import ClassificationTeacher, RegressionTeacher, TrainedClassificationTeacher
 
 class _BaseTeachers(ABC):
 
