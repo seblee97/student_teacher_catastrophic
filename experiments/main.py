@@ -1,4 +1,5 @@
-from context import utils, frameworks
+from context import utils
+from student_teacher_runner import StudentTeacherRunner
 
 import argparse
 import torch
@@ -199,6 +200,6 @@ if __name__ == "__main__":
         log_path = '{}data_logger.csv'.format(checkpoint_path)
         student_teacher_parameters.set_property("logfile_path", log_path)
     
-    student_teacher = frameworks.StudentTeacherRunner(config=student_teacher_parameters)
+    student_teacher = StudentTeacherRunner(config=student_teacher_parameters)
     student_teacher.train()
     
