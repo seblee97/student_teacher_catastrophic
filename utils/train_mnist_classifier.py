@@ -1,5 +1,5 @@
-from frameworks.models.base_network import Model
-from frameworks.data_modules import PureMNISTData
+from models.networks.base_network import Model
+from components.data_modules import PureMNISTData
 
 import torch
 import torch.nn as nn 
