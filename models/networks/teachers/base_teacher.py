@@ -1,4 +1,4 @@
-from frameworks.models.base_network import Model
+from models.networks.base_network import Model
 
 import torch
 import torch.distributions as tdist

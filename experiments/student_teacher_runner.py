@@ -9,11 +9,15 @@ import torch.optim as optim
 
 from typing import List, Tuple, Generator, Dict
 
-from .learners import ContinualLearner, MetaLearner
-from .teachers import OverlappingTeachers, DummyMNISTTeachers, TrainedMNISTTeachers
-from .loggers import StudentMNISTLogger, StudentTeacherLogger
-from .data_modules import IIDData, MNISTStreamData, PureMNISTData
-from .loss_modules import RegressionLoss, ClassificationLoss
+# components
+from context import data_modules, loss_modules, loggers
+# models
+from context import teachers, learners
+# from context.components.data_modules import IIDData, MNISTStreamData, PureMNISTData
+# from context.components.loss_modules import RegressionLoss, ClassificationLoss
+# from context.components.loggers import StudentMNISTLogger, StudentTeacherLogger
+# from context.models.learners import ContinualLearner, MetaLearner
+# from context.models.teachers import OverlappingTeachers, DummyMNISTTeachers, TrainedMNISTTeachers
 
 class StudentTeacherRunner:
 
@@ -75,32 +79,32 @@ class StudentTeacherRunner:
 
     def _setup_learner(self, config: Dict):
         if self.learner_configuration == "continual":
-            self.learner = ContinualLearner(config=config)
+            self.learner = learners.ContinualLearner(config=config)
         elif self.learner_configuration == "meta":
-            self.learner = MetaLearner(config=config)
+            self.learner = learners.MetaLearner(config=config)
         else:
             raise ValueError("Learner configuration {} not recognised".format(self.learner_configuration))
 
     def _setup_teachers(self, config: Dict):
         if self.teacher_configuration == "overlapping":
-            self.teachers = OverlappingTeachers(config=config)
+            self.teachers = teachers.OverlappingTeachers(config=config)
         elif self.teacher_configuration == "mnist":
-            self.teachers = DummyMNISTTeachers(config=config) # 'teachers' are MNIST images with labels - provided by data module
+            self.teachers = teachers.DummyMNISTTeachers(config=config) # 'teachers' are MNIST images with labels - provided by data module
         elif self.teacher_configuration == "trained_mnist":
-            self.teachers = TrainedMNISTTeachers(config=config)
+            self.teachers = teachers.TrainedMNISTTeachers(config=config)
         else:
             raise NotImplementedError("Teacher configuration {} not recognised".format(self.teacher_configuration))
 
     def _setup_data(self, config: Dict):
 
         if (self.teacher_configuration == "mnist") or (self.teacher_configuration == "trained_mnist"):
-            self.data_module = PureMNISTData(config)
+            self.data_module = data_modules.PureMNISTData(config)
 
         else:
             if self.input_source == 'iid_gaussian':
-                self.data_module = IIDData(config)
+                self.data_module = data_modules.IIDData(config)
             elif self.input_source == 'mnist':
-                self.data_module = MNISTStreamData(config)
+                self.data_module = data_modules.MNISTStreamData(config)
             else:
                 raise ValueError("Input source type {} not recognised. Please use either iid_gaussian or mnist".format(self.input_source))
         
@@ -111,15 +115,15 @@ class StudentTeacherRunner:
         
     def _setup_logger(self, config: Dict):
         if self.teacher_configuration == "mnist":
-            self.logger = StudentMNISTLogger(config=config)
+            self.logger = loggers.StudentMNISTLogger(config=config)
         else:
-            self.logger = StudentTeacherLogger(config=config)
+            self.logger = loggers.StudentTeacherLogger(config=config)
 
     def _setup_loss(self, config: Dict):
         if self.loss_type == "regression":
-            self.loss_module = RegressionLoss(config=config)
+            self.loss_module = loss_modules.RegressionLoss(config=config)
         elif self.loss_type == "classification":
-            self.loss_module = ClassificationLoss(config=config)
+            self.loss_module = loss_modules.ClassificationLoss(config=config)
         else:
             raise NotImplementedError("Loss type {} not recognised".format(self.loss_type))
 
