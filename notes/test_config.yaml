@@ -1,0 +1,72 @@
+experiment_name:                    
+use_gpu:                            True                      
+seed:                               5                         
+resume:        
+verbose:                            True                      
+verbose_tb:                         False                     
+checkpoint_frequency:               500                       
+log_to_df:                          True
+
+task:
+  label_task_boundaries:            True                      
+  learner_configuration:            continual                 # meta or continual - specifies whether student has separate heads for each teacher (continual) or not (meta)
+  teacher_configuration:            overlapping               # noisy, independent, overlapping, drifting, trained_mnist (see README)
+  num_teachers:                     2                         
+  loss_type:                        regression                # classification or regression
+
+training:
+  total_training_steps:             100000                    
+  train_batch_size:                 1                         
+  test_batch_size:                  50000                     # generalisation error
+  learning_rate:                    0.5                         
+  weight_decay:                     0.01                      
+  loss_function:                    mse                       # mse, bce
+  input_source:                     mnist                     # iid_gaussian, mnist (see README)
+  scale_output_backward:            True                      # whether to add 1/N factor in lr of output layer  
+  
+testing:
+  test_frequency:                   1                         # how often during training to perform generalisation error test loop
+  overlap_frequency:                100                       # how often during training to compute / visualise overlap matrices
+  test_all_teachers:                True                      # whether to compute generalisation losses for all teachers or just one currently teaching
+
+model:
+  input_dimension:                  784                       
+  student_hidden_layers:            [2]                       
+  teacher_hidden_layers:            [1]                       
+  output_dimension:                 1                         
+  student_nonlinearity:             relu                      
+  teacher_nonlinearities:           [relu, relu]              # per teacher
+  teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
+  student_initialisation_std:       0.001                     # std of normal initialisation for student network
+  initialise_student_outputs:       False                     # whether or not to initialise hidden -> output weights of student
+  soft_committee:                   False                     # whether or not to freeze output layer (scm)
+  teacher_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (teacher)
+  student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
+
+curriculum:
+  type:                             custom                    # curriculum type (custom - declarative or standard - imperative)
+  selection_type:                   cyclical                  # how to determine next task (random or cyclical)
+  stopping_condition:               fixed_period              # condition on which to switch task (fixed_period or threshold)
+
+  fixed_period:                     5000                      # period for changing tasks 
+  loss_threshold:                   0.0001                    # loss threshold under which teacher is changed 
+  custom:                           [0, 1]                    # curriculum defined manually. Each entry defines next teacher index
+
+mnist:
+  data_path:                        "../../data/"
+  pca_input:                        -1                        # number of principle components (no PCA if -1, not applicable to iid_gaussian input)                         
+  teachers:                         [[0, 1], [4, 5]]
+  rotations:                        [[0, 0], [90, 90]]
+
+trained_mnist:
+  save_weight_path:                 "../saved_model_weights/"
+  convergence_criterion:            0.001
+  learning_rate:                    0.001
+  output_dimension:                 1
+  batch_size:                       32
+
+teachers:
+  overlap_percentages:              [0, 0]                    # percentage of weights to copy between teachers per layer. 
+  teacher_noise:                    [0]
+  drift_size:                       0.01
+  drift_frequency:                  1
