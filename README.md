@@ -1,16 +1,18 @@
-# catastrophic
+# Investigating Catastophic Forgetting with Student-Teacher Networks
 
-Basic requirements can (hopefully) be met with
+This repository contains code for a project investigating catastrophic forgetting with 
+a student-teacher framework. The project is part of my thesis for an MSc in Computer Science at the University 
+of Oxford, and is supervised by Andrew Saxe.
 
-```pip3 install numpy matplotlib torch torchvision PyYAML tensorboardX```
+This code allows specification of a continual learning framework for a student
+where different tasks are represented by different teachers.
 
-More details to follow.
+# Prerequisites
 
-Run experiment with 
+To run this code you will need Python 3.7+; it is written in PyTorch. All other requirements are 
+specified in the requirements file (requirements.txt) and can be satisfied by running  
 
-```python experiments/main.py```
-
-View tensorboard logs at ```experiments/results/```
+```pip3 install -r requirements.txt```
 
 # Teacher Configurations
 
