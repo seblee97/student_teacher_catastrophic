@@ -13,11 +13,6 @@ from typing import List, Tuple, Generator, Dict
 from context import data_modules, loss_modules, loggers
 # models
 from context import teachers, learners
-# from context.components.data_modules import IIDData, MNISTStreamData, PureMNISTData
-# from context.components.loss_modules import RegressionLoss, ClassificationLoss
-# from context.components.loggers import StudentMNISTLogger, StudentTeacherLogger
-# from context.models.learners import ContinualLearner, MetaLearner
-# from context.models.teachers import OverlappingTeachers, DummyMNISTTeachers, TrainedMNISTTeachers
 
 class StudentTeacherRunner:
 
@@ -70,12 +65,6 @@ class StudentTeacherRunner:
 
         self.input_dimension = config.get(["model", "input_dimension"])
         self.input_source = config.get(["training", "input_source"])
-        self.pca_input = config.get(["training", "pca_input"])
-
-        if self.pca_input > 0:
-            if self.pca_input != self.input_dimension:
-                raise ValueError("Please ensure that if PCA is applied that the number of principal components\
-                    matches the input dimension for the network.")
 
     def _setup_learner(self, config: Dict):
         if self.learner_configuration == "continual":
@@ -99,7 +88,6 @@ class StudentTeacherRunner:
 
         if (self.teacher_configuration == "mnist") or (self.teacher_configuration == "trained_mnist"):
             self.data_module = data_modules.PureMNISTData(config)
-
         else:
             if self.input_source == 'iid_gaussian':
                 self.data_module = data_modules.IIDData(config)
@@ -257,8 +245,6 @@ class StudentTeacherRunner:
                     self.logger.write_scalar_tb('steps_per_task', task_step_count, total_step_count)
                     steps_per_task.append(task_step_count)
                     break
-
-        # self._consolidate_dfs()
 
     def _switch_task(self, step: int, generalisation_error: float) -> bool: 
         """
