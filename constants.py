@@ -1,0 +1,3 @@
+class StudentTeacherConstants:
+
+    TEST = "test"
