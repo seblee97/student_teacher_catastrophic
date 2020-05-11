@@ -1,5 +1,7 @@
 from context import utils
 from student_teacher_runner import StudentTeacherRunner
+from student_teacher_parameters import StudentTeacherParameters
+from config_templates import ConfigTemplate, MNISTTemplate, TrainedMNISTTemplate
 
 import argparse
 import torch
@@ -7,6 +9,8 @@ import yaml
 import time
 import datetime
 import os
+
+from typing import Dict
 
 parser = argparse.ArgumentParser()
 
@@ -41,6 +45,62 @@ parser.add_argument('-teacher_overlaps', '--to', type=str, help="per layer overl
 
 args = parser.parse_args()
 
+def update_config_with_parser(args, params: Dict):
+
+    # update parameters with (optional) args given in command line
+    if args.s:
+        params["seed"] = args.s
+    if args.lc:
+        params["task"]["learner_configuration"] = args.lc
+    if args.tc:
+        params["task"]["teacher_configuration"] = args.tc
+    if args.inp_s:
+        params["training"]["input_source"] = args.inp_s
+    if args.id:
+        params["model"]["input_dimension"] = args.id
+    if args.nt:
+        params["task"]["num_teachers"] = args.nt
+    if args.lty:
+        params["task"]["loss_type"] = args.lty
+    if args.lf:
+        params["training"]["loss_function"] = args.lf
+    if args.st:
+        params["curriculum"]["selection_type"] = args.st
+    if args.sc:
+        params["curriculum"]["stopping_condition"] = args.sc
+    if args.fp:
+        params["curriculum"]["fixed_period"] = args.fp
+    if args.lt:
+        params["curriculum"]["loss_threshold"] = args.lt
+    if args.ts:
+        params["training"]["total_training_steps"] = args.ts
+    if args.en:
+        params["experiment_name"] = args.en
+    if args.lr:
+        params["training"]["learning_rate"] = args.lr
+    if args.cf:
+        params["checkpoint_frequency"] = args.cf
+    if args.v is not None:
+        params["verbose"] = bool(args.v)
+
+    # update specific parameters with (optional) args given in command line
+    if args.to:
+        overlaps = [int(op) for op in "".join(args.to).strip('[]').split(',')]
+        params["task"]["overlap_percentages"] = overlaps
+    if args.snl:
+        params["model"]["student_nonlinearity"] = args.snl
+    if args.tnl:
+        teacher_nonlinearities = [str(nl).strip() for nl in "".join(args.tnl).strip('[]').split(',')]
+        params["model"]["teacher_nonlinearities"] = teacher_nonlinearities
+    if args.sh:
+        student_hidden = [int(h) for h in "".join(args.sh).strip('[]').split(',')]
+        params["model"]["student_hidden_layers"] = student_hidden
+    if args.th:
+        teacher_hidden = [int(h) for h in "".join(args.th).strip('[]').split(',')]
+        params["model"]["teacher_hidden_layers"] = teacher_hidden
+
+    return params
+
 if __name__ == "__main__":
 
     main_file_path = os.path.dirname(os.path.realpath(__file__))
@@ -50,107 +110,12 @@ if __name__ == "__main__":
     with open(base_config_full_path, 'r') as yaml_file:
         params = yaml.load(yaml_file, yaml.SafeLoader)
 
-    # create object in which to store experiment parameters
-    student_teacher_parameters = utils.parameters.StudentTeacherParameters(params)
+    params = update_config_with_parser(args=args, params=params)
 
-    # update parameters with (optional) args given in command line
-    if args.s:
-        student_teacher_parameters._config["seed"] = args.s
-    if args.lc:
-        student_teacher_parameters._config["task"]["learner_configuration"] = args.lc
-    if args.tc:
-        student_teacher_parameters._config["task"]["teacher_configuration"] = args.tc
-    if args.inp_s:
-        student_teacher_parameters._config["training"]["input_source"] = args.inp_s
-    if args.id:
-        student_teacher_parameters._config["model"]["input_dimension"] = args.id
-    if args.nt:
-        student_teacher_parameters._config["task"]["num_teachers"] = args.nt
-    if args.lty:
-        student_teacher_parameters._config["task"]["loss_type"] = args.lty
-    if args.lf:
-        student_teacher_parameters._config["training"]["loss_function"] = args.lf
-    if args.st:
-        student_teacher_parameters._config["curriculum"]["selection_type"] = args.st
-    if args.sc:
-        student_teacher_parameters._config["curriculum"]["stopping_condition"] = args.sc
-    if args.fp:
-        student_teacher_parameters._config["curriculum"]["fixed_period"] = args.fp
-    if args.lt:
-        student_teacher_parameters._config["curriculum"]["loss_threshold"] = args.lt
-    if args.ts:
-        student_teacher_parameters._config["training"]["total_training_steps"] = args.ts
-    if args.en:
-        student_teacher_parameters._config["experiment_name"] = args.en
-    if args.lr:
-        student_teacher_parameters._config["training"]["learning_rate"] = args.lr
-    if args.cf:
-        student_teacher_parameters._config["checkpoint_frequency"] = args.cf
-    if args.v is not None:
-        student_teacher_parameters._config["verbose"] = bool(args.v)
-
-    supplementary_configs_path = args.ac
-    additional_configurations = []
-
-    teacher_configuration = student_teacher_parameters.get(["task", "teacher_configuration"])
-    if teacher_configuration == 'noisy':
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'noisy_config.yaml'))
-    elif teacher_configuration == 'independent':
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'independent_config.yaml'))
-    elif teacher_configuration == 'drifting':
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'drifting_config.yaml'))
-    elif teacher_configuration == 'overlapping':
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'overlapping_config.yaml'))
-    
-    elif teacher_configuration == "trained_mnist":
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'trained_mnist_config.yaml'))
-
-    elif teacher_configuration == 'mnist':
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'mnist_config.yaml'))
-    else:
-        raise ValueError("teacher configuration {} not recognised. Please use 'noisy', \
-                'overlapping', 'drifting', 'independent', or 'mnist'".format(teacher_configuration))
-
-    if student_teacher_parameters.get(["training", "input_source"]) == 'mnist':
-        additional_configurations.append(os.path.join(supplementary_configs_path, 'mnist_input_config.yaml'))
-
-    # specific parameters
-    for additional_configuration in additional_configurations:
-        additional_configuration_full_path = os.path.join(main_file_path, additional_configuration)
-        with open(additional_configuration_full_path, 'r') as yaml_file:
-            specific_params = yaml.load(yaml_file, yaml.SafeLoader)
-    
-        # update base-parameters with specific parameters
-        student_teacher_parameters.update(specific_params)
-
-    # update specific parameters with (optional) args given in command line
-    if args.to:
-        overlaps = [int(op) for op in "".join(args.to).strip('[]').split(',')]
-        student_teacher_parameters._config["task"]["overlap_percentages"] = overlaps
-    if args.snl:
-        student_teacher_parameters._config["model"]["student_nonlinearity"] = args.snl
-    if args.tnl:
-        teacher_nonlinearities = [str(nl).strip() for nl in "".join(args.tnl).strip('[]').split(',')]
-        student_teacher_parameters._config["model"]["teacher_nonlinearities"] = teacher_nonlinearities
-    if args.sh:
-        student_hidden = [int(h) for h in "".join(args.sh).strip('[]').split(',')]
-        student_teacher_parameters._config["model"]["student_hidden_layers"] = student_hidden
-    if args.th:
-        teacher_hidden = [int(h) for h in "".join(args.th).strip('[]').split(',')]
-        student_teacher_parameters._config["model"]["teacher_hidden_layers"] = teacher_hidden
-
-    # check for consistency in loss specification of config
-    permissible_regression_losses = ["mse", "l1", "smooth_l1"]
-    permissible_classification_losses = ["bce"]
-
-    loss_type = student_teacher_parameters.get(["task", "loss_type"])
-    loss_function = student_teacher_parameters.get(["training", "loss_function"])
-
-    if (loss_type == "classification" and loss_function in permissible_classification_losses) or \
-       (loss_type == "regression" and loss_function in permissible_regression_losses):
-       pass
-    else:
-        raise ValueError("Potential inconsistency in config specification for loss type and loss function. Please check")
+    # create object in which to store experiment parameters and validate config file
+    student_teacher_parameters = StudentTeacherParameters(
+        params, root_config_template=ConfigTemplate, mnist_config_template=MNISTTemplate, trained_mnist_config_template=TrainedMNISTTemplate
+        )
 
     # establish experiment name / log path etc.
     exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
