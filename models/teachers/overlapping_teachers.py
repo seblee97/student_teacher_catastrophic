@@ -20,7 +20,7 @@ class OverlappingTeachers(_BaseTeachers):
         hidden to output or both.
         """
         # get noise configs if applicable
-        teacher_noise = config.get(["task", "teacher_noise"])
+        teacher_noise = config.get(["teachers", "teacher_noise"])
         if type(teacher_noise) is int:
             teacher_noises = [teacher_noise for _ in range(self._num_teachers)]
         elif type(teacher_noise) is list:
@@ -28,7 +28,7 @@ class OverlappingTeachers(_BaseTeachers):
             "Provide one noise for each teacher. {} noises given, {} teachers specified".format(len(teacher_noise), self._num_teachers)
             teacher_noises = teacher_noise
 
-        overlap_percentages = config.get(["task", "overlap_percentages"])
+        overlap_percentages = config.get(["teachers", "overlap_percentages"])
 
         self._teachers = []
 
