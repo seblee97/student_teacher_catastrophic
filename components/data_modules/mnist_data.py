@@ -18,8 +18,8 @@ class _MNISTData(_BaseData, ABC):
     def __init__(self, config: Dict):
         _BaseData.__init__(self, config)
 
-        self._pca_input = config.get(["training", "pca_input"])
-        self._data_path = config.get("data_path")
+        self._pca_input = config.get(["mnist", "pca_input"])
+        self._data_path = config.get(["mnist", "data_path"])
 
         self._load_mnist_data()
 
