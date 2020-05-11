@@ -129,8 +129,15 @@ class StudentTeacherRunner:
         """
         curriculum_type = config.get(["curriculum", "type"])
         self.curriculum_stopping_condition = config.get(["curriculum", "stopping_condition"])
-        self.curriculum_period = config.get(["curriculum", "fixed_period"])
-        self.curriculum_loss_threshold = config.get(["curriculum", "loss_threshold"])
+        if self.curriculum_stopping_condition == "fixed_period":
+            self.curriculum_period = config.get(["curriculum", "fixed_period"])
+        elif self.curriculum_stopping_condition == "single_threshold":
+            self.current_loss_threshold = config.get(["curriculum", "loss_threshold"])
+        elif self.curriculum_stopping_condition == "threshold_sequence":
+            loss_threshold_sequence = config.get(["curriculum", "loss_threshold"])
+            # make n copies of threshold sequence e.g. [thresh1, thresh2] -> [thresh1, thresh1, thresh2, thresh2]
+            self.curriculum_loss_threshold = iter([threshold for threshold in loss_threshold_sequence for _ in range(self.num_teachers)])
+            self.current_loss_threshold = next(self.curriculum_loss_threshold) 
 
         if curriculum_type == "custom":
             self.curriculum = itertools.cycle((config.get(["curriculum", "custom"])))
@@ -261,8 +268,14 @@ class StudentTeacherRunner:
                 return True
             else:
                 return False
-        elif self.curriculum_stopping_condition == "threshold":
-            if generalisation_error < self.curriculum_loss_threshold:
+        elif self.curriculum_stopping_condition == "single_threshold":
+            if generalisation_error < self.current_loss_threshold:
+                return True
+            else:
+                return False
+        elif self.curriculum_stopping_condition == "threshold_sequence":
+            if generalisation_error < self.current_loss_threshold:
+                self.current_loss_threshold = next(self.curriculum_loss_threshold)
                 return True
             else:
                 return False
