@@ -16,7 +16,7 @@ class CurriculumTemplate(utils._Template):
     )
     
     STOPPING_CONDITION = utils.Field(
-        name="stopping_condition", types=(str), reqs=[lambda x: x in ["fixed_period", "threshold"]]
+        name="stopping_condition", types=(str), reqs=[lambda x: x in ["fixed_period", "single_threshold", "threshold_sequence"]]
     )
 
     FIXED_PERIOD = utils.Field(
@@ -24,7 +24,7 @@ class CurriculumTemplate(utils._Template):
     )
 
     LOSS_THRESHOLD = utils.Field(
-        name="loss_threshold", types=(float), reqs=[lambda x: x > 0]
+        name="loss_threshold", types=(list, float), reqs=[lambda x: (isinstance(x, float) and x > 0) or (isinstance(x, list) and all(isinstance(y, float) and y > 0 for y in x))]
     )
 
     CUSTOM = utils.Field(
