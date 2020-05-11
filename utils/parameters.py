@@ -1,11 +1,16 @@
-from typing import Any, List, Union
+from .base_template import _Template, Field
+
+from typing import Any, List, Union, Dict, Type
 
 import yaml
 import os
 import collections
 import six
 
-class StudentTeacherParameters(object):
+TemplateType = Type[_Template]
+FieldType = Type[Field]
+
+class Parameters(object):
     
     def __init__(self, parameters):
         self._config = parameters
@@ -43,6 +48,43 @@ class StudentTeacherParameters(object):
         """
         raise NotImplementedError # TODO: Is this worth doing? .yaml not particularly amenable 
 
+    def _validate_field(self, field: FieldType, data: Dict, level: str) -> None:
+        field_name = field.get_name()
+        allowed_field_types = field.get_types()
+        additional_reqs = field.get_reqs()
+
+        # ensure field exists
+        assert field_name in data, "{} not specified in configuration at level {}".format(field_name, level)
+
+        # ensure value give for field is correct type
+        field_value = data[field_name]
+        assert isinstance(field_value, allowed_field_types), \
+        "Type given for field {} at level {} in config is {}. Must be one of {}".format(field_name, level, type(field_value), allowed_field_types)
+
+        # ensure other requirements are satisfied
+        if additional_reqs:
+            for r, requirement in enumerate(additional_reqs):
+                assert requirement(field_value), "Additional requirement check {} for field {} failed".format(r, field_name)
+
+        print("Validating field: {} at level {} in config...".format(field_name, level))
+
+    def check_template(self, template: TemplateType):
+        template_attributes = template.get_fields()
+        # import pdb; pdb.set_trace()
+        for template_attribute in template_attributes:
+            if isinstance(template_attribute, type(_Template)):
+                self.check_template(template_attribute)
+            else:
+                template_nesting = template.get_levels()
+                data = self._config
+                if template_nesting is "ROOT":
+                    level_name = "ROOT"
+                else:
+                    level_name = '/'.join(template_nesting)
+                    for level in template_nesting:
+                        data = data.get(level)
+                self._validate_field(field=template_attribute, data=data, level=level_name)
+
     def set_property(self, property_name: Union[str, List[str]], property_value: Any, property_description: str=None) -> None:
         """
         Add to the configuration specification
@@ -67,6 +109,7 @@ class StudentTeacherParameters(object):
         :param property_value: value to ammend for property in configuration
         :param property_description (optional): description of property to add to configuration
         """
+        raise NotImplementedError
         if property_name not in self._config:
             raise Exception("This field is not defined in the configuration. Use set_property method to add this entry")
         else:
@@ -88,7 +131,7 @@ class StudentTeacherParameters(object):
         with open(os.path.join(save_path, "config.yaml"), "w") as f:
             yaml.dump(self._config, f)
 
-    def update(self, specific_params: dict) -> None:
+    def update(self, specific_params: Dict) -> None:
         """
         Update parameter entries based on entried in specific_params.
 
