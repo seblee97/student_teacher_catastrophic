@@ -3,6 +3,7 @@ import copy
 import time
 import logging
 import itertools
+import sys
 
 import torch 
 import torch.optim as optim
@@ -277,7 +278,12 @@ class StudentTeacherRunner:
                 return False
         elif self.curriculum_stopping_condition == "threshold_sequence":
             if generalisation_error < self.current_loss_threshold:
-                self.current_loss_threshold = next(self.curriculum_loss_threshold)
+                try:
+                    self.current_loss_threshold = next(self.curriculum_loss_threshold)
+                except:
+                    self.logger.log("Sequence of thresholds exhausted. Run complete...")
+                    self.logger._consolidate_dfs()
+                    sys.exit(0)
                 return True
             else:
                 return False
