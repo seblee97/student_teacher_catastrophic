@@ -16,13 +16,13 @@ class MNISTStreamData(_MNISTData):
         self.test_data = torchvision.datasets.MNIST(self._full_data_path, transform=self.transform, train=False)
 
         self.training_dataloader = torch.utils.data.DataLoader(self.train_data, batch_size=self._train_batch_size, shuffle=True)
-        self.training_data_iterator = iter(self.training_dataloader)
-
         self.test_dataloader = torch.utils.data.DataLoader(self.test_data, batch_size=len(self.test_data))
+
+        self.training_data_iterator = iter(self.training_dataloader)
 
     def get_test_set(self) -> (torch.Tensor, List[torch.Tensor]):
         data, labels = next(iter(self.test_dataloader))
-        return data, None
+        return {'x': data}
 
     def get_batch(self) -> Dict[str, torch.Tensor]:
         """
