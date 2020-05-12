@@ -18,7 +18,7 @@ class IIDData(_BaseData):
         return test_input_batch: test data set
         """
         test_input_data = torch.randn(self._test_batch_size, self._input_dimension).to(self._device)
-        return test_input_data, None 
+        return {'x': test_input_data}
 
     def get_batch(self) -> Dict[str, torch.Tensor]:
         """returns batch of training data"""
