@@ -197,15 +197,12 @@ class StudentTeacherRunner:
             while total_step_count < self.total_training_steps:
 
                 batch = self.data_module.get_batch() # returns dictionary 
-
                 batch_input = batch.get('x')
-                batch_labels = batch.get('y') # returns None unless using pure MNIST teachers
+                            
+                # feed full batch into teachers (i.e. potentially with label since come teacher configurations will simply return label)
+                teacher_output = self.teachers.forward(teacher_index, batch)
 
-                if (batch_labels is not None) and (self.teacher_configuration != "trained_mnist"):
-                    teacher_output = batch_labels
-                else:
-                    teacher_output = self.teachers.forward(teacher_index, batch_input)
-      
+                # student on the other hand only gets input (avoids accidentally accessing label)
                 student_output = self.learner.forward(batch_input)
 
                 if self.verbose and task_step_count % 1000 == 0:
@@ -265,6 +262,8 @@ class StudentTeacherRunner:
                     self.logger.write_scalar_tb('steps_per_task', task_step_count, total_step_count)
                     steps_per_task.append(task_step_count)
                     break
+        
+        self.logger._consolidate_dfs()
 
     def _switch_task(self, step: int, generalisation_error: float) -> bool: 
         """
