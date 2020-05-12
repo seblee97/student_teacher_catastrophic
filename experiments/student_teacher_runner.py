@@ -70,25 +70,37 @@ class StudentTeacherRunner:
         self.input_source = config.get(["training", "input_source"])
 
     def _setup_learner(self, config: Dict):
+        t0 = time.time()
         if self.learner_configuration == "continual":
             self.learner = learners.ContinualLearner(config=config)
         elif self.learner_configuration == "meta":
             self.learner = learners.MetaLearner(config=config)
         else:
             raise ValueError("Learner configuration {} not recognised".format(self.learner_configuration))
+        print("Learner setup in {}s".format(round(time.time() - t0, 5)))
 
     def _setup_teachers(self, config: Dict):
+        t0 = time.time()
         if self.teacher_configuration == "overlapping":
             self.teachers = teachers.OverlappingTeachers(config=config)
         elif self.teacher_configuration == "mnist":
-            self.teachers = teachers.DummyMNISTTeachers(config=config) # 'teachers' are MNIST images with labels - provided by data module
+            self.teachers = teachers.PureMNISTTeachers(config=config) # 'teachers' are MNIST images with labels - provided by data module
         elif self.teacher_configuration == "trained_mnist":
             self.teachers = teachers.TrainedMNISTTeachers(config=config)
         else:
             raise NotImplementedError("Teacher configuration {} not recognised".format(self.teacher_configuration))
+        print("Teachers setup in {}s".format(round(time.time() - t0, 5)))
+        
+    def _setup_logger(self, config: Dict):
+        t0 = time.time()
+        if self.teacher_configuration == "mnist":
+            self.logger = loggers.StudentMNISTLogger(config=config)
+        else:
+            self.logger = loggers.StudentTeacherLogger(config=config)
+        print("Logger module setup in {}s".format(round(time.time() - t0, 5)))
 
     def _setup_data(self, config: Dict):
-
+        t0 = time.time()
         if (self.teacher_configuration == "mnist") or (self.teacher_configuration == "trained_mnist"):
             self.data_module = data_modules.PureMNISTData(config)
         else:
@@ -99,24 +111,22 @@ class StudentTeacherRunner:
             else:
                 raise ValueError("Input source type {} not recognised. Please use either iid_gaussian or mnist".format(self.input_source))
         
-        self.test_input_data, self.test_teacher_outputs = self.data_module.get_test_set() # labels will be None if using student-teacher networks
+        self.test_data = self.data_module.get_test_set() # labels will be None if using student-teacher networks
 
-        if self.test_teacher_outputs is None or self.teacher_configuration == "trained_mnist":
-            self.test_teacher_outputs = self.teachers.forward_all(self.test_input_data)
-        
-    def _setup_logger(self, config: Dict):
-        if self.teacher_configuration == "mnist":
-            self.logger = loggers.StudentMNISTLogger(config=config)
-        else:
-            self.logger = loggers.StudentTeacherLogger(config=config)
+        # if self.test_teacher_outputs is None or self.teacher_configuration == "trained_mnist":
+        self.test_teacher_outputs = self.teachers.forward_all(self.test_data)
+
+        print("Data module setup in {}s".format(round(time.time() - t0, 5)))
 
     def _setup_loss(self, config: Dict):
+        t0 = time.time()
         if self.loss_type == "regression":
             self.loss_module = loss_modules.RegressionLoss(config=config)
         elif self.loss_type == "classification":
             self.loss_module = loss_modules.ClassificationLoss(config=config)
         else:
             raise NotImplementedError("Loss type {} not recognised".format(self.loss_type))
+        print("Loss module setup in {}s".format(round(time.time() - t0, 5)))
 
     def _initialise_metrics(self) -> None:
         """
