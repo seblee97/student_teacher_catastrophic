@@ -18,21 +18,24 @@ class _MNISTData(_BaseData, ABC):
     def __init__(self, config: Dict):
         _BaseData.__init__(self, config)
 
-        self._pca_input = config.get(["mnist", "pca_input"])
-        self._data_path = config.get(["mnist", "data_path"])
+        self._data_path = config.get(["mnist_data", "data_path"])
+        
+        self._pca_input = config.get(["mnist_data", "pca_input"])
+        self._standardise = config.get(["mnist_data", "standardise"])
+        self._noise = config.get(["mnist_data", "noise"])
 
         self._load_mnist_data()
 
     def _load_mnist_data(self) -> None:
 
-        self._preprocess_data()
+        self._get_transforms()
         self._generate_dataloaders()
 
     @abstractmethod
     def _generate_dataloaders(self) -> None:
         raise NotImplementedError("Base class method")
 
-    def _preprocess_data(self) -> None:
+    def _get_transforms(self) -> None:
 
         # TODO: Docs
 
@@ -43,6 +46,7 @@ class _MNISTData(_BaseData, ABC):
         transform_list = [
             torchvision.transforms.Grayscale(),
             torchvision.transforms.ToTensor(),
+            torchvision.transforms.Normalize((0.1307,), (0.3081,)),
             custom_torch_transforms.CustomFlatten(),
             custom_torch_transforms.ToFloat()                   
         ]
@@ -61,21 +65,29 @@ class _MNISTData(_BaseData, ABC):
             transform_list.append(pca_transform)
             base_transform = torchvision.transforms.Compose(transform_list)
 
-        # load dataset to compute channel statistics
-        mnist_train_data = torchvision.datasets.MNIST(self._full_data_path, transform=base_transform, train=True)
-        mnist_train_dataloader = torch.utils.data.DataLoader(mnist_train_data, batch_size=len(mnist_train_data))
+        if self._standardise:
+            # load dataset to compute channel statistics
+            mnist_train_data = torchvision.datasets.MNIST(self._full_data_path, transform=base_transform, train=True)
+            mnist_train_dataloader = torch.utils.data.DataLoader(mnist_train_data, batch_size=len(mnist_train_data))
 
-        # evaluate channel mean and std (note MNIST small enough to load all in memory rather than computing over smaller batches)
-        data_mu = torch.mean(next(iter(mnist_train_dataloader))[0], axis=0)
-        data_sigma = torch.std(next(iter(mnist_train_dataloader))[0], axis=0)
+            # import pdb; pdb.set_trace()
 
-        # add normalisation to transforms
-        normalise_transform = custom_torch_transforms.Standardize(data_mu, data_sigma)
-        transform_list.append(normalise_transform)
+            # evaluate channel mean and std (note MNIST small enough to load all in memory rather than computing over smaller batches)
+            data_mu = torch.mean(next(iter(mnist_train_dataloader))[0], axis=0)
+            data_sigma = torch.std(next(iter(mnist_train_dataloader))[0], axis=0)
+            # import pdb; pdb.set_trace()
+
+            # add normalisation to transforms
+            normalise_transform = custom_torch_transforms.Standardize(data_mu, data_sigma)
+            transform_list.append(normalise_transform)
+
+        if self._noise is not None:
+            add_noise_transform = custom_torch_transforms.AddGaussianNoise(self._noise)
+            transform_list.append(normalise_transform)
 
         transform = torchvision.transforms.Compose(transform_list)
 
-        self.transform = transform
+        self.transform = torchvision.transforms.Compose(transform_list)
     
     @abstractmethod
     def get_test_set(self) -> (torch.Tensor, List[torch.Tensor]):
