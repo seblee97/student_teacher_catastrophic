@@ -7,10 +7,12 @@ from .testing_template import TestingTemplate
 from .model_template import ModelTemplate
 from .curriculum_template import CurriculumTemplate
 from .teachers_template import TeachersTemplate
+from .logging_template import LoggingTemplate
 
 class ConfigTemplate(utils._Template):
 
     LEVELS = "ROOT"
+    OPTIONAL = ["drift_teachers", "mnist_data", "pure_mnist", "trained_mnist"]
 
     # root level fields
     EXPERIMENT_NAME = utils.Field(
@@ -24,26 +26,11 @@ class ConfigTemplate(utils._Template):
     SEED = utils.Field(
         name="seed", types=(int), reqs=None
     )
-        
-    VERBOSE = utils.Field(
-        name="verbose", types=(bool), reqs=None
-    )
-
-    VERBOSE_TB = utils.Field(
-        name="verbose_tb", types=(bool), reqs=None
-    )
-
-    CHECKPOINT_FREQUENCY = utils.Field(
-        name="checkpoint_frequency", types=(int), reqs=None
-    )
-        
-    LOG_TO_DF = utils.Field(
-        name="log_to_df", types=(bool), reqs=None
-    )
 
     TASK_TEMPLATE = TaskTemplate
     TRAINING_TEMPLATE = TrainingTemplate
     TESTING_TEMPLATE = TestingTemplate
+    LOGGING_TEMPLATE = LoggingTemplate
     MODEL_TEMPLATE = ModelTemplate
     CURRICULUM_TEMPLATE = CurriculumTemplate
     TEACHERS_TEMPLATE = TeachersTemplate
@@ -54,15 +41,11 @@ class ConfigTemplate(utils._Template):
             cls.EXPERIMENT_NAME,
             cls.USE_GPU,
             cls.SEED,
-            cls.VERBOSE,
-            cls.VERBOSE_TB,
-            cls.CHECKPOINT_FREQUENCY,
-            cls.LOG_TO_DF,
-            cls.LOG_TO_DF,
 
             cls.TASK_TEMPLATE,
             cls.TRAINING_TEMPLATE,
             cls.TESTING_TEMPLATE,
+            cls.LOGGING_TEMPLATE,
             cls.MODEL_TEMPLATE,
             cls.CURRICULUM_TEMPLATE,
             cls.TEACHERS_TEMPLATE
