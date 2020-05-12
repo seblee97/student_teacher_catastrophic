@@ -8,7 +8,7 @@ class TrainingTemplate(utils._Template):
 
     # Training level fields
     TOTAL_TRAINING_STEPS = utils.Field(
-        name="total_training_steps", types=(int), reqs=[lambda x: x > 0]
+        name="total_training_steps", types=(type(None), int), reqs=[lambda x: x is None or x > 0]
     )
 
     TRAIN_BATCH_SIZE = utils.Field(
