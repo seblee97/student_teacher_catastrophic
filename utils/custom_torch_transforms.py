@@ -48,3 +48,11 @@ class ApplyPCA(object):
         reduced_image = img.squeeze()
 
         return reduced_image
+
+class AddGaussianNoise(object):
+
+    def __init__(self, std):
+        self.std = std
+
+    def __call__(self, image):
+        noisy_image = image + torch.empty(image.shape).normal_(mean=0,std=self.std)
