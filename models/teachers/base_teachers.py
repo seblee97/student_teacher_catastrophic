@@ -33,14 +33,14 @@ class _BaseTeachers(ABC):
         elif self._loss_type == "regression":
             return RegressionTeacher(config=config, index=index).to(self._device)
 
-    def forward(self, teacher_index: int, x: torch.Tensor) -> torch.Tensor:
+    @abstractmethod
+    def forward(self, teacher_index: int, batch: torch.Tensor) -> torch.Tensor:
         """call to current teacher forward"""
-        output = self._teachers[teacher_index](x)
-        return output
+        raise NotImplementedError("Base class method")
 
-    def forward_all(self, x: torch.Tensor) -> List[torch.Tensor]:
+    def forward_all(self, batch: torch.Tensor) -> List[torch.Tensor]:
         """call to forward of all teachers (used primarily for evaluation)"""
-        outputs = [teacher(x) for teacher in self._teachers]
+        outputs = [self.forward(t, batch) for t in range(self._num_teachers)]
         return outputs
 
     def get_teacher_networks(self) -> List[nn.Module]:
