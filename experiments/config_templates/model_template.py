@@ -5,6 +5,7 @@ from typing import List
 class ModelTemplate(utils._Template):
 
     LEVELS = ["model"]
+    OPTIONAL = []
 
     # Model level fields
     INPUT_DIMENSION = utils.Field(
@@ -66,6 +67,7 @@ class ModelTemplate(utils._Template):
             cls.TEACHER_NONLINEARITIES,
             cls.TEACHER_INITIALISATION_STD,
             cls.STUDENT_INITIALISATION_STD,
+            cls.INITIALISE_STUDENT_OUTPUTS,
             cls.SOFT_COMMITTEE,
             cls.TEACHER_BIAS_PARAMETERS,
             cls.STUDENT_BIAS_PARAMETERS

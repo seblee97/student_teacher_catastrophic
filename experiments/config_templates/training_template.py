@@ -5,6 +5,7 @@ from typing import List
 class TrainingTemplate(utils._Template):
 
     LEVELS = ["training"]
+    OPTIONAL = []
 
     # Training level fields
     TOTAL_TRAINING_STEPS = utils.Field(

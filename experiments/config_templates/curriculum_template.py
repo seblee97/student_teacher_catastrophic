@@ -5,6 +5,7 @@ from typing import List
 class CurriculumTemplate(utils._Template):
 
     LEVELS = ["curriculum"]
+    OPTIONAL = []
 
     # Curriculum level fields
     TYPE = utils.Field(

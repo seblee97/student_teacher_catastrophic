@@ -5,6 +5,7 @@ from typing import List
 class TaskTemplate(utils._Template):
 
     LEVELS = ["task"]
+    OPTIONAL = []
 
     # Task level fields
     LABEL_TASK_BOUNDARIES = utils.Field(

@@ -5,6 +5,7 @@ from typing import List
 class TeachersTemplate(utils._Template):
 
     LEVELS = ["teachers"]
+    OPTIONAL = []
 
     # Teachers level fields
     OVERLAP_PERCENTAGES = utils.Field(

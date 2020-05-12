@@ -5,6 +5,7 @@ from typing import List
 class TestingTemplate(utils._Template):
 
     LEVELS = ["testing"]
+    OPTIONAL = []
 
     # Testing level fields
     TEST_FREQUENCY = utils.Field(
