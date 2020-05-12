@@ -52,6 +52,8 @@ class StudentTeacherRunner:
         self.log_to_df = config.get("log_to_df")
 
         self.total_training_steps = config.get(["training", "total_training_steps"])
+        if self.total_training_steps is None:
+            self.total_training_steps = np.inf
         self.learning_rate = config.get(["training", "learning_rate"])
         self.weight_decay = config.get(["training", "weight_decay"])
 
