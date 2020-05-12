@@ -15,7 +15,7 @@ class PureMNISTData(_MNISTData):
 
         self.override_batch_size = override_batch_size
 
-        self._mnist_teacher_classes = config.get(['training', 'teachers'])
+        self._mnist_teacher_classes = config.get(['pure_mnist', 'teacher_digits'])
         self._current_teacher_index = None
         self._num_teachers = config.get(["task", "num_teachers"])
 
@@ -25,31 +25,25 @@ class PureMNISTData(_MNISTData):
             raise AssertionError("Number of teachers specified in base config is not compatible with\
                 number of MNIST classifiers specified.")
 
+    def filter_dataset_by_target(self, unflitered_data, target_to_keep: int, train: bool, new_label: int=None):
+        """generate subset of dataset filtered by target"""
+        targets = unflitered_data.targets
+
+        indices_to_keep = targets == target_to_keep
+        filtered_dataset_indices = np.arange(len(targets))[indices_to_keep]
+
+        if train:
+            train_dataset_copy = copy.deepcopy(unflitered_data)
+            for ind in filtered_dataset_indices:
+                train_dataset_copy.targets[ind] = torch.Tensor([new_label])
+            return Subset(train_dataset_copy, filtered_dataset_indices)
+        else:  
+            return Subset(unflitered_data, filtered_dataset_indices)
+
     def _generate_dataloaders(self) -> None:
 
         full_train_data = torchvision.datasets.MNIST(self._full_data_path, transform=self.transform, train=True)
         full_test_data = torchvision.datasets.MNIST(self._full_data_path, transform=self.transform, train=False)
-
-        full_train_dataset_targets = full_train_data.targets
-        full_test_dataset_targets = full_test_data.targets
-
-        def filter_dataset_by_target(target_to_keep: int, train: bool, new_label: int=None):
-            """generate subset of dataset filtered by target"""
-            if train:
-                targets = full_train_dataset_targets
-            else:
-                targets = full_test_dataset_targets
-
-            indices_to_keep = targets == target_to_keep
-            filtered_dataset_indices = np.arange(len(targets))[indices_to_keep]
-
-            if train:
-                train_dataset_copy = copy.deepcopy(full_train_data)
-                for ind in filtered_dataset_indices:
-                    train_dataset_copy.targets[ind] = torch.Tensor([new_label])
-                return Subset(train_dataset_copy, filtered_dataset_indices)
-            else:
-                return Subset(full_test_data, filtered_dataset_indices)
 
         task_train_datasets = []
         task_test_datasets = []
@@ -57,11 +51,15 @@ class PureMNISTData(_MNISTData):
         for t, task_classes in enumerate(self._mnist_teacher_classes):
             
             # get filtered training sets
-            train_target_filtered_datasets = [filter_dataset_by_target(target_to_keep=target, train=True, new_label=st) for st, target in enumerate(task_classes)]
+            train_target_filtered_datasets = [self.filter_dataset_by_target(
+                unflitered_data=full_train_data, target_to_keep=target, train=True, new_label=st
+                ) for st, target in enumerate(task_classes)]
             train_task_dataset = ConcatDataset(train_target_filtered_datasets)
 
             # get filtered test sets
-            test_target_filtered_datasets = [filter_dataset_by_target(target_to_keep=target, train=False) for target in task_classes]
+            test_target_filtered_datasets = [
+                self.filter_dataset_by_target(unflitered_data=full_test_data, target_to_keep=target, train=False
+                ) for target in task_classes]
             test_task_dataset = ConcatDataset(test_target_filtered_datasets)
 
             task_train_datasets.append(train_task_dataset)
@@ -85,7 +83,7 @@ class PureMNISTData(_MNISTData):
         test_sets = [next(iter(test_dataloader)) for test_dataloader in self.task_test_dataloaders]
         data = torch.cat([test_set[0] for test_set in test_sets])
         labels = [test_set[1] for test_set in test_sets]
-        return data, labels
+        return {'x': data, 'y': labels}
     
     def get_batch(self) -> Dict[str, torch.Tensor]:
         """
