@@ -40,10 +40,12 @@ class _BaseLogger(ABC):
     def _extract_parameters(self, config: Dict) -> None:
         """get relevant parameters from config and make attributes of class"""
         self._checkpoint_path = config.get("checkpoint_path")
-        self._log_to_df = config.get("log_to_df")
+        self._log_to_df = config.get(["logging", "log_to_df"])
         self._logfile_path = config.get("logfile_path")
-        self._verbose_tb = config.get("verbose_tb")
-        self._checkpoint_frequency = config.get("checkpoint_frequency")
+        self._logfile_path_no_ext = self._logfile_path.split(".csv")[0]
+        self._verbose_tb = config.get(["logging", "verbose_tb"])
+        self._checkpoint_frequency = config.get(["logging", "checkpoint_frequency"])
+        self._merge_at_checkpoint = config.get(["logging", "merge_at_checkpoint"])
 
         self._student_hidden = config.get(["model", "student_hidden_layers"])
         self._num_teachers = config.get(["task", "num_teachers"])
@@ -125,7 +127,13 @@ class _BaseLogger(ABC):
         raise NotImplementedError("Base class method")
 
     def checkpoint_df(self, step: int) -> None:
-        """save dataframe"""
+        if self._merge_at_checkpoint:
+            self._save_and_merge_df(step=step)
+        else:
+            self._save_df(step=step)
+
+    def _save_and_merge_df(self, step: int) -> None:
+        """save dataframe and merge with previous"""
         self._logger.info("Checkpointing Dataframe...")
         t0 = time.time()
 
@@ -145,13 +153,21 @@ class _BaseLogger(ABC):
             self._logger_df = pd.DataFrame()
         self._logger.info("Dataframe checkpointed in {}s".format(round(time.time() - t0, 5)))
 
+    def _save_df(self, step: int) -> None:
+        """save dataframe"""
+        self._logger.info("Saving Dataframe...")
+        t0 = time.time()
+        self._logger_df.to_csv("{}_iter_{}.csv".format(self._logfile_path_no_ext, step))
+        self._logger.info("Dataframe saved in {}s".format(round(time.time() - t0, 5)))
+        self._logger_df = pd.DataFrame()
+
     def _consolidate_dfs(self) -> None:
         self._logger.info("Consolidating/Merging all dataframes..")
-        import pdb; pdb.set_trace()
         all_df_paths = [os.path.join(self._checkpoint_path, f) for f in os.listdir(self._checkpoint_path) if f.endswith('.csv')]
-        all_dfs = [pd.read_csv(df_path) for df_path in all_df_paths]
+        ordered_df_paths = sorted(all_df_paths, key=lambda x: float(x.split("iter_")[-1].strip(".csv")))
+        all_dfs = [pd.read_csv(df_path) for df_path in ordered_df_paths]
         merged_df = pd.concat(all_dfs)
-        merged_df.to_csv("{}.csv".format(self._logfile_path))
+        merged_df.to_csv(self._logfile_path)
 
         # remove indiviudal dataframes
         for df in all_df_paths:
