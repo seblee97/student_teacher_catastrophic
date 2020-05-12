@@ -13,6 +13,14 @@ class _Template(ABC):
     def get_levels(cls) -> Union[List[str], str]:
         return cls.LEVELS
 
+    @classmethod
+    def get_template_name(cls) -> str:
+        return cls.LEVELS[-1]
+
+    @classmethod
+    def get_optional_fields(cls) -> List[str]:
+        return cls.OPTIONAL
+
 class Field:
 
     def __init__(self, name: str, types: Tuple, reqs: List):
