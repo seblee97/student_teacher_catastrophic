@@ -47,10 +47,10 @@ class StudentTeacherRunner:
         """
         Method to extract relevant parameters from config and make them attributes of this class
         """
-        self.verbose = config.get("verbose")
+        self.verbose = config.get(["logging", "verbose"])
         self.logfile_path = config.get("logfile_path")
-        self.checkpoint_frequency = config.get("checkpoint_frequency")
-        self.log_to_df = config.get("log_to_df")
+        self.checkpoint_frequency = config.get(["logging", "checkpoint_frequency"])
+        self.log_to_df = config.get(["logging", "log_to_df"])
 
         self.total_training_steps = config.get(["training", "total_training_steps"])
         if self.total_training_steps is None:
