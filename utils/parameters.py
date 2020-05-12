@@ -6,6 +6,7 @@ import yaml
 import os
 import collections
 import six
+import warnings
 
 TemplateType = Type[_Template]
 FieldType = Type[Field]
@@ -70,20 +71,34 @@ class Parameters(object):
 
     def check_template(self, template: TemplateType):
         template_attributes = template.get_fields()
-        # import pdb; pdb.set_trace()
+
+        template_nesting = template.get_levels()
+        data = self._config
+        if template_nesting is "ROOT":
+            level_name = "ROOT"
+        else:
+            level_name = '/'.join(template_nesting)
+            for level in template_nesting:
+                data = data.get(level)
+
+        fields_to_check = list(data.keys())
+        optional_fields = template.get_optional_fields()
+
         for template_attribute in template_attributes:
             if isinstance(template_attribute, type(_Template)):
                 self.check_template(template_attribute)
+                fields_to_check.remove(template_attribute.get_template_name())
             else:
-                template_nesting = template.get_levels()
-                data = self._config
-                if template_nesting is "ROOT":
-                    level_name = "ROOT"
-                else:
-                    level_name = '/'.join(template_nesting)
-                    for level in template_nesting:
-                        data = data.get(level)
                 self._validate_field(field=template_attribute, data=data, level=level_name)
+                fields_to_check.remove(template_attribute.get_name())
+
+        for optional_field in optional_fields:
+            if optional_field in fields_to_check:
+                fields_to_check.remove(optional_field)
+                warnings.warn("Optional field {} provided but NOT checked".format(optional_field))
+
+        assert not fields_to_check, \
+            "There are fields at level {} of config that have not been validated: {}".format(level_name, ", ".join(fields_to_check))
 
     def set_property(self, property_name: Union[str, List[str]], property_value: Any, property_description: str=None) -> None:
         """
