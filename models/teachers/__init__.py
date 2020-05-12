@@ -1,3 +1,3 @@
 from .overlapping_teachers import OverlappingTeachers
-from .dummy_mnist_teachers import DummyMNISTTeachers
+from .dummy_mnist_teachers import PureMNISTTeachers
 from .trained_mnist_teachers import TrainedMNISTTeachers
