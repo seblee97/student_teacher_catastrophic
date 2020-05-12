@@ -2,17 +2,10 @@ from typing import List
 
 from context import utils
 
-class MNISTTemplate(utils._Template):
+class PureMNISTTemplate(utils._Template):
 
-    LEVELS = ["mnist"]
-
-    DATA_PATH = utils.Field(
-        name="data_path", types=(str), reqs=None
-    )
-
-    PCA_INPUT = utils.Field(
-        name="pca_input", types=(int), reqs=[lambda x: x >= 0 or x == -1]
-    )
+    LEVELS = ["pure_mnist"]
+    OPTIONAL = []
   
     TEACHER_DIGITS = utils.Field(
         name="teacher_digits", types=(list), reqs=[
@@ -31,8 +24,6 @@ class MNISTTemplate(utils._Template):
     @classmethod
     def get_fields(cls) -> List:
         return [
-            cls.DATA_PATH, 
-            cls.PCA_INPUT,
             cls.TEACHER_DIGITS, 
             cls.ROTATIONS,
         ]
