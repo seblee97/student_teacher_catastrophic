@@ -19,7 +19,7 @@ class StudentTeacherParameters(utils.Parameters):
         if self.get(["task", "teacher_configuration"]) == "trained_mnist":
             self.check_template(self.trained_mnist_config_template)
 
-        if self.get(["training", "input_source"]) == "mnist":
+        if self.get(["data", "input_source"]) == "mnist":
             self.check_template(self.mnist_data_config_template)
 
     def _ensure_consistent_config(self):
@@ -45,7 +45,7 @@ class StudentTeacherParameters(utils.Parameters):
         "number of teacher noises provided ({}) does not match num_teachers specification ({})".format(len(teacher_noises), num_teachers)
 
         # mnist input dimension
-        if self.get(["training", "input_source"]) == "mnist":
+        if self.get(["data", "input_source"]) == "mnist":
             input_specified = self.get(["model", "input_dimension"])
             pca_output = self.get(["mnist_data", "pca_input"])
             assert (input_specified == 784 or (pca_output > 0 and pca_output == input_specified)), \
