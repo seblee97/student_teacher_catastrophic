@@ -17,7 +17,6 @@ class PureMNISTData(_MNISTData):
 
         self._mnist_teacher_classes = config.get(['pure_mnist', 'teacher_digits'])
         self._current_teacher_index = None
-        self._num_teachers = config.get(["task", "num_teachers"])
 
         _MNISTData.__init__(self, config)
 
@@ -79,7 +78,7 @@ class PureMNISTData(_MNISTData):
         # self.training_dataloader = torch.utils.data.DataLoader(self.mnist_train_data, batch_size=self._train_batch_size, shuffle=True)
         # self.training_data_iterator = iter(self.training_dataloader)
 
-    def get_test_set(self) -> (torch.Tensor, List[torch.Tensor]):
+    def get_test_data(self) -> (torch.Tensor, List[torch.Tensor]):
         test_sets = [next(iter(test_dataloader)) for test_dataloader in self.task_test_dataloaders]
         data = torch.cat([test_set[0] for test_set in test_sets])
         labels = [test_set[1] for test_set in test_sets]
