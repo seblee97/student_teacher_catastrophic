@@ -34,6 +34,10 @@ class _BaseTeachers(ABC):
             return RegressionTeacher(config=config, index=index).to(self._device)
 
     @abstractmethod
+    def test_set_forward(self, teacher_index: int, batch: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError("Base class method")
+
+    @abstractmethod
     def forward(self, teacher_index: int, batch: torch.Tensor) -> torch.Tensor:
         """call to current teacher forward"""
         raise NotImplementedError("Base class method")
