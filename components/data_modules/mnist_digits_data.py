@@ -9,7 +9,7 @@ from torch.utils.data import Subset, ConcatDataset, DataLoader
 import numpy as np
 import copy
 
-class PureMNISTData(_MNISTData):
+class MNISTDigitsData(_MNISTData):
 
     def __init__(self, config: Dict, override_batch_size: int=None):
 
