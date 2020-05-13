@@ -33,6 +33,9 @@ class StudentTeacherRunner:
         self._setup_data(config=config)
         self._setup_loss(config=config)
 
+        # compute test outputs for teachers
+        self._setup_testing()
+
         # extract curriculum from config
         self._set_curriculum(config)
 
@@ -67,7 +70,8 @@ class StudentTeacherRunner:
         self.overlap_frequency = config.get(["testing", "overlap_frequency"])
 
         self.input_dimension = config.get(["model", "input_dimension"])
-        self.input_source = config.get(["training", "input_source"])
+        self.input_source = config.get(["data", "input_source"])
+        self.same_input_distribution = config.get(["data", "same_input_distribution"])
 
     def _setup_learner(self, config: Dict):
         t0 = time.time()
@@ -110,13 +114,16 @@ class StudentTeacherRunner:
                 self.data_module = data_modules.MNISTStreamData(config)
             else:
                 raise ValueError("Input source type {} not recognised. Please use either iid_gaussian or mnist".format(self.input_source))
-        
-        self.test_data = self.data_module.get_test_set() # labels will be None if using student-teacher networks
-
-        # if self.test_teacher_outputs is None or self.teacher_configuration == "trained_mnist":
-        self.test_teacher_outputs = self.teachers.forward_all(self.test_data)
-
         print("Data module setup in {}s".format(round(time.time() - t0, 5)))
+
+    def _setup_testing(self):
+        t0 = time.time()
+        self.test_data = self.data_module.get_test_data()
+        if self.same_input_distribution:
+            self.test_teacher_outputs = [self.teachers.forward(t, self.test_data) for t in range(self.num_teachers)]
+        else:
+            self.test_teacher_outputs = [self.teachers.forward(t, test_set) for t, test_set in enumerate(self.test_data)]
+        print("Testing setup in {}s".format(round(time.time() - t0, 5)))
 
     def _setup_loss(self, config: Dict):
         t0 = time.time()
@@ -234,7 +241,7 @@ class StudentTeacherRunner:
                 # overlap matrices
                 if total_step_count % self.overlap_frequency == 0 and total_step_count != 0:
                     self.logger._compute_overlap_matrices(
-                        student_network=self.learner.get_student_network(), 
+                        student_network=self.learner, 
                         teacher_networks=self.teachers.get_teacher_networks(), 
                         step_count=total_step_count
                         )
@@ -243,7 +250,7 @@ class StudentTeacherRunner:
                 task_step_count += 1
 
                 # output layer weights
-                self.logger._log_output_weights(step_count=total_step_count, student_network=self.learner.get_student_network())
+                self.logger._log_output_weights(step_count=total_step_count, student_network=self.learner)
 
                 # alert learner/teacher(s) of step e.g. to drift teacher
                 self.learner.signal_step_boundary_to_learner(step=task_step_count, current_task=teacher_index)
@@ -382,7 +389,10 @@ class StudentTeacherRunner:
 
     def _compute_generalisation_errors(self, teacher_index=None):
         with torch.no_grad():
-            student_outputs = self.learner.forward_all(self.test_input_data)
+            if self.same_input_distribution:
+                student_outputs = self.learner.forward_all(self.test_data['x'])
+            else:
+                student_outputs = self.learner.forward_batch_per_task(self.test_data)
             generalisation_errors = [float(self.loss_module.compute_loss(student_output, teacher_output)) for student_output, teacher_output in zip(student_outputs, self.test_teacher_outputs)]
 
             return_dict = {'generalisation_error': generalisation_errors}
@@ -390,5 +400,4 @@ class StudentTeacherRunner:
             if self.loss_type == "classification":
                 accuracies = [float(self._compute_classification_acc(student_output, teacher_output)) for student_output, teacher_output in zip(student_outputs, self.test_teacher_outputs)]
                 return_dict['accuracy'] = accuracies
-
             return return_dict
