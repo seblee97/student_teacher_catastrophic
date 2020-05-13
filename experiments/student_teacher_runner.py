@@ -87,10 +87,13 @@ class StudentTeacherRunner:
         t0 = time.time()
         if self.teacher_configuration == "overlapping":
             self.teachers = teachers.OverlappingTeachers(config=config)
-        elif self.teacher_configuration == "mnist":
+            self.teacher_is_network = True
+        elif self.teacher_configuration == "pure_mnist":
             self.teachers = teachers.PureMNISTTeachers(config=config) # 'teachers' are MNIST images with labels - provided by data module
+            self.teacher_is_network = False
         elif self.teacher_configuration == "trained_mnist":
             self.teachers = teachers.TrainedMNISTTeachers(config=config)
+            self.teacher_is_network = True
         else:
             raise NotImplementedError("Teacher configuration {} not recognised".format(self.teacher_configuration))
         print("Teachers setup in {}s".format(round(time.time() - t0, 5)))
@@ -105,22 +108,23 @@ class StudentTeacherRunner:
 
     def _setup_data(self, config: Dict):
         t0 = time.time()
-        if (self.teacher_configuration == "mnist") or (self.teacher_configuration == "trained_mnist"):
-            self.data_module = data_modules.PureMNISTData(config)
-        else:
-            if self.input_source == 'iid_gaussian':
-                self.data_module = data_modules.IIDData(config)
-            elif self.input_source == 'mnist':
-                self.data_module = data_modules.MNISTStreamData(config)
-            else:
-                raise ValueError("Input source type {} not recognised. Please use either iid_gaussian or mnist".format(self.input_source))
+        if self.input_source == 'iid_gaussian':
+            self.data_module = data_modules.IIDData(config)
+        elif self.input_source == 'mnist_stream':
+            self.data_module = data_modules.MNISTStreamData(config)
+        elif self.input_source == 'mnist_digits':
+            self.data_module = data_modules.MNISTDigitsData(config)
+        elif self.input_source == 'even_greater':
+            self.data_module = data_modules.MNISTEvenGreaterData(config)
+        else:    
+            raise ValueError("Input source type {} not recognised. Please use either iid_gaussian or mnist".format(self.input_source))
         print("Data module setup in {}s".format(round(time.time() - t0, 5)))
 
     def _setup_testing(self):
         t0 = time.time()
         self.test_data = self.data_module.get_test_data()
         if self.same_input_distribution:
-            self.test_teacher_outputs = [self.teachers.forward(t, self.test_data) for t in range(self.num_teachers)]
+            self.test_teacher_outputs = [self.teachers.test_set_forward(t, self.test_data) for t in range(self.num_teachers)]
         else:
             self.test_teacher_outputs = [self.teachers.forward(t, test_set) for t, test_set in enumerate(self.test_data)]
         print("Testing setup in {}s".format(round(time.time() - t0, 5)))
@@ -212,6 +216,9 @@ class StudentTeacherRunner:
                 # student on the other hand only gets input (avoids accidentally accessing label)
                 student_output = self.learner.forward(batch_input)
 
+                assert teacher_output.shape == student_output.shape, \
+                    "Shape of student and teacher outputs are different. To ensure correctness please fix"
+
                 if self.verbose and task_step_count % 1000 == 0:
                     self.logger.log("Training step {}".format(task_step_count))
 
@@ -239,7 +246,7 @@ class StudentTeacherRunner:
                     self.learner.set_to_train()
 
                 # overlap matrices
-                if total_step_count % self.overlap_frequency == 0 and total_step_count != 0:
+                if total_step_count % self.overlap_frequency == 0 and self.teacher_is_network:
                     self.logger._compute_overlap_matrices(
                         student_network=self.learner, 
                         teacher_networks=self.teachers.get_teacher_networks(), 
@@ -393,6 +400,8 @@ class StudentTeacherRunner:
                 student_outputs = self.learner.forward_all(self.test_data['x'])
             else:
                 student_outputs = self.learner.forward_batch_per_task(self.test_data)
+
+            # import pdb; pdb.set_trace()
             generalisation_errors = [float(self.loss_module.compute_loss(student_output, teacher_output)) for student_output, teacher_output in zip(student_outputs, self.test_teacher_outputs)]
 
             return_dict = {'generalisation_error': generalisation_errors}
