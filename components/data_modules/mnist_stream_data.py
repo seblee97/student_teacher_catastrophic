@@ -20,7 +20,7 @@ class MNISTStreamData(_MNISTData):
 
         self.training_data_iterator = iter(self.training_dataloader)
 
-    def get_test_set(self) -> (torch.Tensor, List[torch.Tensor]):
+    def get_test_data(self) -> (torch.Tensor, List[torch.Tensor]):
         data, labels = next(iter(self.test_dataloader))
         return {'x': data}
 
