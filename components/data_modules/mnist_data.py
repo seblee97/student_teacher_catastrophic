@@ -90,7 +90,7 @@ class _MNISTData(_BaseData, ABC):
         self.transform = torchvision.transforms.Compose(transform_list)
     
     @abstractmethod
-    def get_test_set(self) -> (torch.Tensor, List[torch.Tensor]):
+    def get_test_data(self) -> (torch.Tensor, List[torch.Tensor]):
         """
         returns fixed test data set (data and labels)
         
