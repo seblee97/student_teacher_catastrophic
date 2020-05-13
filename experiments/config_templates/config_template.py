@@ -8,6 +8,7 @@ from .model_template import ModelTemplate
 from .curriculum_template import CurriculumTemplate
 from .teachers_template import TeachersTemplate
 from .logging_template import LoggingTemplate
+from .data_template import DataTemplate
 
 class ConfigTemplate(utils._Template):
 
@@ -29,6 +30,7 @@ class ConfigTemplate(utils._Template):
 
     TASK_TEMPLATE = TaskTemplate
     TRAINING_TEMPLATE = TrainingTemplate
+    DATA_TEMPLATE = DataTemplate
     TESTING_TEMPLATE = TestingTemplate
     LOGGING_TEMPLATE = LoggingTemplate
     MODEL_TEMPLATE = ModelTemplate
@@ -44,6 +46,7 @@ class ConfigTemplate(utils._Template):
 
             cls.TASK_TEMPLATE,
             cls.TRAINING_TEMPLATE,
+            cls.DATA_TEMPLATE,
             cls.TESTING_TEMPLATE,
             cls.LOGGING_TEMPLATE,
             cls.MODEL_TEMPLATE,
