@@ -17,7 +17,7 @@ class TaskTemplate(utils._Template):
     )
     
     TEACHER_CONFIGURATION = utils.Field(
-        name="teacher_configuration", types=(str), reqs=[lambda x: x in ["overlapping", "mnist", "trained_mnist"]]
+        name="teacher_configuration", types=(str), reqs=[lambda x: x in ["overlapping", "pure_mnist", "trained_mnist"]]
     )
 
     NUM_TEACHERS = utils.Field(
