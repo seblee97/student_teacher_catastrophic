@@ -64,6 +64,9 @@ class OverlappingTeachers(_BaseTeachers):
                 teacher.set_noise_distribution(mean=0, std=teacher_noises[t + 1] * teacher_output_std)
             self._teachers.append(teacher)
 
+    def test_set_forward(self, teacher_index: int, batch: Dict) -> torch.Tensor:
+        return self.forward(teacher_index, batch)
+
     def forward(self, teacher_index: int, batch: Dict) -> torch.Tensor:
         x = batch['x']
         output = self._teachers[teacher_index](x)
