@@ -1,3 +1,4 @@
 from .iid_data import IIDData
 from .mnist_stream_data import MNISTStreamData
-from .pure_mnist_data import PureMNISTData
+from .mnist_digits_data import MNISTDigitsData
+from .even_greater_mnist_data import MNISTEvenGreaterData
