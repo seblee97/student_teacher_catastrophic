@@ -11,13 +11,14 @@ class IIDData(_BaseData):
     def __init__(self, config):
         _BaseData.__init__(self, config)
 
-    def get_test_set(self) -> (torch.Tensor, None):
+    def get_test_data(self) -> List[Dict[str, torch.Tensor]]:
         """
         returns fixed test data set (data and labels)
         
         return test_input_batch: test data set
         """
         test_input_data = torch.randn(self._test_batch_size, self._input_dimension).to(self._device)
+
         return {'x': test_input_data}
 
     def get_batch(self) -> Dict[str, torch.Tensor]:
