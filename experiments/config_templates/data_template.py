@@ -9,7 +9,7 @@ class DataTemplate(utils._Template):
 
     # Data level fields
     INPUT_SOURCE = utils.Field(
-        name="input_source", types=(str), reqs=[lambda x: x in ["mnist", "iid_gaussian"]]
+        name="input_source", types=(str), reqs=[lambda x: x in ["mnist_stream", "mnist_digits", "even_greater", "iid_gaussian"]]
     )
 
     SAME_INPUT_DISTRIBUTION = utils.Field(
