@@ -1,5 +1,5 @@
 from models.networks.base_network import Model
-from components.data_modules import PureMNISTData
+from components.data_modules import MNISTDigitsData
 
 import torch
 import torch.nn as nn 
@@ -47,7 +47,7 @@ class MNISTTrainer:
         self.batch_size = config.get(["trained_mnist", "batch_size"])
 
         self.model = ClassificationTeacher(config=config)
-        self.data_module = PureMNISTData(config, override_batch_size=self.batch_size)
+        self.data_module = MNISTDigitsData(config, override_batch_size=self.batch_size)
         self.data_module.signal_task_boundary_to_data_generator(new_task=task_index)
 
         self.convergence_criterion = config.get(["trained_mnist", "convergence_criterion"])
