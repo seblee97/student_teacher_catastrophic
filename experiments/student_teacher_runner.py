@@ -8,16 +8,15 @@ import sys
 import torch 
 import torch.optim as optim
 
-from typing import List, Tuple, Generator, Dict
+from typing import List, Tuple, Generator, Dict, Union
 
-# components
-from context import data_modules, loss_modules, loggers
-# models
-from context import teachers, learners
+from components import data_modules, data_modules, loss_modules, loggers
+from models import teachers, learners
+from utils import Parameters
 
 class StudentTeacherRunner:
 
-    def __init__(self, config: Dict) -> None:
+    def __init__(self, config: Parameters) -> None:
         """
         Class for orchestrating student teacher framework including training and test loops
 
@@ -27,14 +26,26 @@ class StudentTeacherRunner:
         self._extract_parameters(config)
 
         # initialise student, teachers, logger_module, data_module and loss_module
-        self._setup_learner(config=config)
-        self._setup_teachers(config=config)
-        self._setup_logger(config=config)
-        self._setup_data(config=config)
-        self._setup_loss(config=config)
+        t0 = time.time()
+        self.learner: learners._BaseLearner = self._setup_learner(config=config)
+        t1 = time.time()
+        print("Learners setup in {}s".format(round(t1 - t0, 5)))
+        self.teachers: teachers._BaseTeachers = self._setup_teachers(config=config)
+        t2 = time.time()
+        print("Teachers setup in {}s".format(round(t2 - t1, 5)))
+        self.logger: loggers._BaseLogger = self._setup_logger(config=config)
+        t3 = time.time()
+        print("Logger setup in {}s".format(round(t3 - t2, 5)))
+        self.data_module: data_modules._BaseData = self._setup_data(config=config)
+        t4 = time.time()
+        print("Data module setup in {}s".format(round(t4 - t3, 5)))
+        self.loss_module: loss_modules._BaseLoss = self._setup_loss(config=config)
+        t5 = time.time()
+        print("Loss module setup in {}s".format(round(t5 - t4, 5)))
 
         # compute test outputs for teachers
-        self._setup_testing()
+        self.test_data: Union[List[Dict[str, torch.Tensor]], Dict[str, Union[torch.Tensor, List[torch.Tensor]]]] = self.data_module.get_test_data()
+        self.test_teacher_outputs: List[torch.Tensor] = self._get_test_teacher_outputs()
 
         # extract curriculum from config
         self._set_curriculum(config)
@@ -46,7 +57,7 @@ class StudentTeacherRunner:
         # initialise objects containing metrics of interest
         self._initialise_metrics()
 
-    def _extract_parameters(self, config: Dict) -> None:
+    def _extract_parameters(self, config: Parameters) -> None:
         """
         Method to extract relevant parameters from config and make them attributes of this class
         """
@@ -73,80 +84,68 @@ class StudentTeacherRunner:
         self.input_source = config.get(["data", "input_source"])
         self.same_input_distribution = config.get(["data", "same_input_distribution"])
 
-    def _setup_learner(self, config: Dict):
-        t0 = time.time()
+    def _setup_learner(self, config: Parameters) -> learners._BaseLearner :
         if self.learner_configuration == "continual":
-            self.learner = learners.ContinualLearner(config=config)
+            return learners.ContinualLearner(config=config)
         elif self.learner_configuration == "meta":
-            self.learner = learners.MetaLearner(config=config)
+            return learners.MetaLearner(config=config)
         else:
             raise ValueError("Learner configuration {} not recognised".format(self.learner_configuration))
-        print("Learner setup in {}s".format(round(time.time() - t0, 5)))
 
-    def _setup_teachers(self, config: Dict):
-        t0 = time.time()
+    def _setup_teachers(self, config: Parameters) -> teachers._BaseTeachers:  
+        self.teacher_is_network: bool
         if self.teacher_configuration == "overlapping":
-            self.teachers = teachers.OverlappingTeachers(config=config)
             self.teacher_is_network = True
+            return teachers.OverlappingTeachers(config=config)
         elif self.teacher_configuration == "pure_mnist":
-            self.teachers = teachers.PureMNISTTeachers(config=config) # 'teachers' are MNIST images with labels - provided by data module
             self.teacher_is_network = False
+            return teachers.PureMNISTTeachers(config=config) # 'teachers' are MNIST images with labels - provided by data module
         elif self.teacher_configuration == "trained_mnist":
-            self.teachers = teachers.TrainedMNISTTeachers(config=config)
             self.teacher_is_network = True
+            return teachers.TrainedMNISTTeachers(config=config)
         else:
             raise NotImplementedError("Teacher configuration {} not recognised".format(self.teacher_configuration))
-        print("Teachers setup in {}s".format(round(time.time() - t0, 5)))
         
-    def _setup_logger(self, config: Dict):
-        t0 = time.time()
+    def _setup_logger(self, config: Parameters) -> loggers._BaseLogger:
         if self.teacher_configuration == "mnist":
-            self.logger = loggers.StudentMNISTLogger(config=config)
+            return loggers.StudentMNISTLogger(config=config)
         else:
-            self.logger = loggers.StudentTeacherLogger(config=config)
-        print("Logger module setup in {}s".format(round(time.time() - t0, 5)))
+            return loggers.StudentTeacherLogger(config=config)
 
-    def _setup_data(self, config: Dict):
-        t0 = time.time()
+    def _setup_data(self, config: Parameters) -> data_modules._BaseData:
         if self.input_source == 'iid_gaussian':
-            self.data_module = data_modules.IIDData(config)
+            return data_modules.IIDData(config)
         elif self.input_source == 'mnist_stream':
-            self.data_module = data_modules.MNISTStreamData(config)
+            return data_modules.MNISTStreamData(config)
         elif self.input_source == 'mnist_digits':
-            self.data_module = data_modules.MNISTDigitsData(config)
+            return data_modules.MNISTDigitsData(config)
         elif self.input_source == 'even_greater':
-            self.data_module = data_modules.MNISTEvenGreaterData(config)
+            return data_modules.MNISTEvenGreaterData(config)
         else:    
             raise ValueError("Input source type {} not recognised. Please use either iid_gaussian or mnist".format(self.input_source))
-        print("Data module setup in {}s".format(round(time.time() - t0, 5)))
 
-    def _setup_testing(self):
-        t0 = time.time()
-        self.test_data = self.data_module.get_test_data()
+    def _get_test_teacher_outputs(self) -> List[torch.Tensor]:
         if self.same_input_distribution:
-            self.test_teacher_outputs = [self.teachers.test_set_forward(t, self.test_data) for t in range(self.num_teachers)]
+            return [self.teachers.test_set_forward(t, self.test_data) for t in range(self.num_teachers)]
         else:
-            self.test_teacher_outputs = [self.teachers.forward(t, test_set) for t, test_set in enumerate(self.test_data)]
-        print("Testing setup in {}s".format(round(time.time() - t0, 5)))
+            return [self.teachers.forward(t, test_data) for t, test_data in enumerate(self.test_data)]
 
-    def _setup_loss(self, config: Dict):
-        t0 = time.time()
+    def _setup_loss(self, config: Parameters) -> loss_modules._BaseLoss:
         if self.loss_type == "regression":
-            self.loss_module = loss_modules.RegressionLoss(config=config)
+            return loss_modules.RegressionLoss(config=config)
         elif self.loss_type == "classification":
-            self.loss_module = loss_modules.ClassificationLoss(config=config)
+            return loss_modules.ClassificationLoss(config=config)
         else:
             raise NotImplementedError("Loss type {} not recognised".format(self.loss_type))
-        print("Loss module setup in {}s".format(round(time.time() - t0, 5)))
 
     def _initialise_metrics(self) -> None:
         """
         Initialise objects that will keep metrix of training e.g. generalisation errors
         Useful to make them attributes of class so that they can be accessed by all methods in class
         """
-        self.generalisation_errors = {i: [] for i in range(self.num_teachers)}
+        self.generalisation_errors: Dict[int, List] = {i: [] for i in range(self.num_teachers)}
 
-    def _set_curriculum(self, config: Dict) -> None:
+    def _set_curriculum(self, config: Parameters) -> None:
         """
         Establish and assign curriculum from configuration file. This is used to determine how to 
         proceed with training (when to switch teacher, how to decide subsequent teacher etc.)
@@ -207,8 +206,8 @@ class StudentTeacherRunner:
 
             while total_step_count < self.total_training_steps:
 
-                batch = self.data_module.get_batch() # returns dictionary 
-                batch_input = batch.get('x')
+                batch: Dict[str, torch.Tensor] = self.data_module.get_batch()
+                batch_input: torch.Tensor = batch['x']
                             
                 # feed full batch into teachers (i.e. potentially with label since come teacher configurations will simply return label)
                 teacher_output = self.teachers.forward(teacher_index, batch)
@@ -387,10 +386,10 @@ class StudentTeacherRunner:
 
             generalisation_error_wrt_current_teacher = generalisation_error_per_teacher[teacher_index]
 
-            return generalisation_error_wrt_current_teacher
+        return generalisation_error_wrt_current_teacher
 
     def _compute_classification_acc(self, prediction: torch.Tensor, target: torch.Tensor):
-        class_predictions = (prediction > 0.5).type(torch.LongTensor).squeeze()
+        class_predictions = (prediction > 0.5).long().squeeze()
         accuracy = float((class_predictions == target).sum()) / len(target)
         return accuracy
 
