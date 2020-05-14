@@ -1,26 +1,26 @@
 from typing import List
 
-from context import utils
+from utils import _Template, Field
 
-class MNISTDataTemplate(utils._Template):
+class MNISTDataTemplate(_Template):
 
     LEVELS = ["mnist_data"]
-    OPTIONAL = []
+    OPTIONAL: List[str] = []
 
-    DATA_PATH = utils.Field(
-        name="data_path", types=(str), reqs=None
+    DATA_PATH = Field(
+        name="data_path", types=[str], reqs=None
     )
 
-    PCA_INPUT = utils.Field(
-        name="pca_input", types=(int), reqs=[lambda x: x >= 0 or x == -1]
+    PCA_INPUT = Field(
+        name="pca_input", types=[int], reqs=[lambda x: x >= 0 or x == -1]
     )
 
-    STANDARDISE = utils.Field(
-        name="standardise", types=(bool), reqs=None
+    STANDARDISE = Field(
+        name="standardise", types=[bool], reqs=None
     )
 
-    NOISE = utils.Field(
-        name="noise", types=(type(None), float, int), reqs=[lambda x: x is None or x > 0]
+    NOISE = Field(
+        name="noise", types=[type(None), float, int], reqs=[lambda x: x is None or x > 0]
     )
   
     @classmethod

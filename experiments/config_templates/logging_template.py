@@ -1,31 +1,31 @@
 from typing import List
 
-from context import utils
+from utils import _Template, Field
 
-class LoggingTemplate(utils._Template):
+class LoggingTemplate(_Template):
 
     LEVELS = ["logging"]
-    OPTIONAL = []
+    OPTIONAL: List[str] = []
     
     # Logging level fields
-    VERBOSE = utils.Field(
-        name="verbose", types=(bool), reqs=None
+    VERBOSE = Field(
+        name="verbose", types=[bool], reqs=None
     )
 
-    VERBOSE_TB = utils.Field(
-        name="verbose_tb", types=(bool), reqs=None
+    VERBOSE_TB = Field(
+        name="verbose_tb", types=[bool], reqs=None
     )
 
-    CHECKPOINT_FREQUENCY = utils.Field(
-        name="checkpoint_frequency", types=(int), reqs=None
+    CHECKPOINT_FREQUENCY = Field(
+        name="checkpoint_frequency", types=[int], reqs=None
     )
         
-    LOG_TO_DF = utils.Field(
-        name="log_to_df", types=(bool), reqs=None
+    LOG_TO_DF = Field(
+        name="log_to_df", types=[bool], reqs=None
     )
 
-    MERGE_AT_CHECKPOINT = utils.Field(
-        name="merge_at_checkpoint", types=(bool), reqs=None
+    MERGE_AT_CHECKPOINT = Field(
+        name="merge_at_checkpoint", types=[bool], reqs=None
     )
 
     @classmethod

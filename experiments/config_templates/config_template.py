@@ -1,6 +1,6 @@
 from typing import List
 
-from context import utils
+from utils import Parameters, _Template, Field
 from .task_template import TaskTemplate 
 from .training_template import TrainingTemplate 
 from .testing_template import TestingTemplate
@@ -10,22 +10,22 @@ from .teachers_template import TeachersTemplate
 from .logging_template import LoggingTemplate
 from .data_template import DataTemplate
 
-class ConfigTemplate(utils._Template):
+class ConfigTemplate(_Template):
 
     LEVELS = "ROOT"
-    OPTIONAL = ["drift_teachers", "mnist_data", "pure_mnist", "trained_mnist"]
+    OPTIONAL: List[str] = ["drift_teachers", "mnist_data", "pure_mnist", "trained_mnist"]
 
     # root level fields
-    EXPERIMENT_NAME = utils.Field(
-        name="experiment_name", types=(type(None), str), reqs=None
+    EXPERIMENT_NAME = Field(
+        name="experiment_name", types=[type(None), str], reqs=None
     )
 
-    USE_GPU = utils.Field(
-        name="use_gpu", types=(bool), reqs=None
+    USE_GPU = Field(
+        name="use_gpu", types=[bool], reqs=None
     )
 
-    SEED = utils.Field(
-        name="seed", types=(int), reqs=None
+    SEED = Field(
+        name="seed", types=[int], reqs=None
     )
 
     TASK_TEMPLATE = TaskTemplate

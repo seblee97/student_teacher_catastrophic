@@ -1,10 +1,10 @@
 from typing import List
 
-from context import utils
+from utils import _Template, Field
 
-class TrainedMNISTTemplate(utils._Template):
+class TrainedMNISTTemplate(_Template):
 
-    OPTIONAL = []
+    OPTIONAL: List[str] = []
 
     @classmethod
     def get_fields(cls) -> List:

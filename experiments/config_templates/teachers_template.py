@@ -1,19 +1,19 @@
-from context import utils
+from utils import _Template, Field
 
 from typing import List
 
-class TeachersTemplate(utils._Template):
+class TeachersTemplate(_Template):
 
     LEVELS = ["teachers"]
-    OPTIONAL = []
+    OPTIONAL: List[str] = []
 
     # Teachers level fields
-    OVERLAP_PERCENTAGES = utils.Field(
-        name="overlap_percentages", types=(list), reqs=[lambda x: all(isinstance(y, int) and y >= 0 for y in x)]
+    OVERLAP_PERCENTAGES = Field(
+        name="overlap_percentages", types=[list], reqs=[lambda x: all(isinstance(y, int) and y >= 0 for y in x)]
     )
 
-    TEACHER_NOISE = utils.Field(
-        name="teacher_noise", types=(list), reqs=[lambda x: all(isinstance(y, (float, int)) and y >= 0 for y in x)]
+    TEACHER_NOISE = Field(
+        name="teacher_noise", types=[list], reqs=[lambda x: all(isinstance(y, (float, int)) and y >= 0 for y in x)]
     )
 
     @classmethod

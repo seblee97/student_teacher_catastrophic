@@ -1,59 +1,59 @@
-from context import utils
+from utils import _Template, Field
 
 from typing import List
 
-class ModelTemplate(utils._Template):
+class ModelTemplate(_Template):
 
     LEVELS = ["model"]
-    OPTIONAL = []
+    OPTIONAL: List[str] = []
 
     # Model level fields
-    INPUT_DIMENSION = utils.Field(
-        name="input_dimension", types=(int), reqs=[lambda x: x > 0]
+    INPUT_DIMENSION = Field(
+        name="input_dimension", types=[int], reqs=[lambda x: x > 0]
     )
 
-    STUDENT_HIDDEN_LAYERS = utils.Field(
-        name="student_hidden_layers", types=(list), reqs=[lambda x: all(isinstance(y, int) and y > 0 for y in x)]
+    STUDENT_HIDDEN_LAYERS = Field(
+        name="student_hidden_layers", types=[list], reqs=[lambda x: all(isinstance(y, int) and y > 0 for y in x)]
     )
     
-    TEACHER_HIDDEN_LAYERS = utils.Field(
-        name="teacher_hidden_layers", types=(list), reqs=[lambda x: all(isinstance(y, int) and y > 0 for y in x)]
+    TEACHER_HIDDEN_LAYERS = Field(
+        name="teacher_hidden_layers", types=[list], reqs=[lambda x: all(isinstance(y, int) and y > 0 for y in x)]
     )
 
-    OUTPUT_DIMENSION = utils.Field(
-        name="output_dimension", types=(int), reqs=[lambda x: x > 0]
+    OUTPUT_DIMENSION = Field(
+        name="output_dimension", types=[int], reqs=[lambda x: x > 0]
     )
 
-    STUDENT_NONLINEARITY = utils.Field(
-        name="student_nonlinearity", types=(str), reqs=[lambda x: x in ["relu", "linear", "sigmoid"]]
+    STUDENT_NONLINEARITY = Field(
+        name="student_nonlinearity", types=[str], reqs=[lambda x: x in ["relu", "linear", "sigmoid"]]
     )
 
-    TEACHER_NONLINEARITIES = utils.Field(
-        name="teacher_nonlinearities", types=(list), reqs=[lambda x: all(isinstance(y, str) and y in ["relu", "linear", "sigmoid"] for y in x)]
+    TEACHER_NONLINEARITIES = Field(
+        name="teacher_nonlinearities", types=[list], reqs=[lambda x: all(isinstance(y, str) and y in ["relu", "linear", "sigmoid"] for y in x)]
     )
 
-    TEACHER_INITIALISATION_STD = utils.Field(
-        name="teacher_initialisation_std", types=(float, int), reqs=[lambda x: x > 0]
+    TEACHER_INITIALISATION_STD = Field(
+        name="teacher_initialisation_std", types=[float, int], reqs=[lambda x: x > 0]
     )
 
-    STUDENT_INITIALISATION_STD = utils.Field(
-        name="student_initialisation_std", types=(float, int), reqs=[lambda x: x > 0]
+    STUDENT_INITIALISATION_STD = Field(
+        name="student_initialisation_std", types=[float, int], reqs=[lambda x: x > 0]
     )
 
-    INITIALISE_STUDENT_OUTPUTS = utils.Field(
-        name="initialise_student_outputs", types=(bool), reqs=None
+    INITIALISE_STUDENT_OUTPUTS = Field(
+        name="initialise_student_outputs", types=[bool], reqs=None
     )
 
-    SOFT_COMMITTEE = utils.Field(
-        name="soft_committee", types=(bool), reqs=None
+    SOFT_COMMITTEE = Field(
+        name="soft_committee", types=[bool], reqs=None
     )
 
-    TEACHER_BIAS_PARAMETERS = utils.Field(
-        name="teacher_bias_parameters", types=(bool), reqs=None
+    TEACHER_BIAS_PARAMETERS = Field(
+        name="teacher_bias_parameters", types=[bool], reqs=None
     )
 
-    STUDENT_BIAS_PARAMETERS = utils.Field(
-        name="student_bias_parameters", types=(bool), reqs=None
+    STUDENT_BIAS_PARAMETERS = Field(
+        name="student_bias_parameters", types=[bool], reqs=None
     )
 
     @classmethod
