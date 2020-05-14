@@ -1,6 +1,10 @@
 from abc import ABC, abstractmethod
 
-from typing import Dict, List
+from utils import Parameters
+from models.learners import _BaseLearner
+from models.networks import _Teacher
+
+from typing import Dict, List, Union
 
 import logging
 import os
@@ -14,7 +18,7 @@ import torch.nn as nn
 
 class _BaseLogger(ABC):
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Parameters):
 
         self._extract_parameters(config=config)
 
@@ -37,19 +41,19 @@ class _BaseLogger(ABC):
         # Add handlers to the logger
         self._logger.addHandler(file_handler)
 
-    def _extract_parameters(self, config: Dict) -> None:
+    def _extract_parameters(self, config: Parameters) -> None:
         """get relevant parameters from config and make attributes of class"""
-        self._checkpoint_path = config.get("checkpoint_path")
-        self._log_to_df = config.get(["logging", "log_to_df"])
-        self._logfile_path = config.get("logfile_path")
-        self._logfile_path_no_ext = self._logfile_path.split(".csv")[0]
-        self._verbose_tb = config.get(["logging", "verbose_tb"])
-        self._checkpoint_frequency = config.get(["logging", "checkpoint_frequency"])
-        self._merge_at_checkpoint = config.get(["logging", "merge_at_checkpoint"])
+        self._checkpoint_path: str = config.get("checkpoint_path")
+        self._log_to_df: bool = config.get(["logging", "log_to_df"])
+        self._logfile_path: str = config.get("logfile_path")
+        self._logfile_path_no_ext: str = self._logfile_path.split(".csv")[0]
+        self._verbose_tb: bool = config.get(["logging", "verbose_tb"])
+        self._checkpoint_frequency: int = config.get(["logging", "checkpoint_frequency"])
+        self._merge_at_checkpoint: bool = config.get(["logging", "merge_at_checkpoint"])
 
-        self._student_hidden = config.get(["model", "student_hidden_layers"])
-        self._num_teachers = config.get(["task", "num_teachers"])
-        self._input_dimension = config.get(["model", "input_dimension"])
+        self._student_hidden: List[int] = config.get(["model", "student_hidden_layers"])
+        self._num_teachers: int = config.get(["task", "num_teachers"])
+        self._input_dimension: int = config.get(["model", "input_dimension"])
 
     def log(self, statement: str) -> None:
         """add to log file"""
@@ -83,7 +87,7 @@ class _BaseLogger(ABC):
         """
         self._logger_df.at[step, tag] = scalar
 
-    def _log_output_weights(self, step_count: int, student_network: nn.Module) -> None:
+    def _log_output_weights(self, step_count: int, student_network: _BaseLearner) -> None:
         """
         extract and log output weights of student.
 
@@ -100,7 +104,7 @@ class _BaseLogger(ABC):
                 if self._log_to_df:
                     self._logger_df.at[step_count, 'student_head_{}_weight_{}'.format(h, w)] = float(weight)
 
-    def _compute_overlap_matrices(self, student_network: nn.Module, teacher_networks: List[nn.Module], step_count: int) -> None:
+    def _compute_overlap_matrices(self, student_network: _BaseLearner, teacher_networks: List[_Teacher], step_count: int) -> None:
         """
         calculate overlap matrices between student and teacher and across student/teacher layers
 
@@ -115,7 +119,7 @@ class _BaseLogger(ABC):
             self._compute_layer_overlaps(layer="output", student_network=student_network, teacher_networks=teacher_networks, head=head_index, step_count=step_count)
 
     @abstractmethod
-    def _compute_layer_overlaps(self, layer: int, student_network: nn.Module, teacher_networks: List[nn.Module], head: int, step_count: int) -> None:
+    def _compute_layer_overlaps(self, layer: str, student_network: _BaseLearner, teacher_networks: List[_Teacher], head: Union[None, int], step_count: int) -> None:
         """
         computes overlap of given layer of student_network and teacher networks.
 

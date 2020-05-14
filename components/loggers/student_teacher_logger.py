@@ -1,19 +1,22 @@
 from .base_logger import _BaseLogger
 
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import itertools
+import torch.nn as nn
 
-from utils import visualise_matrix
+from utils import Parameters, visualise_matrix
+from models.learners import _BaseLearner
+from models.networks import _Teacher
 
 class StudentTeacherLogger(_BaseLogger):
 
     """logging class for when teachers are initialised networks, regardless of input (standard student-teacher setup)"""
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Parameters):
         _BaseLogger.__init__(self, config)
 
-    def _compute_layer_overlaps(self, layer: str, student_network, teacher_networks: List, head: int, step_count: int):
+    def _compute_layer_overlaps(self, layer: str, student_network: _BaseLearner, teacher_networks: List[_Teacher], head: Union[None, int], step_count: int) -> None:
         """
         computes overlap of given layer of student_network and teacher networks.
 
