@@ -1,7 +1,7 @@
-from context import utils, StudentTeacherPostprocessor
-from student_teacher_runner import StudentTeacherRunner
-from student_teacher_parameters import StudentTeacherParameters
-from config_templates import ConfigTemplate, MNISTDataTemplate, TrainedMNISTTemplate, PureMNISTTemplate
+from postprocessing import StudentTeacherPostprocessor
+from experiments.student_teacher_runner import StudentTeacherRunner
+from experiments.student_teacher_parameters import StudentTeacherParameters
+from experiments.config_templates import ConfigTemplate, MNISTDataTemplate, TrainedMNISTTemplate, PureMNISTTemplate
 
 import argparse
 import torch
