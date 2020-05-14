@@ -1,4 +1,5 @@
 from models.networks.base_network import Model
+from utils import Parameters
 
 import torch
 import torch.distributions as tdist
@@ -7,13 +8,13 @@ import torch.nn.functional as F
 
 import numpy as np
 
-from typing import Dict
+from typing import Dict, Tuple
 
 from abc import ABC, abstractmethod
 
 class _Teacher(Model, ABC):
 
-    def __init__(self, config: Dict, index: int) -> None:
+    def __init__(self, config: Parameters, index: int) -> None:
 
         Model.__init__(self, config=config, model_type='teacher_{}'.format(str(index)))
         self.noisy = False
@@ -29,13 +30,17 @@ class _Teacher(Model, ABC):
             output_range = output_max - output_min
         return output_std
 
+    def add_output_noise(self, clean_tensor: torch.Tensor) -> torch.Tensor:
+        noise_sample = self.noise_distribution.sample(clean_tensor.shape)
+        return clean_tensor + noise_sample
+
     def set_noise_distribution(self, mean: float, std: float):
         """
         Sets a normal distribution from which to sample noise that is added to output
         """
         if std == 0:
             raise ValueError("Standard Deviation of Normal cannot be 0.")
-        self.noise_distribution = tdist.Normal(torch.Tensor([mean]), torch.Tensor([std]))
+        self.noise_distribution = tdist.Normal(mean, std)
         self.noisy = True
     
     def load_weights(self, weights_path: str) -> None:
