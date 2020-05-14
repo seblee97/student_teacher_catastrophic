@@ -1,5 +1,6 @@
 from models.networks.base_network import Model
 from components.data_modules import MNISTDigitsData
+from utils import Parameters
 
 import torch
 import torch.nn as nn 
@@ -13,7 +14,7 @@ class ClassificationTeacher(Model):
 
     """Classification - threshold output"""
 
-    def __init__(self, config: Dict) -> None:
+    def __init__(self, config: Parameters) -> None:
 
         self._output_dimension = config.get(["trained_mnist", "output_dimension"])
         Model.__init__(self, config=config, model_type="teacher_0")
@@ -40,7 +41,7 @@ class ClassificationTeacher(Model):
 
 class MNISTTrainer:
 
-    def __init__(self, config: Dict, task_index: int):
+    def __init__(self, config: Parameters, task_index: int):
 
         self.task_index=task_index
         
