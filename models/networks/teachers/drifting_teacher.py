@@ -1,4 +1,5 @@
 from .teacher import Teacher
+from utils import Parameters
 
 import torch
 import torch.distributions as tdist
@@ -8,7 +9,7 @@ from typing import Dict
 
 class DriftingTeacher(Teacher):
 
-    def __init__(self, config: Dict, index: int) -> None:
+    def __init__(self, config: Parameters, index: int) -> None:
 
         Teacher.__init__(self, config=config, index=index)
         self.drift_distribution = tdist.Normal(torch.Tensor([0]), torch.Tensor([config.get(["task", "drift_size"])]))
