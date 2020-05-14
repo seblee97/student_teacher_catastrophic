@@ -1,22 +1,28 @@
 from .base_template import _Template, Field
 
-from typing import Any, List, Union, Dict, Type
+from typing import Any, List, Union, Dict, Type, overload
 
 import yaml
 import os
 import collections
 import six
 import warnings
+import inspect
 
-TemplateType = Type[_Template]
-FieldType = Type[Field]
+ParameterGetTypes = Union[List[str], List[int], int, str, bool, float]
 
 class Parameters(object):
     
-    def __init__(self, parameters):
+    def __init__(self, parameters: Dict[str, Any]):
         self._config = parameters
     
-    def get(self, property_name: Union[str, List[str]]) -> Any:
+    @overload
+    def get(self, property_name: str): ...
+
+    @overload
+    def get(self, property_name: List[str]): ...
+
+    def get(self, property_name):
         """
         Return value associated with property_name in configuration
 
@@ -24,14 +30,14 @@ class Parameters(object):
                               Could be list if accessing nested part of dict.
         :return: value associated with property_name
         """
-        if type(property_name) == list:
+        if isinstance(property_name, list):
             value = self._config
             for prop in property_name:
                 value = value.get(prop, "Unknown Key")
                 if value == "Unknown Key":
                     raise ValueError("Config key {} unrecognised".format(prop))
             return value
-        elif type(property_name) == str:
+        elif isinstance(property_name, str):
             value = self._config.get(property_name, "Unknown Key")
             if value == "Unknown Key":
                 raise ValueError("Config key {} unrecognised".format(property_name))
@@ -49,7 +55,7 @@ class Parameters(object):
         """
         raise NotImplementedError # TODO: Is this worth doing? .yaml not particularly amenable 
 
-    def _validate_field(self, field: FieldType, data: Dict, level: str) -> None:
+    def _validate_field(self, field: Field, data: Dict, level: str) -> None:
         field_name = field.get_name()
         allowed_field_types = field.get_types()
         additional_reqs = field.get_reqs()
@@ -69,11 +75,11 @@ class Parameters(object):
 
         print("Validating field: {} at level {} in config...".format(field_name, level))
 
-    def check_template(self, template: TemplateType):
+    def check_template(self, template: _Template):
         template_attributes = template.get_fields()
 
         template_nesting = template.get_levels()
-        data = self._config
+        data: Union[Dict[str, Any], Any] = self._config
         if template_nesting is "ROOT":
             level_name = "ROOT"
         else:
@@ -85,7 +91,7 @@ class Parameters(object):
         optional_fields = template.get_optional_fields()
 
         for template_attribute in template_attributes:
-            if isinstance(template_attribute, type(_Template)):
+            if (inspect.isclass(template_attribute) and issubclass(template_attribute, _Template)):
                 self.check_template(template_attribute)
                 fields_to_check.remove(template_attribute.get_template_name())
             else:
@@ -111,7 +117,7 @@ class Parameters(object):
         if property_name in self._config:
             raise Exception("This field is already defined in the configuration. Use ammend_property method to override current entry")
         else:
-            if type(property_name) == str:
+            if isinstance(property_name, str):
                 self._config[property_name] = property_value
             else:
                 raise TypeError("Property name type {} not assignable".format(type(property_name)))
