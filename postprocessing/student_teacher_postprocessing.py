@@ -1,4 +1,4 @@
-from context import utils
+from utils import Parameters
 
 from typing import Dict
 
@@ -22,7 +22,7 @@ class StudentTeacherPostprocessor:
             params = yaml.load(yaml_file, yaml.SafeLoader)
 
         # create object in which to store experiment parameters and validate config file
-        config_parameters = utils.Parameters(params)
+        config_parameters = Parameters(params)
         
         return config_parameters
 
