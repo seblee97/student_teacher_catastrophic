@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
-from typing import Dict, List
+from typing import Dict, List, Union
+
+from utils import Parameters
 
 import torch
 
@@ -8,18 +10,18 @@ class _BaseData(ABC):
 
     """Class for handling data"""
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Parameters):
 
-        self._num_teachers = config.get(["task", "num_teachers"])
+        self._num_teachers: int = config.get(["task", "num_teachers"])
         
-        self._train_batch_size = config.get(["training", "train_batch_size"])
-        self._test_batch_size = config.get(["testing", "test_batch_size"])
-        self._input_dimension = config.get(["model", "input_dimension"])
+        self._train_batch_size: int = config.get(["training", "train_batch_size"])
+        self._test_batch_size: int = config.get(["testing", "test_batch_size"])
+        self._input_dimension: int = config.get(["model", "input_dimension"])
 
         self._device = config.get("device")
     
     @abstractmethod
-    def get_test_data(self) -> List[Dict[str, torch.Tensor]]:
+    def get_test_data(self) -> Union[List[Dict[str, torch.Tensor]], Dict[str, Union[torch.Tensor, List[torch.Tensor]]]]:
         """returns fixed test data sets (data and labels)"""
         raise NotImplementedError("Base class method")
 
