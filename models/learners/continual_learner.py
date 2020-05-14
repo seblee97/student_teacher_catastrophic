@@ -25,7 +25,7 @@ class ContinualLearner(_BaseLearner):
 
     def _construct_output_layers(self):
         # create one head per teacher
-        self.heads = nn.ModuleList([])
+        self.heads: Iterable[nn.Module] = nn.ModuleList([])
         for _ in range(self.num_teachers):
             output_layer = nn.Linear(self.hidden_dimensions[-1], self.output_dimension, bias=self.bias)
             if self.initialise_student_outputs:
@@ -49,13 +49,6 @@ class ContinualLearner(_BaseLearner):
             param.requires_grad = True
         self._current_teacher = task_index
 
-    # def forward_with_head(self, x: torch.Tensor, task_index: int):
-    #     for layer in self.layers:
-    #         x = self.nonlinear_function(layer(x) / np.sqrt(self.input_dimension))
-    #     task_output = self.heads[task_index](x)
-    #     if self.classification_output:
-    #         task_output = self._threshold(task_output)
-    #     return task_output
 
     def forward_batch_per_task(self, batch_list: List[Dict[str, torch.Tensor]]) -> List[torch.Tensor]:
         assert len(batch_list) == self.num_teachers, \
