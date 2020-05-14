@@ -4,6 +4,9 @@ from typing import List, Union, Tuple
 
 class _Template(ABC):
 
+    LEVELS: Union[List[str], str]
+    OPTIONAL: List[str]
+
     @classmethod
     @abstractmethod
     def get_fields(cls) -> List:
@@ -23,10 +26,10 @@ class _Template(ABC):
 
 class Field:
 
-    def __init__(self, name: str, types: Tuple, reqs: List):
+    def __init__(self, name: str, types: List, reqs: Union[List, None]):
 
         self.name = name
-        self.types = types 
+        self.types: Tuple = tuple(types)
         self.reqs = reqs 
 
     def get_name(self):
