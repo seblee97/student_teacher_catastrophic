@@ -2,18 +2,22 @@ from abc import ABC, abstractmethod
 
 import torch
 import torch.nn as nn
+from torch.nn.modules.loss import _Loss
+
+from utils import Parameters
 
 from typing import Dict
 
 class _BaseLoss(ABC):
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Parameters):
         
         config_loss = config.get(["training", "loss_function"])
         self._setup_loss_function(config_loss)
 
     def _setup_loss_function(self, loss_name: str) -> None:
         """instantiate torch loss function"""
+        self.loss_function: _Loss
         if loss_name == 'mse':
             self.loss_function = nn.MSELoss()
         elif loss_name == 'bce':
@@ -35,6 +39,6 @@ class _BaseLoss(ABC):
 
         :return loss: loss between target (from teacher) and prediction (from student)
         """
-        loss = 0.5 * self.loss_function(prediction, target.type(torch.FloatTensor))
+        loss = 0.5 * self.loss_function(prediction, target)
         return loss
 
