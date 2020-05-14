@@ -1,9 +1,9 @@
-from context import utils
+from utils import Parameters
 
-class StudentTeacherParameters(utils.Parameters):
+class StudentTeacherParameters(Parameters):
 
     def __init__(self, params, root_config_template, mnist_data_config_template, pure_mnist_config_template, trained_mnist_config_template):
-        utils.Parameters.__init__(self, params)
+        Parameters.__init__(self, params)
 
         self.root_config_template = root_config_template
         self.mnist_data_config_template = mnist_data_config_template
