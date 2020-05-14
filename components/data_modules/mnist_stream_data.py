@@ -1,13 +1,14 @@
 from .mnist_data import _MNISTData 
+from utils import Parameters
 
 import torch
 import torchvision
 
-from typing import Dict, List
+from typing import Dict, List, Union
 
 class MNISTStreamData(_MNISTData):
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Parameters):
         _MNISTData.__init__(self, config)
 
     def _generate_dataloaders(self) -> None:
@@ -20,7 +21,7 @@ class MNISTStreamData(_MNISTData):
 
         self.training_data_iterator = iter(self.training_dataloader)
 
-    def get_test_data(self) -> (torch.Tensor, List[torch.Tensor]):
+    def get_test_data(self) -> Union[List[Dict[str, torch.Tensor]], Dict[str, Union[torch.Tensor, List[torch.Tensor]]]]:
         data, labels = next(iter(self.test_dataloader))
         return {'x': data}
 

@@ -2,32 +2,31 @@ from abc import ABC, abstractmethod
 
 from .base_data_module import _BaseData
 
-from typing import Dict, List
+from typing import Dict, List, Union
+
+from utils import Parameters, custom_torch_transforms, get_pca
 
 import os
 
 import torch
 import torchvision 
 
-from utils import custom_torch_transforms, get_pca
-
 class _MNISTData(_BaseData, ABC):
 
     """Class for dealing with data generated from MNIST images"""
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Parameters):
         _BaseData.__init__(self, config)
 
-        self._data_path = config.get(["mnist_data", "data_path"])
+        self._data_path: str = config.get(["mnist_data", "data_path"])
         
-        self._pca_input = config.get(["mnist_data", "pca_input"])
-        self._standardise = config.get(["mnist_data", "standardise"])
-        self._noise = config.get(["mnist_data", "noise"])
+        self._pca_input: int = config.get(["mnist_data", "pca_input"])
+        self._standardise: bool = config.get(["mnist_data", "standardise"])
+        self._noise: bool = config.get(["mnist_data", "noise"])
 
         self._load_mnist_data()
 
     def _load_mnist_data(self) -> None:
-
         self._get_transforms()
         self._generate_dataloaders()
 
@@ -36,8 +35,6 @@ class _MNISTData(_BaseData, ABC):
         raise NotImplementedError("Base class method")
 
     def _get_transforms(self) -> None:
-
-        # TODO: Docs
 
         file_path = os.path.dirname(os.path.realpath(__file__))
         self._full_data_path = os.path.join(file_path, self._data_path)
@@ -73,9 +70,10 @@ class _MNISTData(_BaseData, ABC):
             # import pdb; pdb.set_trace()
 
             # evaluate channel mean and std (note MNIST small enough to load all in memory rather than computing over smaller batches)
-            data_mu = torch.mean(next(iter(mnist_train_dataloader))[0], axis=0)
-            data_sigma = torch.std(next(iter(mnist_train_dataloader))[0], axis=0)
-            # import pdb; pdb.set_trace()
+            all_train_data: torch.Tensor = next(iter(mnist_train_dataloader))[0]
+
+            data_mu = torch.mean(all_train_data, dim=0)
+            data_sigma = torch.std(all_train_data, dim=0)
 
             # add normalisation to transforms
             normalise_transform = custom_torch_transforms.Standardize(data_mu, data_sigma)
@@ -90,7 +88,7 @@ class _MNISTData(_BaseData, ABC):
         self.transform = torchvision.transforms.Compose(transform_list)
     
     @abstractmethod
-    def get_test_data(self) -> (torch.Tensor, List[torch.Tensor]):
+    def get_test_data(self) -> Union[List[Dict[str, torch.Tensor]], Dict[str, Union[torch.Tensor, List[torch.Tensor]]]]:
         """
         returns fixed test data set (data and labels)
         

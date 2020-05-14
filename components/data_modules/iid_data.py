@@ -1,17 +1,18 @@
 from .base_data_module import _BaseData
+from utils import Parameters
 
 import torch
 
-from typing import List, Dict
+from typing import List, Dict, Union
 
 class IIDData(_BaseData):
 
     """Class for dealing with data generated from IID Gaussian"""
 
-    def __init__(self, config):
+    def __init__(self, config: Parameters):
         _BaseData.__init__(self, config)
 
-    def get_test_data(self) -> List[Dict[str, torch.Tensor]]:
+    def get_test_data(self) -> Union[List[Dict[str, torch.Tensor]], Dict[str, Union[torch.Tensor, List[torch.Tensor]]]]:
         """
         returns fixed test data set (data and labels)
         
