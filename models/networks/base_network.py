@@ -7,13 +7,15 @@ import torch.distributions as tdist
 import numpy as np
 import copy
 
-from typing import List, Tuple, Generator, Dict
+from typing import List, Tuple, Generator, Dict, Union, Callable
 
 from abc import ABC, abstractmethod
 
+from utils import Parameters
+
 class Model(nn.Module, ABC):
 
-    def __init__(self, config: Dict, model_type: str) -> None:
+    def __init__(self, config: Parameters, model_type: str) -> None:
         """
         Multi-layer non-linear neural network class. For use in student-teacher framework.
 
@@ -22,9 +24,11 @@ class Model(nn.Module, ABC):
         """
         self.model_type = model_type # 'teacher' or 'student'
 
+        model_index: Union[int, None]
+
         if 'teacher' in self.model_type:
-            self.model_type, model_index = self.model_type.split("_")
-            model_index = int(model_index)
+            self.model_type, model_index_str = self.model_type.split("_")
+            model_index = int(model_index_str)
         else:
             model_index = None
 
@@ -38,9 +42,12 @@ class Model(nn.Module, ABC):
 
         # initialise specified nonlinearity function
         if self.model_type == 'teacher':
-            self.nonlinearity_name = config.get(["model", "teacher_nonlinearities"])[model_index]
+            all_teacher_nonlinearities = config.get(["model", "teacher_nonlinearities"])
+            self.nonlinearity_name = all_teacher_nonlinearities[model_index]
         else:
             self.nonlinearity_name = config.get(["model", "student_nonlinearity"])
+
+        self.nonlinear_function: Callable
 
         if self.nonlinearity_name == 'relu':
             self.nonlinear_function = F.relu
@@ -57,7 +64,7 @@ class Model(nn.Module, ABC):
 
         self._construct_layers()
 
-    def _extract_parameters(self, config: Dict):
+    def _extract_parameters(self, config: Parameters):
         self.input_dimension = config.get(["model", "input_dimension"])
         self.output_dimension = config.get(["model", "output_dimension"])
         self.hidden_dimensions = config.get(["model", "{}_hidden_layers".format(self.model_type)])
@@ -75,11 +82,13 @@ class Model(nn.Module, ABC):
         """
         self.layers = nn.ModuleList([])
         
-        input_layer = self._initialise_weights(nn.Linear(self.input_dimension, self.hidden_dimensions[0], bias=self.bias))
+        input_layer = nn.Linear(self.input_dimension, self.hidden_dimensions[0], bias=self.bias)
+        self._initialise_weights(input_layer)
         self.layers.append(input_layer)
 
         for h in range(len(self.hidden_dimensions[:-1])):
-            hidden_layer = self._initialise_weights(nn.Linear(self.hidden_dimensions[h], self.hidden_dimensions[h + 1], bias=self.bias))
+            hidden_layer = nn.Linear(self.hidden_dimensions[h], self.hidden_dimensions[h + 1], bias=self.bias)
+            self._initialise_weights(hidden_layer)
             self.layers.append(hidden_layer)
 
         self._construct_output_layers()
@@ -121,7 +130,7 @@ class Model(nn.Module, ABC):
         for param in self.parameters():
             param.requires_grad = False
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor: # type: ignore
         """
         Forward pass
 
