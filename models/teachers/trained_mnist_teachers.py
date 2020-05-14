@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List, Union
 
 from .base_teachers import _BaseTeachers
 
@@ -6,16 +6,16 @@ import torch
 import os
 import hashlib
 
-from utils import train_mnist_classifier
+from utils import train_mnist_classifier, Parameters
 
 class TrainedMNISTTeachers(_BaseTeachers):
 
     """Teachers are initialised with weights corresponding to trained MNIST classifiers."""
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Parameters):
         _BaseTeachers.__init__(self, config)
 
-    def _setup_teachers(self, config: Dict):
+    def _setup_teachers(self, config: Parameters):
         """
         Instantiate all teachers.
         
@@ -74,10 +74,13 @@ class TrainedMNISTTeachers(_BaseTeachers):
                 teacher.set_noise_distribution(mean=0, std=teacher_noises[t] * teacher_output_std)
             self._teachers.append(teacher)
 
-    def forward(self, teacher_index: int, batch: Dict) -> torch.Tensor:
+    def forward(self, teacher_index: int, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
         x = batch['x']
         output = self._teachers[teacher_index](x)
         return output
+
+    def test_set_forward(self, teacher_index, batch) -> torch.Tensor:
+        raise NotImplementedError
 
     def signal_task_boundary_to_teacher(self, new_task: int):
         pass

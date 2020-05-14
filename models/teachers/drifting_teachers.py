@@ -1,4 +1,5 @@
-from models import DriftingTeacher
+from models.networks.teachers import DriftingTeacher
+from utils import Parameters
 
 from .base_teachers import _BaseTeachers
 
@@ -9,11 +10,11 @@ from typing import Dict
 
 class DriftingTeachers(_BaseTeachers):
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Parameters):
         _BaseTeachers.__init__(self, config)
         self._drift_frequency = config.get(["task", "drift_frequency"])
 
-    def _setup_teachers(self, config: Dict):
+    def _setup_teachers(self, config: Parameters):
         """Instantiate Teachers"""
         # initialise teacher networks, freeze
         teacher_noise = config.get(["task", "teacher_noise"])

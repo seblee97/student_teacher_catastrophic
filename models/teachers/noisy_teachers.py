@@ -1,13 +1,14 @@
 from .base_teachers import _BaseTeachers
+from utils import Parameters
 
 from typing import Dict
 
 class NoisyTeachers(_BaseTeachers):
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Parameters):
         _BaseTeachers.__init__(self, config)
 
-    def _setup_teachers(self, config: Dict):
+    def _setup_teachers(self, config: Parameters):
         """
         Instantiate all teachers
 

@@ -1,16 +1,17 @@
 from .base_teachers import _BaseTeachers
+from utils import Parameters
 
 import torch 
 import copy
 
-from typing import Dict
+from typing import Dict, Union, List
 
 class OverlappingTeachers(_BaseTeachers):
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Parameters):
         _BaseTeachers.__init__(self, config)
 
-    def _setup_teachers(self, config: Dict) -> None:
+    def _setup_teachers(self, config: Parameters) -> None:
         """
         Instantiate all teachers.
         
@@ -64,10 +65,10 @@ class OverlappingTeachers(_BaseTeachers):
                 teacher.set_noise_distribution(mean=0, std=teacher_noises[t + 1] * teacher_output_std)
             self._teachers.append(teacher)
 
-    def test_set_forward(self, teacher_index: int, batch: Dict) -> torch.Tensor:
+    def test_set_forward(self, teacher_index, batch) -> torch.Tensor:
         return self.forward(teacher_index, batch)
 
-    def forward(self, teacher_index: int, batch: Dict) -> torch.Tensor:
+    def forward(self, teacher_index: int, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
         x = batch['x']
         output = self._teachers[teacher_index](x)
         return output
