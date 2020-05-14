@@ -1,17 +1,20 @@
 from abc import ABC, abstractmethod
 
-from typing import Dict, List
+from typing import Dict, List, Iterator, Union
 
 from models.networks.base_network import Model
+from utils import Parameters
 
 import torch
 import torch.nn as nn
 
 import numpy as np
 
+TrainableParameters = Union[List[Dict[str, Iterator[torch.nn.Parameter]]], Iterator[torch.nn.Parameter]]
+
 class _BaseLearner(Model):
 
-    def __init__(self, config: Dict):
+    def __init__(self, config: Parameters):
 
         Model.__init__(self, config=config, model_type='student')
 
@@ -20,8 +23,6 @@ class _BaseLearner(Model):
         self._learning_rate = config.get(["training", "learning_rate"])
         self._input_dimension = config.get(["model", "input_dimension"])
         self._soft_committee = config.get(["model", "soft_committee"])
-
-        # self._setup_student(config=config)
         
         if config.get(["task", "loss_type"]) == "classification":
             self.classification_output = True
@@ -29,6 +30,8 @@ class _BaseLearner(Model):
             self.classification_output = False
         else:
             raise ValueError("Unknown loss type given in base config")
+
+        self.heads: nn.ModuleList
 
     @abstractmethod
     def forward_all(self, x) -> List[torch.Tensor]:
@@ -44,10 +47,11 @@ class _BaseLearner(Model):
         """
         raise NotImplementedError("Base class method")
 
-    def get_trainable_parameters(self) -> Dict[str, torch.Tensor]:
+    def get_trainable_parameters(self) -> TrainableParameters:
         """
         To instantiate optimiser, returns relevant (trainable) parameters of student networks
         """
+        trainable_parameters: TrainableParameters
         if self._scale_output_backward:
             trainable_parameters = [{'params': layer.parameters()} for layer in self.layers]
             if not self._soft_committee:
@@ -67,6 +71,10 @@ class _BaseLearner(Model):
     @abstractmethod
     def signal_task_boundary_to_learner(self, new_task: int) -> None:
         raise NotImplementedError("Base class method")
+
+    @abstractmethod
+    def signal_step_boundary_to_learner(self, step: int, current_task: int):
+        pass
 
     @abstractmethod
     def _construct_output_layers(self):
