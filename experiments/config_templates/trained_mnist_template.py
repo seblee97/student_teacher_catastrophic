@@ -1,6 +1,7 @@
 from typing import List
 
-from utils import _Template, Field
+from utils import _Template
+
 
 class TrainedMNISTTemplate(_Template):
 
@@ -10,4 +11,3 @@ class TrainedMNISTTemplate(_Template):
     def get_fields(cls) -> List:
         return [
         ]
-        

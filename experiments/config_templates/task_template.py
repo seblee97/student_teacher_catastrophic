@@ -2,6 +2,7 @@ from utils import _Template, Field
 
 from typing import List
 
+
 class TaskTemplate(_Template):
 
     LEVELS = ["task"]
@@ -13,11 +14,13 @@ class TaskTemplate(_Template):
     )
 
     LEARNER_CONFIGURATION = Field(
-        name="learner_configuration", types=[str], reqs=[lambda x: x in ["continual", "meta"]]
+        name="learner_configuration", types=[str],
+        reqs=[lambda x: x in ["continual", "meta"]]
     )
-    
+
     TEACHER_CONFIGURATION = Field(
-        name="teacher_configuration", types=[str], reqs=[lambda x: x in ["overlapping", "pure_mnist", "trained_mnist"]]
+        name="teacher_configuration", types=[str],
+        reqs=[lambda x: x in ["overlapping", "pure_mnist", "trained_mnist"]]
     )
 
     NUM_TEACHERS = Field(
@@ -25,7 +28,8 @@ class TaskTemplate(_Template):
     )
 
     LOSS_TYPE = Field(
-        name="loss_type", types=[str], reqs=[lambda x: x in ["regression", "classification"]]
+        name="loss_type", types=[str],
+        reqs=[lambda x: x in ["regression", "classification"]]
     )
 
     @classmethod

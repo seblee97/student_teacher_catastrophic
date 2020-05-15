@@ -2,11 +2,12 @@ from typing import List
 
 from utils import _Template, Field
 
+
 class LoggingTemplate(_Template):
 
     LEVELS = ["logging"]
     OPTIONAL: List[str] = []
-    
+
     # Logging level fields
     VERBOSE = Field(
         name="verbose", types=[bool], reqs=None
@@ -19,7 +20,7 @@ class LoggingTemplate(_Template):
     CHECKPOINT_FREQUENCY = Field(
         name="checkpoint_frequency", types=[int], reqs=None
     )
-        
+
     LOG_TO_DF = Field(
         name="log_to_df", types=[bool], reqs=None
     )

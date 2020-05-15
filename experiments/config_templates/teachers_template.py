@@ -2,6 +2,7 @@ from utils import _Template, Field
 
 from typing import List
 
+
 class TeachersTemplate(_Template):
 
     LEVELS = ["teachers"]
@@ -9,11 +10,13 @@ class TeachersTemplate(_Template):
 
     # Teachers level fields
     OVERLAP_PERCENTAGES = Field(
-        name="overlap_percentages", types=[list], reqs=[lambda x: all(isinstance(y, int) and y >= 0 for y in x)]
+        name="overlap_percentages", types=[list],
+        reqs=[lambda x: all(isinstance(y, int) and y >= 0 for y in x)]
     )
 
     TEACHER_NOISE = Field(
-        name="teacher_noise", types=[list], reqs=[lambda x: all(isinstance(y, (float, int)) and y >= 0 for y in x)]
+        name="teacher_noise", types=[list],
+        reqs=[lambda x: all(isinstance(y, (float, int)) and y >= 0 for y in x)]
     )
 
     @classmethod

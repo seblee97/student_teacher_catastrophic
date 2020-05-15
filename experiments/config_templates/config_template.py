@@ -1,8 +1,8 @@
 from typing import List
 
-from utils import Parameters, _Template, Field
-from .task_template import TaskTemplate 
-from .training_template import TrainingTemplate 
+from utils import _Template, Field
+from .task_template import TaskTemplate
+from .training_template import TrainingTemplate
 from .testing_template import TestingTemplate
 from .model_template import ModelTemplate
 from .curriculum_template import CurriculumTemplate
@@ -10,10 +10,13 @@ from .teachers_template import TeachersTemplate
 from .logging_template import LoggingTemplate
 from .data_template import DataTemplate
 
+
 class ConfigTemplate(_Template):
 
     LEVELS = "ROOT"
-    OPTIONAL: List[str] = ["drift_teachers", "mnist_data", "pure_mnist", "trained_mnist"]
+    OPTIONAL: List[str] = [
+        "drift_teachers", "mnist_data", "pure_mnist", "trained_mnist"
+        ]
 
     # root level fields
     EXPERIMENT_NAME = Field(

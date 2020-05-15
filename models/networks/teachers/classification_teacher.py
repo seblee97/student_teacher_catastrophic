@@ -1,8 +1,8 @@
 from .base_teacher import _Teacher
 from utils import Parameters
 
-from typing import Dict
 import torch
+
 
 class ClassificationTeacher(_Teacher):
 
@@ -20,17 +20,18 @@ class ClassificationTeacher(_Teacher):
 
         if self.noisy:
             y = self.add_output_noise(y)
-        
-        # threshold differently depending on nonlinearity to ensure even class distributions
+
+        # threshold differently depending on nonlinearity to
+        # ensure even class distributions
         if self.nonlinearity_name == 'relu':
             labels = torch.abs(y) > 0
         elif self.nonlinearity_name == 'linear':
             tanh_y = torch.tanh(y)
             labels = tanh_y > 0
-        else: 
-            raise NotImplementedError("Teacher thresholding for {} nonlinearity not yet implemented".format(self.nonlinearity_name))
+        else:
+            raise NotImplementedError(
+                "Teacher thresholding for {} nonlinearity not yet \
+                implemented".format(self.nonlinearity_name)
+            )
 
-        return labels.long().reshape(len(labels),)
-
-        
-        
+        return labels.long().reshape(len(labels),) 

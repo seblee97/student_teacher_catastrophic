@@ -1,16 +1,14 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
-from typing import Dict, List, Iterator, Union
+from typing import Dict, List
 
 from models.networks.base_network import Model
 from utils import Parameters
+from constants import Constants
 
 import torch
 import torch.nn as nn
 
-import numpy as np
-
-TrainableParameters = Union[List[Dict[str, Iterator[torch.nn.Parameter]]], Iterator[torch.nn.Parameter]]
 
 class _BaseLearner(Model):
 
@@ -19,11 +17,12 @@ class _BaseLearner(Model):
         Model.__init__(self, config=config, model_type='student')
 
         self._device = config.get("device")
-        self._scale_output_backward = config.get(["training", "scale_output_backward"])
+        self._scale_output_backward = \
+            config.get(["training", "scale_output_backward"])
         self._learning_rate = config.get(["training", "learning_rate"])
         self._input_dimension = config.get(["model", "input_dimension"])
         self._soft_committee = config.get(["model", "soft_committee"])
-        
+
         if config.get(["task", "loss_type"]) == "classification":
             self.classification_output = True
         elif config.get(["task", "loss_type"]) == 'regression':
@@ -41,31 +40,48 @@ class _BaseLearner(Model):
         raise NotImplementedError("Base class method")
 
     @abstractmethod
-    def forward_batch_per_task(self, batch_list: List[Dict[str, torch.Tensor]]) -> List[torch.Tensor]:
+    def forward_batch_per_task(
+        self,
+        batch_list: List[Dict[str, torch.Tensor]]
+    ) -> List[torch.Tensor]:
         """
-        Makes call to student forward, using a different head for each batch in list
+        Makes call to student forward, using a different head
+        for each batch in list
         """
         raise NotImplementedError("Base class method")
 
-    def get_trainable_parameters(self) -> TrainableParameters:
+    def get_trainable_parameters(self) -> Constants.TRAINABLE_PARAMETERS_TYPE:
         """
-        To instantiate optimiser, returns relevant (trainable) parameters of student networks
+        To instantiate optimiser, returns relevant (trainable) parameters
+        of student networks
         """
-        trainable_parameters: TrainableParameters
+        trainable_parameters: Constants.TRAINABLE_PARAMETERS_TYPE
         if self._scale_output_backward:
-            trainable_parameters = [{'params': layer.parameters()} for layer in self.layers]
+            trainable_parameters = [
+                {'params': layer.parameters()} for layer in self.layers
+                ]
             if not self._soft_committee:
-                trainable_parameters += [{'params': head.parameters(), 'lr': self._learning_rate / self._input_dimension} for head in self.heads]
+                trainable_parameters += [
+                    {
+                        'params': head.parameters(),
+                        'lr': self._learning_rate / self._input_dimension
+                    }
+                    for head in self.heads
+                    ]
         else:
-            trainable_parameters = self.parameters()   
+            trainable_parameters = self.parameters()
         return trainable_parameters
 
     def set_to_train(self) -> None:
-        """set network to train mode (can affect behaviour of certain torch modules)"""
+        """set network to train mode
+        (can affect behaviour of certain torch modules)
+        """
         self.train()
-    
+
     def set_to_eval(self) -> None:
-        """set network to evaluations mode (can affect behaviour of certain torch modules)"""
+        """set network to evaluations mode
+        (can affect behaviour of certain torch modules)
+        """
         self.eval()
 
     @abstractmethod
@@ -83,19 +99,18 @@ class _BaseLearner(Model):
     @abstractmethod
     def set_task(self, task_index: int):
         raise NotImplementedError("Base class method")
-    
+
     def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
         y = self._get_output_from_head(x)
 
-        # threshold 
         if self.classification_output:
             return self._threshold(y)
-            
+
         return y
 
     def _threshold(self, y):
         return torch.sigmoid(y)
-    
+
     @abstractmethod
     def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError("Base class method")
@@ -103,4 +118,3 @@ class _BaseLearner(Model):
     @abstractmethod
     def _get_head_weights(self) -> List[torch.Tensor]:
         raise NotImplementedError("Base class method")
-

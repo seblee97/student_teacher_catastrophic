@@ -1,7 +1,6 @@
-from .base_loss import _BaseLoss 
+from .base_loss import _BaseLoss
 from utils import Parameters
 
-from typing import Dict
 
 class ClassificationLoss(_BaseLoss):
 

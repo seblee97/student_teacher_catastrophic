@@ -4,3 +4,8 @@ from .mnist_digits_data import MNISTDigitsData
 from .even_greater_mnist_data import MNISTEvenGreaterData
 from .mnist_data import _MNISTData
 from .base_data_module import _BaseData
+
+__all__ = [
+    "IIDData", "MNISTStreamData", "MNISTDigitsData",
+    "MNISTEvenGreaterData", "_MNISTData", "_BaseData"
+]

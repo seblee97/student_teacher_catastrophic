@@ -7,11 +7,12 @@ import sys
 import torch
 import torch.optim as optim
 
-from typing import List, Dict, Union
+from typing import List, Dict
 
 from components import data_modules, loss_modules, loggers
 from models import teachers, learners
 from utils import Parameters
+from constants import Constants
 
 
 class StudentTeacherRunner:
@@ -51,11 +52,8 @@ class StudentTeacherRunner:
         print("Loss module setup in {}s".format(round(t5 - t4, 5)))
 
         # compute test outputs for teachers
-        TestDataTypes = Union[
-            List[Dict[str, torch.Tensor]],
-            Dict[str, Union[torch.Tensor, List[torch.Tensor]]]
-            ]
-        self.test_data: TestDataTypes = self.data_module.get_test_data()
+        self.test_data: Constants.TEST_DATA_TYPES = \
+            self.data_module.get_test_data()
         self.test_teacher_outputs: List[torch.Tensor] = \
             self._get_test_teacher_outputs()
 
@@ -235,7 +233,12 @@ class StudentTeacherRunner:
                 "Curriculum type {} not recognised".format(curriculum_type)
                 )
 
-    def _log_to_df(self, tag: str, scalar: float, step: int):
+    def _log_to_df(
+        self,
+        tag: str,
+        scalar: float,
+        step: int
+    ) -> None:
         """Makes call to logger method, avoids constant checks for
         boolean log_to_df in training loop etc.
         """
@@ -386,7 +389,11 @@ class StudentTeacherRunner:
 
         self.logger._consolidate_dfs()
 
-    def _switch_task(self, step: int, generalisation_error: float) -> bool:
+    def _switch_task(
+        self,
+        step: int,
+        generalisation_error: float
+    ) -> bool:
         """
         Method to determine whether to switch task
         (i.e. whether condition set out by curriculum
@@ -430,8 +437,11 @@ class StudentTeacherRunner:
                     'threshold'.".format(self.curriculum_stopping_condition))
 
     def _perform_test_loop(
-        self, teacher_index: int, task_step_count: int, total_step_count: int
-            ) -> float:
+        self,
+        teacher_index: int,
+        task_step_count: int,
+        total_step_count: int
+    ) -> float:
         """
         Test loop. Evaluated generalisation error of student wrt teacher(s)
 
@@ -560,13 +570,18 @@ class StudentTeacherRunner:
         return generalisation_error_wrt_current_teacher
 
     def _compute_classification_acc(
-            self, prediction: torch.Tensor, target: torch.Tensor
-            ):
+        self,
+        prediction: torch.Tensor,
+        target: torch.Tensor
+    ) -> float:
         class_predictions = (prediction > 0.5).long().squeeze()
         accuracy = float((class_predictions == target).sum()) / len(target)
         return accuracy
 
-    def _compute_generalisation_errors(self, teacher_index=None):
+    def _compute_generalisation_errors(
+        self,
+        teacher_index=None
+    ) -> Dict[str, float]:
         with torch.no_grad():
             if self.same_input_distribution:
                 student_outputs = self.learner.forward_all(self.test_data['x'])

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from typing import List, Union, Tuple
 
+
 class _Template(ABC):
 
     LEVELS: Union[List[str], str]
@@ -24,19 +25,20 @@ class _Template(ABC):
     def get_optional_fields(cls) -> List[str]:
         return cls.OPTIONAL
 
+
 class Field:
 
     def __init__(self, name: str, types: List, reqs: Union[List, None]):
 
         self.name = name
         self.types: Tuple = tuple(types)
-        self.reqs = reqs 
+        self.reqs = reqs
 
     def get_name(self):
-        return self.name 
+        return self.name
 
     def get_types(self):
-        return self.types 
+        return self.types
 
     def get_reqs(self):
         return self.reqs

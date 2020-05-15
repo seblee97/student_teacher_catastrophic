@@ -1,28 +1,28 @@
-import torch 
-import torch.nn as nn 
-import torch.nn.functional as F 
-import torch.optim as optim
-import torch.distributions as tdist
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 import numpy as np
-import copy
 
-from typing import List, Tuple, Generator, Dict, Union, Callable
+from typing import Union, Callable
 
 from abc import ABC, abstractmethod
 
 from utils import Parameters
 
+
 class Model(nn.Module, ABC):
 
     def __init__(self, config: Parameters, model_type: str) -> None:
         """
-        Multi-layer non-linear neural network class. For use in student-teacher framework.
+        Multi-layer non-linear neural network class. For use in
+        student-teacher framework.
 
-        :param config: dictionary containing parameters to specify network configuration
+        :param config: dictionary containing parameters to specify
+        network configuration
         :param model_type: "teacher" or "student"
         """
-        self.model_type = model_type # 'teacher' or 'student'
+        self.model_type = model_type  # 'teacher' or 'student'
 
         model_index: Union[int, None]
 
@@ -32,7 +32,8 @@ class Model(nn.Module, ABC):
         else:
             model_index = None
 
-        assert self.model_type == 'teacher' or 'student', "Unknown model type {} provided to network".format(self.model_type)
+        assert self.model_type == 'teacher' or 'student', \
+            "Unknown model type {} provided to network".format(self.model_type)
 
         # extract relevant parameters from config
         self._extract_parameters(config=config)
@@ -42,10 +43,12 @@ class Model(nn.Module, ABC):
 
         # initialise specified nonlinearity function
         if self.model_type == 'teacher':
-            all_teacher_nonlinearities = config.get(["model", "teacher_nonlinearities"])
+            all_teacher_nonlinearities = \
+                config.get(["model", "teacher_nonlinearities"])
             self.nonlinearity_name = all_teacher_nonlinearities[model_index]
         else:
-            self.nonlinearity_name = config.get(["model", "student_nonlinearity"])
+            self.nonlinearity_name = \
+                config.get(["model", "student_nonlinearity"])
 
         self.nonlinear_function: Callable
 
@@ -53,12 +56,12 @@ class Model(nn.Module, ABC):
             self.nonlinear_function = F.relu
         elif self.nonlinearity_name == 'sigmoid':
             self.nonlinear_function = torch.sigmoid
-        elif self.nonlinearity_name == 'linear': 
+        elif self.nonlinearity_name == 'linear':
             self.nonlinear_function = linear_function
         elif self.nonlinearity_name == 'leaky_relu':
             self.nonlinear_function = F.leaky_relu
         else:
-            raise ValueError("Unknown non-linearity. Please use 'relu' or 'sigmoid' or 'linear'")
+            raise ValueError("Unknown non-linearity")
 
         super(Model, self).__init__()
 
@@ -67,27 +70,41 @@ class Model(nn.Module, ABC):
     def _extract_parameters(self, config: Parameters):
         self.input_dimension = config.get(["model", "input_dimension"])
         self.output_dimension = config.get(["model", "output_dimension"])
-        self.hidden_dimensions = config.get(["model", "{}_hidden_layers".format(self.model_type)])
-        self.initialisation_std = config.get(["model", "{}_initialisation_std".format(self.model_type)])
-        self.bias = config.get(["model", "{}_bias_parameters".format(self.model_type)])
+        self.hidden_dimensions = \
+            config.get(["model", "{}_hidden_layers".format(self.model_type)])
+        self.initialisation_std = \
+            config.get(
+                ["model", "{}_initialisation_std".format(self.model_type)]
+                )
+        self.bias = \
+            config.get(["model", "{}_bias_parameters".format(self.model_type)])
         self.soft_committee = config.get(["model", "soft_committee"])
-        self.learner_configuration = config.get(["task", "learner_configuration"])
+        self.learner_configuration = \
+            config.get(["task", "learner_configuration"])
         self.num_teachers = config.get(["task", "num_teachers"])
-        self.label_task_boundaries = config.get(["task", "label_task_boundaries"])
-        self.initialise_student_outputs = config.get(["model", "initialise_student_outputs"])
+        self.label_task_boundaries = \
+            config.get(["task", "label_task_boundaries"])
+        self.initialise_student_outputs = \
+            config.get(["model", "initialise_student_outputs"])
 
     def _construct_layers(self) -> None:
         """
-        initiates layers (input, hidden and output) according to dimensions specified in configuration
+        initiates layers (input, hidden and output) according to
+        dimensions specified in configuration
         """
         self.layers = nn.ModuleList([])
-        
-        input_layer = nn.Linear(self.input_dimension, self.hidden_dimensions[0], bias=self.bias)
+
+        input_layer = nn.Linear(
+            self.input_dimension, self.hidden_dimensions[0], bias=self.bias
+            )
         self._initialise_weights(input_layer)
         self.layers.append(input_layer)
 
         for h in range(len(self.hidden_dimensions[:-1])):
-            hidden_layer = nn.Linear(self.hidden_dimensions[h], self.hidden_dimensions[h + 1], bias=self.bias)
+            hidden_layer = nn.Linear(
+                self.hidden_dimensions[h], self.hidden_dimensions[h + 1],
+                bias=self.bias
+                )
             self._initialise_weights(hidden_layer)
             self.layers.append(hidden_layer)
 
@@ -96,7 +113,8 @@ class Model(nn.Module, ABC):
     @abstractmethod
     def _construct_output_layers(self):
         """
-        initiates output layers in particular. Student may have different heads, scm has frozen output etc.
+        initiates output layers in particular. Student may have different
+        heads, scm has frozen output etc.
         """
         raise NotImplementedError("Base class method")
 
@@ -120,7 +138,7 @@ class Model(nn.Module, ABC):
             torch.nn.init.normal_(layer.weight, std=self.initialisation_std)
             if self.bias:
                 torch.nn.init.normal_(layer.bias, std=self.initialisation_std)
-        
+
         return layer
 
     def freeze_weights(self) -> None:
@@ -130,7 +148,7 @@ class Model(nn.Module, ABC):
         for param in self.parameters():
             param.requires_grad = False
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor: # type: ignore
+    def forward(self, x: torch.Tensor) -> torch.Tensor:  # type: ignore
         """
         Forward pass
 
@@ -138,7 +156,9 @@ class Model(nn.Module, ABC):
         :return y: output of network
         """
         for layer in self.layers:
-            x = self.nonlinear_function(layer(x) / np.sqrt(self.input_dimension))
+            x = self.nonlinear_function(
+                layer(x) / np.sqrt(self.input_dimension)
+                )
 
         y = self._output_forward(x)
 

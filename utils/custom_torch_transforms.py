@@ -1,5 +1,6 @@
 import torch
 
+
 class CustomFlatten(object):
     """Flatten the image"""
 
@@ -17,11 +18,14 @@ class ToFloat(object):
 
         return torch.Tensor(image).type(torch.FloatTensor)
 
+
 class Standardize(object):
-    """Normalise (for tensor) input[channel] = (input[channel] - mean[channel]) / std[channel]"""
+    """Normalise (for tensor)
+    input[channel] = (input[channel] - mean[channel]) / std[channel]
+    """
 
     def __init__(self, mean, std):
-        self.mean = mean 
+        self.mean = mean
         self.std = std
 
         self.nan_mask = torch.Tensor([1 if ch != 0 else 0 for ch in std])
@@ -49,10 +53,14 @@ class ApplyPCA(object):
 
         return reduced_image
 
+
 class AddGaussianNoise(object):
 
     def __init__(self, std):
         self.std = std
 
     def __call__(self, image):
-        noisy_image = image + torch.empty(image.shape).normal_(mean=0,std=self.std)
+        noisy_image = \
+            image + torch.empty(image.shape).normal_(mean=0, std=self.std)
+
+        return noisy_image

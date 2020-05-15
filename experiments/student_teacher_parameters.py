@@ -6,11 +6,13 @@ from typing import Dict
 class StudentTeacherParameters(Parameters):
 
     def __init__(
-            self, params: Dict, root_config_template: _Template,
-            mnist_data_config_template: _Template, 
-            pure_mnist_config_template: _Template,
-            trained_mnist_config_template: _Template
-            ):
+        self,
+        params: Dict,
+        root_config_template: _Template,
+        mnist_data_config_template: _Template,
+        pure_mnist_config_template: _Template,
+        trained_mnist_config_template: _Template
+    ):
         Parameters.__init__(self, params)
 
         self.root_config_template = root_config_template

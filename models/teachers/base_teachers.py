@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
 
 import torch
-import torch.nn as nn
 
 from typing import Dict, List, Union, overload
 
-from models.networks.teachers import ClassificationTeacher, RegressionTeacher, TrainedClassificationTeacher, _Teacher
+from models.networks.teachers import ClassificationTeacher, \
+    RegressionTeacher, TrainedClassificationTeacher, _Teacher
 from utils import Parameters
+
 
 class _BaseTeachers(ABC):
 
@@ -14,7 +15,8 @@ class _BaseTeachers(ABC):
 
         self._num_teachers = config.get(["task", "num_teachers"])
         self._device = config.get("device")
-        self._teacher_configuration = config.get(["task", "teacher_configuration"])
+        self._teacher_configuration = \
+            config.get(["task", "teacher_configuration"])
 
         self._loss_type = config.get(["task", "loss_type"])
 
@@ -30,26 +32,44 @@ class _BaseTeachers(ABC):
     def _init_teacher(self, config: Parameters, index: int):
         if self._loss_type == "classification":
             if self._teacher_configuration == "trained_mnist":
-                return TrainedClassificationTeacher(config=config, index=index).to(self._device)
+                return TrainedClassificationTeacher(
+                    config=config, index=index
+                    ).to(self._device)
             else:
-                return ClassificationTeacher(config=config, index=index).to(self._device)
+                return ClassificationTeacher(
+                    config=config, index=index
+                    ).to(self._device)
         elif self._loss_type == "regression":
-            return RegressionTeacher(config=config, index=index).to(self._device)
+            return RegressionTeacher(
+                config=config, index=index
+                ).to(self._device)
 
     @overload
     @abstractmethod
-    def test_set_forward(self, teacher_index: int, batch: List[Dict[str, torch.Tensor]]) -> torch.Tensor: ...
-        
+    def test_set_forward(
+        self,
+        teacher_index: int,
+        batch: List[Dict[str, torch.Tensor]]
+    ) -> torch.Tensor: ...
+
     @overload
     @abstractmethod
-    def test_set_forward(self, teacher_index: int, batch: Dict[str, Union[torch.Tensor, List[torch.Tensor]]]) -> torch.Tensor: ...
+    def test_set_forward(
+        self,
+        teacher_index: int,
+        batch: Dict[str, Union[torch.Tensor, List[torch.Tensor]]]
+    ) -> torch.Tensor: ...
 
     @abstractmethod
     def test_set_forward(self, teacher_index, batch) -> torch.Tensor:
         raise NotImplementedError("Base class method")
 
     @abstractmethod
-    def forward(self, teacher_index: int, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def forward(
+        self,
+        teacher_index: int,
+        batch: Dict[str, torch.Tensor]
+    ) -> torch.Tensor:
         """call to current teacher forward"""
         raise NotImplementedError("Base class method")
 
@@ -60,7 +80,7 @@ class _BaseTeachers(ABC):
 
     def get_teacher_networks(self) -> List[_Teacher]:
         """getter method for teacher networks"""
-        networks = self._teachers 
+        networks = self._teachers
         return networks
 
     @abstractmethod
@@ -68,7 +88,9 @@ class _BaseTeachers(ABC):
         raise NotImplementedError("Base class method")
 
     @abstractmethod
-    def signal_step_boundary_to_teacher(self, step: int, current_task: int) -> None:
+    def signal_step_boundary_to_teacher(
+        self,
+        step: int,
+        current_task: int
+    ) -> None:
         raise NotImplementedError("Base class method")
-
-

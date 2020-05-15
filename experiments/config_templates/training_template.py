@@ -2,6 +2,7 @@ from utils import _Template, Field
 
 from typing import List
 
+
 class TrainingTemplate(_Template):
 
     LEVELS = ["training"]
@@ -9,7 +10,8 @@ class TrainingTemplate(_Template):
 
     # Training level fields
     TOTAL_TRAINING_STEPS = Field(
-        name="total_training_steps", types=[type(None), int], reqs=[lambda x: x is None or x > 0]
+        name="total_training_steps", types=[type(None), int],
+        reqs=[lambda x: x is None or x > 0]
     )
 
     TRAIN_BATCH_SIZE = Field(

@@ -2,6 +2,7 @@ from utils import _Template, Field
 
 from typing import List
 
+
 class ModelTemplate(_Template):
 
     LEVELS = ["model"]
@@ -13,11 +14,13 @@ class ModelTemplate(_Template):
     )
 
     STUDENT_HIDDEN_LAYERS = Field(
-        name="student_hidden_layers", types=[list], reqs=[lambda x: all(isinstance(y, int) and y > 0 for y in x)]
+        name="student_hidden_layers", types=[list],
+        reqs=[lambda x: all(isinstance(y, int) and y > 0 for y in x)]
     )
-    
+
     TEACHER_HIDDEN_LAYERS = Field(
-        name="teacher_hidden_layers", types=[list], reqs=[lambda x: all(isinstance(y, int) and y > 0 for y in x)]
+        name="teacher_hidden_layers", types=[list],
+        reqs=[lambda x: all(isinstance(y, int) and y > 0 for y in x)]
     )
 
     OUTPUT_DIMENSION = Field(
@@ -25,19 +28,29 @@ class ModelTemplate(_Template):
     )
 
     STUDENT_NONLINEARITY = Field(
-        name="student_nonlinearity", types=[str], reqs=[lambda x: x in ["relu", "linear", "sigmoid"]]
+        name="student_nonlinearity", types=[str],
+        reqs=[lambda x: x in ["relu", "linear", "sigmoid"]]
     )
 
     TEACHER_NONLINEARITIES = Field(
-        name="teacher_nonlinearities", types=[list], reqs=[lambda x: all(isinstance(y, str) and y in ["relu", "linear", "sigmoid"] for y in x)]
+        name="teacher_nonlinearities", types=[list],
+        reqs=[
+            lambda x: all(
+                isinstance(y, str)
+                and y in ["relu", "linear", "sigmoid"]
+                for y in x
+                )
+            ]
     )
 
     TEACHER_INITIALISATION_STD = Field(
-        name="teacher_initialisation_std", types=[float, int], reqs=[lambda x: x > 0]
+        name="teacher_initialisation_std", types=[float, int],
+        reqs=[lambda x: x > 0]
     )
 
     STUDENT_INITIALISATION_STD = Field(
-        name="student_initialisation_std", types=[float, int], reqs=[lambda x: x > 0]
+        name="student_initialisation_std", types=[float, int],
+        reqs=[lambda x: x > 0]
     )
 
     INITIALISE_STUDENT_OUTPUTS = Field(
