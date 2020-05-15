@@ -182,10 +182,14 @@ def update_config_with_parser(args, params: Dict):
             ]
         params["model"]["teacher_nonlinearities"] = teacher_nonlinearities
     if args.sh:
-        student_hidden = [int(h) for h in "".join(args.sh).strip('[]').split(',')]
+        student_hidden = [
+            int(h) for h in "".join(args.sh).strip('[]').split(',')
+            ]
         params["model"]["student_hidden_layers"] = student_hidden
     if args.th:
-        teacher_hidden = [int(h) for h in "".join(args.th).strip('[]').split(',')]
+        teacher_hidden = [
+            int(h) for h in "".join(args.th).strip('[]').split(',')
+            ]
         params["model"]["teacher_hidden_layers"] = teacher_hidden
 
     return params
