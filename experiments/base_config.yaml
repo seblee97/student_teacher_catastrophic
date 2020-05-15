@@ -18,7 +18,7 @@ training:
   scale_output_backward:            True                      # whether to add 1/N factor in lr of output layer  
 
 data:
-  input_source:                     iid_guassian              # iid_gaussian, mnist (see README)
+  input_source:                     iid_gaussian              # iid_gaussian, mnist (see README)
   same_input_distribution:          True
 
 logging:

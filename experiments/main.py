@@ -1,10 +1,10 @@
 from postprocessing import StudentTeacherPostprocessor
 from experiments.student_teacher_runner import StudentTeacherRunner
 from experiments.student_teacher_parameters import StudentTeacherParameters
-from experiments.config_templates import ConfigTemplate, MNISTDataTemplate, TrainedMNISTTemplate, PureMNISTTemplate
+from experiments.config_templates import ConfigTemplate, MNISTDataTemplate, \
+    TrainedMNISTTemplate, PureMNISTTemplate
 
 import argparse
-import torch
 import yaml
 import time
 import datetime
@@ -12,43 +12,125 @@ import os
 
 from typing import Dict
 
+
 def process_parser():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-config', type=str, help='path to configuration file for student teacher experiment', default='base_config.yaml')
-    parser.add_argument('-additional_config', '--ac', type=str, help='path to folder contatining supplementary configuration files', default='configs/')
-    parser.add_argument('-gpu_id', type=int, help='id of gpu to use if more than 1 available', default=0)
-    parser.add_argument('-log_ext', action='store_false', help='whether to write evaluation data to external file as well as tensorboard')
-    parser.add_argument('-postprocessing_path', '--ppp', type=str, help='path to folder to post-process', default=None)
+    parser.add_argument(
+        '-config', type=str, help='path to configuration file for student \
+            teacher experiment', default='base_config.yaml'
+        )
+    parser.add_argument(
+        '-additional_config', '--ac', type=str, help='path to folder \
+            contatining supplementary configuration files', default='configs/'
+        )
+    parser.add_argument(
+        '-gpu_id', type=int, help='id of gpu to use if more than 1 available',
+        default=0
+        )
+    parser.add_argument(
+        '-log_ext', action='store_false', help='whether to write evaluation \
+            data to external file as well as tensorboard'
+        )
+    parser.add_argument(
+        '-postprocessing_path', '--ppp', type=str, help='path to folder to \
+            post-process', default=None
+        )
 
-    parser.add_argument('-seed', '--s', type=int, help='seed to use for packages with prng', default=None)
-    parser.add_argument('-learner_configuration', '--lc', type=str, help="meta or continual", default=None)
-    parser.add_argument('-teacher_configuration', '--tc', type=str, help="noisy or independent or mnist", default=None)
-    parser.add_argument('-input_source', '--inp_s', type=str, help="mnist or iid_gaussian", default=None)
-    parser.add_argument('-input_dim', '--id', type=int, help="input dimension to networks", default=None)
-    parser.add_argument('-num_teachers', '--nt', type=int, default=None)
-    parser.add_argument('-loss_type', '--lty', type=str, default=None)
-    parser.add_argument('-loss_function', '--lf', type=str, default=None)
-    parser.add_argument('-selection_type', '--st', type=str, help="random or cyclical", default=None)
-    parser.add_argument('-stopping_condition', '--sc', type=str, help="threshold or fixed_period", default=None)
-    parser.add_argument('-fixed_period', '--fp', type=int, help="time between teacher change", default=None)
-    parser.add_argument('-loss_threshold', '--lt', type=str, help="how low loss for current teacher goes before switching (used with threshold)", default=None)
-    parser.add_argument('-student_nonlinearity', '--snl', type=str, help="which non linearity to use for student", default=None)
-    parser.add_argument('-teacher_nonlinearities', '--tnl', type=str, help="which non linearity to use for teacher", default=None)
-    parser.add_argument('-teacher_hidden', '--th', type=str, help="dimension of hidden layer in teacher", default=None)
-    parser.add_argument('-student_hidden', '--sh', type=str, help="dimension of hidden layer in student", default=None)
-    parser.add_argument('-learning_rate', '--lr', type=float, help="base learning rate", default=None)
-    parser.add_argument('-total_steps', '--ts', type=int, help="total timesteps to run algorithm", default=None)
-    parser.add_argument('-experiment_name', '--en', type=str, help="name to give to experiment", default=None)
-    parser.add_argument('-verbose', '--v', type=int, help="whether to display prints", default=None)
-    parser.add_argument('-checkpoint_path', '--cp', type=str, help="where to log results", default=None)
-    parser.add_argument('-checkpoint_frequency', '--cf', type=float, help="how often to log results", default=None) 
-    parser.add_argument('-teacher_overlaps', '--to', type=str, help="per layer overlaps between teachers. Must be in format '[30, 20, etc.]'", default=None)
+    parser.add_argument(
+        '-seed', '--s', type=int, help='seed to use for packages with prng',
+        default=None
+        )
+    parser.add_argument(
+        '-learner_configuration', '--lc', type=str, help="meta or continual",
+        default=None
+        )
+    parser.add_argument(
+        '-teacher_configuration', '--tc', type=str, help="noisy or \
+            independent or mnist", default=None
+        )
+    parser.add_argument(
+        '-input_source', '--inp_s', type=str, help="mnist or iid_gaussian",
+        default=None)
+    parser.add_argument(
+        '-input_dim', '--id', type=int, help="input dimension to networks",
+        default=None
+        )
+    parser.add_argument(
+        '-num_teachers', '--nt', type=int, default=None
+        )
+    parser.add_argument(
+        '-loss_type', '--lty', type=str, default=None
+        )
+    parser.add_argument(
+        '-loss_function', '--lf', type=str, default=None
+        )
+    parser.add_argument(
+        '-selection_type', '--st', type=str, help="random or cyclical",
+        default=None
+        )
+    parser.add_argument(
+        '-stopping_condition', '--sc', type=str, help="threshold or \
+            fixed_period", default=None
+        )
+    parser.add_argument(
+        '-fixed_period', '--fp', type=int, help="time between teacher change",
+        default=None
+        )
+    parser.add_argument(
+        '-loss_threshold', '--lt', type=str, help="how low loss for current \
+            teacher goes before switching (used with threshold)", default=None
+        )
+    parser.add_argument(
+        '-student_nonlinearity', '--snl', type=str, help="which non linearity \
+            to use for student", default=None
+        )
+    parser.add_argument(
+        '-teacher_nonlinearities', '--tnl', type=str, help="which non \
+            linearity to use for teacher", default=None
+        )
+    parser.add_argument(
+        '-teacher_hidden', '--th', type=str, help="dimension of hidden layer \
+            in teacher", default=None
+        )
+    parser.add_argument(
+        '-student_hidden', '--sh', type=str, help="dimension of hidden layer \
+            in student", default=None
+        )
+    parser.add_argument(
+        '-learning_rate', '--lr', type=float, help="base learning rate",
+        default=None
+        )
+    parser.add_argument(
+        '-total_steps', '--ts', type=int, help="total timesteps to run \
+            algorithm", default=None
+        )
+    parser.add_argument(
+        '-experiment_name', '--en', type=str, help="name to give to \
+            experiment", default=None
+        )
+    parser.add_argument(
+        '-verbose', '--v', type=int, help="whether to display prints",
+        default=None
+        )
+    parser.add_argument(
+        '-checkpoint_path', '--cp', type=str, help="where to log results",
+        default=None
+        )
+    parser.add_argument(
+        '-checkpoint_frequency', '--cf', type=float, help="how often to log \
+            results", default=None)
+
+    parser.add_argument(
+        '-teacher_overlaps', '--to', type=str, help="per layer overlaps \
+            between teachers. Must be in format '[30, 20, etc.]'", default=None
+        )
 
     args = parser.parse_args()
 
     return args
+
 
 def update_config_with_parser(args, params: Dict):
 
@@ -95,7 +177,9 @@ def update_config_with_parser(args, params: Dict):
     if args.snl:
         params["model"]["student_nonlinearity"] = args.snl
     if args.tnl:
-        teacher_nonlinearities = [str(nl).strip() for nl in "".join(args.tnl).strip('[]').split(',')]
+        teacher_nonlinearities = [
+            str(nl).strip() for nl in "".join(args.tnl).strip('[]').split(',')
+            ]
         params["model"]["teacher_nonlinearities"] = teacher_nonlinearities
     if args.sh:
         student_hidden = [int(h) for h in "".join(args.sh).strip('[]').split(',')]
@@ -106,9 +190,11 @@ def update_config_with_parser(args, params: Dict):
 
     return params
 
+
 def postprocess(save_path: str):
     post_processor = StudentTeacherPostprocessor(save_path=args.ppp)
     post_processor.post_process()
+
 
 def run(args):
 
@@ -121,32 +207,44 @@ def run(args):
 
     params = update_config_with_parser(args=args, params=params)
 
-    # create object in which to store experiment parameters and validate config file
+    # create object in which to store experiment parameters and validate
+    # config file
     student_teacher_parameters = StudentTeacherParameters(
-        params, root_config_template=ConfigTemplate, mnist_data_config_template=MNISTDataTemplate, 
-        trained_mnist_config_template=TrainedMNISTTemplate, pure_mnist_config_template=PureMNISTTemplate
+        params, root_config_template=ConfigTemplate,
+        mnist_data_config_template=MNISTDataTemplate,
+        trained_mnist_config_template=TrainedMNISTTemplate,
+        pure_mnist_config_template=PureMNISTTemplate
         )
 
     # establish experiment name / log path etc.
-    exp_timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d-%H-%M-%S')
+    raw_datetime = datetime.datetime.fromtimestamp(time.time())
+    exp_timestamp = raw_datetime.strftime('%Y-%m-%d-%H-%M-%S')
     experiment_name = student_teacher_parameters.get("experiment_name")
 
     if args.cp:
-        results_folder_base = args.cp if args.cp.endswith('/') else args.cp + '/'
+        results_folder_base = args.cp if args.cp.endswith('/') \
+            else args.cp + '/'
     else:
         results_folder_base = 'results/'
-        
+
     if experiment_name:
-        checkpoint_path = '{}/{}/{}/{}/'.format(main_file_path, results_folder_base, exp_timestamp, experiment_name)
+        checkpoint_path = '{}/{}/{}/{}/'.format(
+            main_file_path, results_folder_base, exp_timestamp,
+            experiment_name
+            )
     else:
-        checkpoint_path = '{}/{}/{}/'.format(main_file_path, results_folder_base, exp_timestamp)
+        checkpoint_path = '{}/{}/{}/'.format(
+            main_file_path, results_folder_base, exp_timestamp
+            )
 
     student_teacher_parameters.set_property("checkpoint_path", checkpoint_path)
-    student_teacher_parameters.set_property("experiment_timestamp", exp_timestamp)
+    student_teacher_parameters.set_property(
+        "experiment_timestamp", exp_timestamp
+        )
 
     # get specified random seed value from config
     seed_value = student_teacher_parameters.get("seed")
-    
+
     # import packages with non-deterministic behaviour
     import random
     import numpy as np
@@ -155,18 +253,18 @@ def run(args):
     random.seed(seed_value)
     np.random.seed(seed_value)
     torch.manual_seed(seed_value)
-    
+
     # establish whether gpu is available
     if torch.cuda.is_available() and student_teacher_parameters.get('use_gpu'):
         print("Using the GPU")
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
-        student_teacher_parameters.set_property("device", "cuda")
         experiment_device = torch.device("cuda:{}".format(args.gpu_id))
     else:
         print("Using the CPU")
-        student_teacher_parameters.set_property("device", "cpu")
         experiment_device = torch.device("cpu")
+
+    student_teacher_parameters.set_property("device", experiment_device)
 
     if args.log_ext:
         log_path = '{}data_logger.csv'.format(checkpoint_path)
@@ -174,9 +272,10 @@ def run(args):
 
     # write copy of config_yaml in model_checkpoint_folder
     student_teacher_parameters.save_configuration(checkpoint_path)
-    
+
     student_teacher = StudentTeacherRunner(config=student_teacher_parameters)
     student_teacher.train()
+
 
 if __name__ == "__main__":
 
@@ -186,4 +285,3 @@ if __name__ == "__main__":
         postprocess(args.ppp)
     else:
         run(args)
-    
