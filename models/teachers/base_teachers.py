@@ -48,20 +48,18 @@ class _BaseTeachers(ABC):
     @abstractmethod
     def test_set_forward(
         self,
-        teacher_index: int,
         batch: List[Dict[str, torch.Tensor]]
-    ) -> torch.Tensor: ...
+    ) -> List[torch.Tensor]: ...
 
     @overload
     @abstractmethod
     def test_set_forward(
         self,
-        teacher_index: int,
         batch: Dict[str, Union[torch.Tensor, List[torch.Tensor]]]
-    ) -> torch.Tensor: ...
+    ) -> List[torch.Tensor]: ...
 
     @abstractmethod
-    def test_set_forward(self, teacher_index, batch) -> torch.Tensor:
+    def test_set_forward(self, batch) -> List[torch.Tensor]:
         raise NotImplementedError("Base class method")
 
     @abstractmethod
