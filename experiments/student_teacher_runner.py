@@ -55,7 +55,7 @@ class StudentTeacherRunner:
         self.test_data: Constants.TEST_DATA_TYPES = \
             self.data_module.get_test_data()
         self.test_teacher_outputs: List[torch.Tensor] = \
-            self._get_test_teacher_outputs()
+            self.teachers.test_set_forward(self.test_data)
 
         # extract curriculum from config
         self._set_curriculum(config)
@@ -150,18 +150,6 @@ class StudentTeacherRunner:
             raise ValueError(
                 "Input source type {} not \
                     recognised".format(self.input_source))
-
-    def _get_test_teacher_outputs(self) -> List[torch.Tensor]:
-        if self.same_input_distribution:
-            return [
-                self.teachers.test_set_forward(t, self.test_data)
-                for t in range(self.num_teachers)
-                ]
-        else:
-            return [
-                self.teachers.forward(t, test_data)
-                for t, test_data in enumerate(self.test_data)
-                ]
 
     def _setup_loss(self, config: Parameters) -> loss_modules._BaseLoss:
         if self.loss_type == "regression":
