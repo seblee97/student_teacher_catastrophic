@@ -22,3 +22,11 @@ class Constants:
         List[Dict[str, Iterator[torch.nn.Parameter]]],
         Iterator[torch.nn.Parameter]
         ]
+
+    # Hard-coded subplot layouts for different numbers of graphs
+    GRAPH_LAYOUTS = {
+        1: (1, 1), 2: (1, 2), 3: (1, 3), 4: (2, 2), 5: (2, 3),
+        6: (2, 3), 7: (2, 4), 8: (2, 4), 9: (3, 3), 10: (2, 5),
+        11: (3, 4), 12: (3, 4)
+    }
+   
