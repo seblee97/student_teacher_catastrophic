@@ -12,6 +12,8 @@ import os
 
 from typing import Dict
 
+MAIN_FILE_PATH = os.path.dirname(os.path.realpath(__file__))
+
 
 def process_parser():
 
@@ -22,10 +24,6 @@ def process_parser():
             teacher experiment', default='base_config.yaml'
         )
     parser.add_argument(
-        '-additional_config', '--ac', type=str, help='path to folder \
-            contatining supplementary configuration files', default='configs/'
-        )
-    parser.add_argument(
         '-gpu_id', type=int, help='id of gpu to use if more than 1 available',
         default=0
         )
@@ -34,7 +32,11 @@ def process_parser():
             data to external file as well as tensorboard'
         )
     parser.add_argument(
-        '-postprocessing_path', '--ppp', type=str, help='path to folder to \
+        '-plot_config_path', '--pcp', type=str, help='path to json for plot \
+            config', default="plot_configs/summary_plots.json"
+    )
+    parser.add_argument(
+        '-post_processing_path', '--ppp', type=str, help='path to folder to \
             post-process', default=None
         )
 
@@ -195,17 +197,19 @@ def update_config_with_parser(args, params: Dict):
     return params
 
 
-def postprocess(save_path: str):
-    post_processor = StudentTeacherPostprocessor(save_path=args.ppp)
+def postprocess(save_path: str, plot_config_path: str):
+
+    full_plot_config_path = os.path.join(MAIN_FILE_PATH, plot_config_path)
+
+    post_processor = StudentTeacherPostprocessor(
+        save_path=args.ppp, plot_config_path=full_plot_config_path)
     post_processor.post_process()
 
 
 def run(args):
 
-    main_file_path = os.path.dirname(os.path.realpath(__file__))
-
     # read base-parameters from base-config
-    base_config_full_path = os.path.join(main_file_path, args.config)
+    base_config_full_path = os.path.join(MAIN_FILE_PATH, args.config)
     with open(base_config_full_path, 'r') as yaml_file:
         params = yaml.load(yaml_file, yaml.SafeLoader)
 
@@ -233,12 +237,12 @@ def run(args):
 
     if experiment_name:
         checkpoint_path = '{}/{}/{}/{}/'.format(
-            main_file_path, results_folder_base, exp_timestamp,
+            MAIN_FILE_PATH, results_folder_base, exp_timestamp,
             experiment_name
             )
     else:
         checkpoint_path = '{}/{}/{}/'.format(
-            main_file_path, results_folder_base, exp_timestamp
+            MAIN_FILE_PATH, results_folder_base, exp_timestamp
             )
 
     student_teacher_parameters.set_property("checkpoint_path", checkpoint_path)
@@ -286,6 +290,6 @@ if __name__ == "__main__":
     args = process_parser()
 
     if args.ppp is not None:
-        postprocess(args.ppp)
+        postprocess(save_path=args.ppp, plot_config_path=args.pcp)
     else:
         run(args)
