@@ -77,21 +77,25 @@ class MNISTEvenGreaterData(_MNISTData):
     def get_test_data(self) -> Constants.TEST_DATA_TYPES:
         """
         """
-        full_test_datasets = [
-            next(test_set_iterator)[0]
+        full_test_datasets: List[torch.Tensor] = [
+            next(test_set_iterator)
             for test_set_iterator in self.test_data_iterators
             ]
 
-        assert torch.equal(full_test_datasets[0], full_test_datasets[1]), \
-            "Inputs for test set (and training set) should be identical \
-                for both tasks"
+        assert torch.equal(
+                full_test_datasets[0][0], full_test_datasets[1][0]
+            ), (
+                "Inputs for test set (and training set) should be identical"
+                "for both tasks"
+            )
 
         # arbitrarily have one of two dataset inputs as test set inputs
-        data = full_test_datasets[0]
+        input_data = full_test_datasets[0][0]
         # labels obviously still differ between tasks
+
         labels = [test_set[1].unsqueeze(1) for test_set in full_test_datasets]
 
-        return {'x': data, 'y': labels}
+        return {'x': input_data, 'y': labels}
 
     def get_batch(self) -> Dict[str, torch.Tensor]:
         """
@@ -115,9 +119,11 @@ class MNISTEvenGreaterData(_MNISTData):
             batch = \
                 next(self.training_data_iterators[self._current_teacher_index])
 
-        return {
-            'x': batch[0], 'y': batch[1].reshape((self._train_batch_size, -1))
-            }
+        y = batch[1].reshape((self._train_batch_size, -1)).type(
+            torch.FloatTensor
+            )
+
+        return {'x': batch[0], 'y': y}
 
     def signal_task_boundary_to_data_generator(self, new_task: int) -> None:
         self._current_teacher_index = new_task
