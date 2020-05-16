@@ -15,10 +15,9 @@ class PureMNISTTeachers(_BaseTeachers):
     def __init__(self, config: Parameters):
         _BaseTeachers.__init__(self, config)
 
-    def test_set_forward(self, teacher_index, batch) -> torch.Tensor:
+    def test_set_forward(self, batch) -> List[torch.Tensor]:
         all_task_labels: List[torch.Tensor] = batch['y']
-        labels = all_task_labels[teacher_index]
-        return labels
+        return all_task_labels
 
     def forward(
         self,
