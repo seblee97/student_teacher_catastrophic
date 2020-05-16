@@ -2,11 +2,11 @@ from .mnist_data import _MNISTData
 from utils import Parameters
 from constants import Constants
 
-from typing import Dict
+from typing import Dict, Tuple, List
 
 import torch
 import torchvision
-from torch.utils.data import Subset, ConcatDataset, DataLoader, Dataset
+from torch.utils.data import Subset, ConcatDataset, Dataset
 
 import numpy as np
 import copy
@@ -20,7 +20,6 @@ class MNISTDigitsData(_MNISTData):
 
         self._mnist_teacher_classes = \
             config.get(['pure_mnist', 'teacher_digits'])
-        self._current_teacher_index: int
 
         _MNISTData.__init__(self, config)
 
@@ -30,9 +29,34 @@ class MNISTDigitsData(_MNISTData):
                     compatible with number of MNIST classifiers specified."
                 )
 
+        if self.override_batch_size is not None:
+            self._batch_size = self.override_batch_size
+        else:
+            self._batch_size = self._train_batch_size
+
+        self._current_teacher_index: int
+        self.train_data: List[Dataset]
+        self.test_data: List[Dataset]
+
+        self.training_data_iterators = [
+                self._generate_iterator(
+                    dataset=dataset, batch_size=self._batch_size,
+                    shuffle=True
+                )
+                for dataset in self.train_data
+            ]
+
+        self.test_data_iterators = [
+                self._generate_iterator(
+                    dataset=dataset, batch_size=None,
+                    shuffle=False
+                )
+                for dataset in self.test_data
+            ]
+
     def filter_dataset_by_target(
         self,
-        unflitered_data: Dataset,
+        unflitered_data: Constants.MNIST_DATASET_TYPE,
         target_to_keep: int,
         train: bool,
         new_label: int = None
@@ -51,7 +75,9 @@ class MNISTDigitsData(_MNISTData):
         else:
             return Subset(unflitered_data, filtered_dataset_indices)
 
-    def _generate_dataloaders(self) -> None:
+    def _generate_datasets(
+        self
+    ) -> Tuple[Constants.DATASET_TYPES, Constants.DATASET_TYPES]:
 
         full_train_data = \
             torchvision.datasets.MNIST(
@@ -62,8 +88,8 @@ class MNISTDigitsData(_MNISTData):
                 self._full_data_path, transform=self.transform, train=False
                 )
 
-        task_train_datasets = []
-        task_test_datasets = []
+        train_datasets = []
+        test_datasets = []
 
         for t, task_classes in enumerate(self._mnist_teacher_classes):
 
@@ -87,34 +113,20 @@ class MNISTDigitsData(_MNISTData):
             test_task_dataset: ConcatDataset = \
                 ConcatDataset(test_target_filtered_datasets)
 
-            task_train_datasets.append(train_task_dataset)
-            task_test_datasets.append(test_task_dataset)
+            train_datasets.append(train_task_dataset)
+            test_datasets.append(test_task_dataset)
 
-        self.task_test_dataloaders = [
-            DataLoader(task_test_data, batch_size=len(task_test_data))
-            for task_test_data in task_test_datasets
-            ]
-
-        if self.override_batch_size is not None:
-            bs = self.override_batch_size
-        else:
-            bs = self._train_batch_size
-        self.task_train_dataloaders = [
-            DataLoader(task_train_data, batch_size=bs, shuffle=True)
-            for task_train_data in task_train_datasets
-            ]
-        self.task_train_iterators = [
-            iter(training_dataloader)
-            for training_dataloader in self.task_train_dataloaders
-            ]
+        return train_datasets, test_datasets
 
     def get_test_data(self) -> Constants.TEST_DATA_TYPES:
-        test_sets = [
-            next(iter(test_dataloader))
-            for test_dataloader in self.task_test_dataloaders
+
+        full_test_datasets = [
+            next(test_set_iterator)[0]
+            for test_set_iterator in self.test_data_iterators
             ]
-        data = torch.cat([test_set[0] for test_set in test_sets])
-        labels = [test_set[1] for test_set in test_sets]
+
+        data = torch.cat([test_set[0] for test_set in full_test_datasets])
+        labels = [test_set[1] for test_set in full_test_datasets]
         return {'x': data, 'y': labels}
 
     def get_batch(self) -> Dict[str, torch.Tensor]:
@@ -127,12 +139,16 @@ class MNISTDigitsData(_MNISTData):
         """
         try:
             batch = \
-                next(self.task_train_iterators[self._current_teacher_index])
+                next(self.training_data_iterators[self._current_teacher_index])
         except StopIteration:
-            self.task_train_iterators[self._current_teacher_index] = \
-                iter(self.task_train_dataloaders[self._current_teacher_index])
+            dataset = self.train_data[self._current_teacher_index]
+            self.training_data_iterators[self._current_teacher_index] = \
+                self._generate_iterator(
+                    dataset=dataset, batch_size=self._batch_size,
+                    shuffle=True
+                )
             batch = \
-                next(self.task_train_iterators[self._current_teacher_index])
+                next(self.training_data_iterators[self._current_teacher_index])
 
         return {'x': batch[0], 'y': batch[1]}
 

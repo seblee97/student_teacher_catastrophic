@@ -2,11 +2,11 @@ from .mnist_data import _MNISTData
 from utils import Parameters
 from constants import Constants
 
-from typing import Dict
+from typing import Dict, Tuple, List
 
 import torch
 import torchvision
-from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
 
 
 class MNISTEvenGreaterData(_MNISTData):
@@ -18,7 +18,28 @@ class MNISTEvenGreaterData(_MNISTData):
 
         _MNISTData.__init__(self, config)
 
-    def _generate_dataloaders(self) -> None:
+        self.train_data: List[Dataset]
+        self.test_data: List[Dataset]
+
+        self.training_data_iterators = [
+            self._generate_iterator(
+                dataset=dataset, batch_size=self._train_batch_size,
+                shuffle=True
+            )
+            for dataset in self.train_data
+        ]
+
+        self.test_data_iterators = [
+            self._generate_iterator(
+                dataset=dataset, batch_size=None,
+                shuffle=False
+            )
+            for dataset in self.test_data
+        ]
+
+    def _generate_datasets(
+        self
+    ) -> Tuple[Constants.DATASET_TYPES, Constants.DATASET_TYPES]:
         """
         """
         # first dataset
@@ -44,40 +65,21 @@ class MNISTEvenGreaterData(_MNISTData):
                 target_transform=lambda x: Constants.GREATER_FIVE_MAPPING[x]
                 )
 
-        task_train_datasets = [
+        train_data = [
             even_odd_train_dataset, greater_five_train_dataset
             ]
-        task_test_datasets = [
+        test_data = [
             even_odd_test_dataset, greater_five_test_dataset
             ]
 
-        self.task_test_dataloaders = [
-            DataLoader(task_test_data, batch_size=len(task_test_data))
-            for task_test_data in task_test_datasets
-            ]
-
-        self.task_train_dataloaders = [
-            DataLoader(
-                task_train_data, batch_size=self._train_batch_size,
-                shuffle=True
-                )
-            for task_train_data in task_train_datasets
-            ]
-
-        self.task_train_iterators = [
-            iter(training_dataloader) for training_dataloader
-            in self.task_train_dataloaders
-            ]
+        return train_data, test_data
 
     def get_test_data(self) -> Constants.TEST_DATA_TYPES:
         """
         """
-        test_set_iterators = [
-            next(iter(test_dataloader))
-            for test_dataloader in self.task_test_dataloaders
-            ]
         full_test_datasets = [
-            test_set_iterator[0] for test_set_iterator in test_set_iterators
+            next(test_set_iterator)[0]
+            for test_set_iterator in self.test_data_iterators
             ]
 
         assert torch.equal(full_test_datasets[0], full_test_datasets[1]), \
@@ -101,16 +103,17 @@ class MNISTEvenGreaterData(_MNISTData):
         """
         try:
             batch = next(
-                self.task_train_iterators[self._current_teacher_index]
+                self.training_data_iterators[self._current_teacher_index]
                 )
         except StopIteration:
-            self.task_train_iterators[self._current_teacher_index] = \
-                iter(
-                    self.task_train_dataloaders[self._current_teacher_index]
-                    )
-            batch = next(
-                self.task_train_iterators[self._current_teacher_index]
+            dataset = self.train_data[self._current_teacher_index]
+            self.training_data_iterators[self._current_teacher_index] = \
+                self._generate_iterator(
+                    dataset=dataset, batch_size=self._train_batch_size,
+                    shuffle=True
                 )
+            batch = \
+                next(self.training_data_iterators[self._current_teacher_index])
 
         return {
             'x': batch[0], 'y': batch[1].reshape((self._train_batch_size, -1))

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from typing import Dict
+from typing import Dict, Iterator, Union, Tuple
 
 from .base_data_module import _BaseData
 from utils import Parameters, custom_torch_transforms, get_pca
@@ -10,6 +10,7 @@ import os
 
 import torch
 import torchvision
+from torch.utils.data import Dataset
 
 
 class _MNISTData(_BaseData, ABC):
@@ -28,14 +29,36 @@ class _MNISTData(_BaseData, ABC):
         self._load_mnist_data()
 
     def _load_mnist_data(self) -> None:
-        self._get_transforms()
-        self._generate_dataloaders()
+        self.transform = self._get_transforms()
+        self.train_data, self.test_data = self._generate_datasets()
 
     @abstractmethod
-    def _generate_dataloaders(self) -> None:
+    def _generate_datasets(
+        self
+    ) -> Tuple[Constants.DATASET_TYPES, Constants.DATASET_TYPES]:
         raise NotImplementedError("Base class method")
 
-    def _get_transforms(self) -> None:
+    def _generate_iterator(
+        self,
+        dataset: Dataset,
+        batch_size: Union[int, None],
+        shuffle: bool
+    ) -> Iterator:
+
+        if batch_size is None:
+            bs = len(dataset)  # for e.g. test data
+        else:
+            bs = batch_size
+
+        dataloader = torch.utils.data.DataLoader(
+                    dataset, batch_size=bs, shuffle=shuffle
+                )
+
+        iterator = iter(dataloader)
+
+        return iterator
+
+    def _get_transforms(self) -> torchvision.transforms.transforms.Compose:
 
         file_path = os.path.dirname(os.path.realpath(__file__))
         self._full_data_path = os.path.join(file_path, self._data_path)
@@ -96,7 +119,10 @@ class _MNISTData(_BaseData, ABC):
                 custom_torch_transforms.AddGaussianNoise(self._noise)
             transform_list.append(add_noise_transform)
 
-        self.transform = torchvision.transforms.Compose(transform_list)
+        composed_transform_list = \
+            torchvision.transforms.Compose(transform_list)
+
+        return composed_transform_list
 
     @abstractmethod
     def get_test_data(self) -> Constants.TEST_DATA_TYPES:

@@ -4,8 +4,9 @@ from constants import Constants
 
 import torch
 import torchvision
+from torch.utils.data import Dataset
 
-from typing import Dict
+from typing import Dict, Tuple
 
 
 class MNISTStreamData(_MNISTData):
@@ -13,31 +14,36 @@ class MNISTStreamData(_MNISTData):
     def __init__(self, config: Parameters):
         _MNISTData.__init__(self, config)
 
-    def _generate_dataloaders(self) -> None:
+        self.train_data: Dataset
+        self.test_data: Dataset
 
-        self.train_data = \
+        self.training_data_iterator = self._generate_iterator(
+            dataset=self.train_data, batch_size=self._train_batch_size,
+            shuffle=True
+        )
+
+        self.test_data_iterator = self._generate_iterator(
+            dataset=self.test_data, batch_size=None,
+            shuffle=False
+        )
+
+    def _generate_datasets(
+        self
+    ) -> Tuple[Constants.DATASET_TYPES, Constants.DATASET_TYPES]:
+
+        train_data = \
             torchvision.datasets.MNIST(
                 self._full_data_path, transform=self.transform, train=True
                 )
-        self.test_data = \
+        test_data = \
             torchvision.datasets.MNIST(
                 self._full_data_path, transform=self.transform, train=False
                 )
 
-        self.training_dataloader = \
-            torch.utils.data.DataLoader(
-                self.train_data, batch_size=self._train_batch_size,
-                shuffle=True
-                )
-        self.test_dataloader = \
-            torch.utils.data.DataLoader(
-                self.test_data, batch_size=len(self.test_data)
-                )
-
-        self.training_data_iterator = iter(self.training_dataloader)
+        return train_data, test_data
 
     def get_test_data(self) -> Constants.TEST_DATA_TYPES:
-        data, labels = next(iter(self.test_dataloader))
+        data, labels = next(self.test_data_iterator)
         return {'x': data}
 
     def get_batch(self) -> Dict[str, torch.Tensor]:
@@ -51,7 +57,12 @@ class MNISTStreamData(_MNISTData):
         try:
             batch_input = next(self.training_data_iterator)[0]
         except StopIteration:
-            self.training_data_iterator = iter(self.training_dataloader)
+            self.training_data_iterator = \
+                self._generate_iterator(
+                    dataset=self.train_data,
+                    batch_size=self._train_batch_size,
+                    shuffle=True
+                )
             batch_input = next(self.training_data_iterator)[0]
 
         return {'x': batch_input}
