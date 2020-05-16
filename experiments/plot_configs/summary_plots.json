@@ -16,7 +16,7 @@
 
         "Student-Teacher 1 Overlaps": {
             "keys": "layer_0_student_teacher_overlaps/0/values_%_%",
-            "key_format_ranges": [40, 20],
+            "key_format_ranges": [2, 1],
             "ylimits": [],
             "labels": [],
             "key_format": "recursive",
@@ -25,7 +25,7 @@
 
         "Student-Teacher 2 Overlaps": {
             "keys": "layer_0_student_teacher_overlaps/1/values_%_%",
-            "key_format_ranges": [40, 20],
+            "key_format_ranges": [2, 1],
             "ylimits": [],
             "labels": [],
             "key_format": "recursive",
@@ -34,37 +34,37 @@
 
         "Student-Teacher 1 Overlaps (Plot)": {
             "keys": "layer_0_student_teacher_overlaps/0/values_%_%",
-            "key_format_ranges": [40, 20],
+            "key_format_ranges": [2, 1],
             "ylimits": [],
             "labels": [],
             "key_format": "recursive",
             "plot_type": "scalar",
-            "scale_axes": 60000
+            "scale_axes": 100000
         },
 
         "Student-Teacher 2 Overlaps (Plot)": {
             "keys": "layer_0_student_teacher_overlaps/1/values_%_%",
-            "key_format_ranges": [40, 20],
+            "key_format_ranges": [2, 1],
             "ylimits": [],
             "labels": [],
             "key_format": "recursive",
             "plot_type": "scalar",
-            "scale_axes": 60000
+            "scale_axes": 100000
         },
 
         "Student-Student Overlaps": {
             "keys": "layer_0_student_self_overlap/values_%_%", 
-            "key_format_ranges": [40, 40],
+            "key_format_ranges": [2, 2],
             "ylimits": [],
             "labels": [],
             "key_format": "recursive",
             "plot_type": "scalar",
-            "scale_axes": 60000
+            "scale_axes": 100000
         },
 
         "Student Head Weights (Teacher 1)": {
             "keys": "student_head_0_weight_%",
-            "key_format_ranges": [40],
+            "key_format_ranges": [2],
             "ylimits": [],
             "labels": ["Weight 0", "Weight 1"],
             "key_format": "recursive",
@@ -73,7 +73,7 @@
 
         "Student Head Weights (Teacher 2)": {
             "keys": "student_head_1_weight_%",
-            "key_format_ranges": [40],
+            "key_format_ranges": [2],
             "ylimits": [],
             "labels": ["Weight 0", "Weight 1"],
             "key_format": "recursive",
