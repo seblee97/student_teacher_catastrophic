@@ -5,7 +5,7 @@ from models.networks.teachers import _Teacher
 import torch
 import copy
 
-from typing import Dict
+from typing import Dict, List
 
 
 class OverlappingTeachers(_BaseTeachers):
@@ -94,8 +94,8 @@ class OverlappingTeachers(_BaseTeachers):
     ) -> _Teacher:
         raise NotImplementedError
 
-    def test_set_forward(self, teacher_index, batch) -> torch.Tensor:
-        return self.forward(teacher_index, batch)
+    def test_set_forward(self, batch) -> List[torch.Tensor]:
+        return [self.forward(t, batch) for t in range(self._num_teachers)]
 
     def forward(
         self,
