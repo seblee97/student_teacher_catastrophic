@@ -148,7 +148,6 @@ class StudentTeacherPostprocessor:
         if attribute_key_format == 'uniform':
 
             attribute_keys = attribute_config['keys']
-            attribute_ylimits = attribute_config['ylimits']
             attribute_labels = attribute_config['labels']
 
         elif attribute_key_format == 'recursive':
