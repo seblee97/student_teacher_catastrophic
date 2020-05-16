@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 from .base_teachers import _BaseTeachers
 
@@ -111,7 +111,7 @@ class TrainedMNISTTeachers(_BaseTeachers):
         output = self._teachers[teacher_index](x)
         return output
 
-    def test_set_forward(self, teacher_index, batch) -> torch.Tensor:
+    def test_set_forward(self, batch) -> List[torch.Tensor]:
         raise NotImplementedError
 
     def signal_task_boundary_to_teacher(self, new_task: int):
