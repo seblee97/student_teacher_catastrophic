@@ -34,6 +34,12 @@ class StudentTeacherParameters(Parameters):
 
     def _ensure_consistent_config(self):
 
+        self._consistent_loss()
+        self._consistent_num_teachers()
+        self._consistent_input_dimension()
+        self._consistent_same_input()
+
+    def _consistent_loss(self):
         # loss function
         loss_type = self.get(["task", "loss_type"])
         loss_function = self.get(["training", "loss_function"])
@@ -42,6 +48,8 @@ class StudentTeacherParameters(Parameters):
             loss_type == "classification" and loss_function in ["bce"]
         ), "loss function {} is not compatible with loss \
             type {}".format(loss_function, loss_type)
+
+    def _consistent_num_teachers(self):
 
         # number of teachers
         num_teachers = self.get(["task", "num_teachers"])
@@ -64,6 +72,7 @@ class StudentTeacherParameters(Parameters):
                     len(teacher_noises), num_teachers
                     )
 
+    def _consistent_input_dimension(self):
         # mnist input dimension
         if self.get(["data", "input_source"]) == "mnist":
             input_specified = self.get(["model", "input_dimension"])
@@ -79,3 +88,25 @@ class StudentTeacherParameters(Parameters):
             assert self.get(["training", "input_source"]) == "mnist", \
                 "Task chosen is trained MNIST but input specified \
                     are not MNIST"
+
+    def _consistent_same_input(self):
+        # same input distribution
+        same_input_distribution = self.get(["data", "same_input_distribution"])
+        teacher_configuration = self.get(["task", "teacher_configuration"])
+        input_source = self.get(["data", "input_source"])
+        if (
+            teacher_configuration == "pure_mnist"
+            and input_source == "even_greater"
+        ):
+            assert same_input_distribution, \
+                "For even_greater, same_input_distribution should be True"
+        elif (
+            teacher_configuration == "pure_mnist"
+            and input_source == "mnist_digits"
+        ):
+            assert not same_input_distribution, \
+                "For mnist_digits, same input_distribution should be False"
+        elif teacher_configuration == "trained_mnist":
+            assert same_input_distribution
+        elif teacher_configuration == "overlapping":
+            assert same_input_distribution
