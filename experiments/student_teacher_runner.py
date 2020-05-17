@@ -375,6 +375,7 @@ class StudentTeacherRunner:
                     steps_per_task.append(task_step_count)
                     break
 
+    def consolidate_run(self) -> None:
         self.logger._consolidate_dfs()
 
     def _switch_task(
