@@ -9,8 +9,6 @@ import six
 import warnings
 import inspect
 
-ParameterGetTypes = Union[List[str], List[int], int, str, bool, float]
-
 
 class Parameters(object):
 
