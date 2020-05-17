@@ -8,66 +8,68 @@ from typing import Union, Callable
 
 from abc import ABC, abstractmethod
 
-from utils import Parameters
+from utils import Parameters, linear_function
 
 
 class Model(nn.Module, ABC):
+    """
+    Multi-layer non-linear neural network class. For use in
+    student-teacher framework. This is an abstract base class.
 
+    Methods that need to be implemented by child class:
+
+    _construct_output_layers
+    _output_forward
+
+    This base class does the relevant initialisation and makes the
+    forward up to the last layer, which is implemented by the child.
+    """
     def __init__(self, config: Parameters, model_type: str) -> None:
         """
-        Multi-layer non-linear neural network class. For use in
-        student-teacher framework.
+        Initialisation.
 
-        :param config: dictionary containing parameters to specify
-        network configuration
-        :param model_type: "teacher" or "student"
+        Args:
+            config: Parameter object wherein network configuration is specified
+            model_type: Describes type of model "teacher_*" or "student" where
+            * should be an integer specifying the index of the teacher.
+
+        Raises:
+            AssertionError: If model type is not correct format
         """
-        self.model_type = model_type  # 'teacher' or 'student'
 
         model_index: Union[int, None]
 
-        if 'teacher' in self.model_type:
-            self.model_type, model_index_str = self.model_type.split("_")
-            model_index = int(model_index_str)
+        assert (model_type == 'student' or 'teacher_' in model_type), \
+            (
+                "model_type variable has incorrect format. Should be 'student'"
+                " or 'teacher_i' where i is and integer"
+            )
+
+        if 'teacher' in model_type:
+            self.model_type, model_index_str = model_type.split("_")
+            self.model_index = int(model_index_str)
         else:
-            model_index = None
+            self.model_type = model_type
 
-        assert self.model_type == 'teacher' or 'student', \
-            "Unknown model type {} provided to network".format(self.model_type)
-
-        # extract relevant parameters from config
         self._extract_parameters(config=config)
 
-        def linear_function(x):
-            return x
-
-        # initialise specified nonlinearity function
-        if self.model_type == 'teacher':
-            all_teacher_nonlinearities = \
-                config.get(["model", "teacher_nonlinearities"])
-            self.nonlinearity_name = all_teacher_nonlinearities[model_index]
-        else:
-            self.nonlinearity_name = \
-                config.get(["model", "student_nonlinearity"])
-
-        self.nonlinear_function: Callable
-
-        if self.nonlinearity_name == 'relu':
-            self.nonlinear_function = F.relu
-        elif self.nonlinearity_name == 'sigmoid':
-            self.nonlinear_function = torch.sigmoid
-        elif self.nonlinearity_name == 'linear':
-            self.nonlinear_function = linear_function
-        elif self.nonlinearity_name == 'leaky_relu':
-            self.nonlinear_function = F.leaky_relu
-        else:
-            raise ValueError("Unknown non-linearity")
+        self.nonlinear_function = self._get_nonlinear_function(config=config)
 
         super(Model, self).__init__()
 
         self._construct_layers()
 
     def _extract_parameters(self, config: Parameters):
+        """
+        This method extracts the relevant parameters from the config
+        and makes them parameters of this class for easier access.
+
+        Args:
+            config: Overall Parameter object
+
+        Raises:
+            ValueError: If field does not exist in config object
+        """
         self.input_dimension = config.get(["model", "input_dimension"])
         self.output_dimension = config.get(["model", "output_dimension"])
         self.hidden_dimensions = \
@@ -87,10 +89,48 @@ class Model(nn.Module, ABC):
         self.initialise_student_outputs = \
             config.get(["model", "initialise_student_outputs"])
 
+    def _get_nonlinear_function(self, config: Parameters) -> Callable:
+        """
+        This method makes the nonlinearity function specified by the config.
+        Note for teachers, a list of nonlinearities is provided - one for each
+        teacher.
+
+        Args:
+            config: Overall Parameter object
+
+        Returns:
+            nonlinear_function: Callable object, the nonlinearity function
+
+        Raises:
+            ValueError: If nonlinearity provided in config is not recognised
+        """
+
+        if self.model_type == 'teacher':
+            all_teacher_nonlinearities = \
+                config.get(["model", "teacher_nonlinearities"])
+            self.nonlinearity_name = \
+                all_teacher_nonlinearities[self.model_index]
+        else:
+            self.nonlinearity_name = \
+                config.get(["model", "student_nonlinearity"])
+
+        if self.nonlinearity_name == 'relu':
+            return F.relu
+        elif self.nonlinearity_name == 'sigmoid':
+            return torch.sigmoid
+        elif self.nonlinearity_name == 'linear':
+            return linear_function
+        elif self.nonlinearity_name == 'leaky_relu':
+            return F.leaky_relu
+        else:
+            raise ValueError("Unknown non-linearity")
+
     def _construct_layers(self) -> None:
         """
-        initiates layers (input, hidden and output) according to
-        dimensions specified in configuration
+        This method instantiates layers (input, hidden and output) according to
+        dimensions specified in configuration. Note this method makes a call to
+        the abstract _construct_output_layers, which is implemented by the
+        child.
         """
         self.layers = nn.ModuleList([])
 
@@ -112,48 +152,42 @@ class Model(nn.Module, ABC):
 
     @abstractmethod
     def _construct_output_layers(self):
-        """
-        initiates output layers in particular. Student may have different
-        heads, scm has frozen output etc.
-        """
+        """This method instantiates the output layer."""
         raise NotImplementedError("Base class method")
 
     def _get_model_type(self) -> str:
-        """
-        returns class attribute 'model type' i.e. 'teacher' or 'student'
-        """
+        """returns model_type attribute"""
         return self.model_type
 
-    def _initialise_weights(self, layer) -> None:
+    def _initialise_weights(self, layer: nn.Module) -> None:
         """
-        Weight initialisation method for given layer
+        This method performs weight initialisation for a given layer.
+        Initialisation is in place. The exact initialisation procedure
+        is specified by the config.
+
+        Args:
+            layer: The layer to be initialised.
         """
-        if self.nonlinearity_name == 'relu':
-            # std = 1 / np.sqrt(self.input_dimension)
+        if self.initialisation_std is not None:
             torch.nn.init.normal_(layer.weight, std=self.initialisation_std)
             if self.bias:
                 torch.nn.init.normal_(layer.bias, std=self.initialisation_std)
-
-        elif self.nonlinearity_name == 'sigmoid' or 'linear':
-            torch.nn.init.normal_(layer.weight, std=self.initialisation_std)
-            if self.bias:
-                torch.nn.init.normal_(layer.bias, std=self.initialisation_std)
-
-        return layer
 
     def freeze_weights(self) -> None:
-        """
-        Freezes weights in graph (always called for teacher)
-        """
+        """Freezes weights in graph (always called for teacher)"""
         for param in self.parameters():
             param.requires_grad = False
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:  # type: ignore
         """
-        Forward pass
+        This method performs the forward pass. This implements the
+        abstract method from the nn.Module base class.
 
-        :param x: input tensor to network
-        :return y: output of network
+        Args:
+            x: Input tensor
+
+        Returns:
+            y: Output of network
         """
         for layer in self.layers:
             x = self.nonlinear_function(
