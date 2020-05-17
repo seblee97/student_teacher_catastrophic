@@ -11,3 +11,4 @@ saved_model_weights/
 .vscode/
 .mypy_cache/
 mypy.txt
+tests/experiment_tests/test_results/
