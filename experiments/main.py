@@ -36,6 +36,10 @@ def process_parser():
             config', default="plot_configs/summary_plots.json"
     )
     parser.add_argument(
+        '-auto_post_process', '--app', action='store_false', help='whether to \
+            automatically go into postprocessing after training loop'
+    )
+    parser.add_argument(
         '-post_processing_path', '--ppp', type=str, help='path to folder to \
             post-process', default=None
         )
@@ -267,12 +271,12 @@ def run(args):
         print("Using the GPU")
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+        student_teacher_parameters.set_property("using_gpu", True)
         experiment_device = torch.device("cuda:{}".format(args.gpu_id))
     else:
         print("Using the CPU")
+        student_teacher_parameters.set_property("using_gpu", False)
         experiment_device = torch.device("cpu")
-
-    student_teacher_parameters.set_property("device", experiment_device)
 
     if args.log_ext:
         log_path = '{}data_logger.csv'.format(checkpoint_path)
@@ -281,8 +285,15 @@ def run(args):
     # write copy of config_yaml in model_checkpoint_folder
     student_teacher_parameters.save_configuration(checkpoint_path)
 
+    student_teacher_parameters.set_property("device", experiment_device)
+
     student_teacher = StudentTeacherRunner(config=student_teacher_parameters)
     student_teacher.train()
+
+    if args.app:
+        post_processor = StudentTeacherPostprocessor(
+            save_path=checkpoint_path, plot_config_path=args.pcp)
+        post_processor.post_process()
 
 
 if __name__ == "__main__":
