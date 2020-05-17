@@ -98,6 +98,14 @@ class StudentTeacherPostprocessor:
             )
         all_dfs = [pd.read_csv(df_path) for df_path in ordered_df_paths]
         merged_df = pd.concat(all_dfs)
+
+        key_set = set()
+        for df in all_dfs:
+            key_set.update(df.keys())
+
+        assert set(merged_df.keys()) == key_set, \
+            "Merged df does not have correct keys"
+
         merged_df.to_csv(os.path.join(self._save_path, "data_logger.csv"))
 
         # remove individual dataframes
