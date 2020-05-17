@@ -12,6 +12,10 @@ from torch.utils.data import DataLoader
 from utils import custom_torch_transforms
 
 
+def linear_function(x: torch.Tensor) -> torch.Tensor:
+    return x
+
+
 def visualise_matrix(
     matrix_data: np.ndarray,
     fig_title: str = None,
