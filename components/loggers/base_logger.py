@@ -228,14 +228,32 @@ class _BaseLogger(ABC):
             os.path.join(self._checkpoint_path, f)
             for f in os.listdir(self._checkpoint_path) if f.endswith('.csv')
             ]
+
+        if any("data_logger.csv" in path for path in all_df_paths):
+            print(
+                "'data_logger.csv' file already in save path "
+                "specified. Consolidation already complete."
+                )
+            if len(all_df_paths) > 1:
+                print("Note, other csv files are also still in save path.")
+            return
+
         ordered_df_paths = sorted(
             all_df_paths,
             key=lambda x: float(x.split("iter_")[-1].strip(".csv"))
             )
         all_dfs = [pd.read_csv(df_path) for df_path in ordered_df_paths]
         merged_df = pd.concat(all_dfs)
+
+        key_set = set()
+        for df in all_dfs:
+            key_set.update(df.keys())
+
+        assert set(merged_df.keys()) == key_set, \
+            "Merged df does not have correct keys"
+
         merged_df.to_csv(self._logfile_path)
 
-        # remove indiviudal dataframes
+        # remove individual dataframes
         for df in all_df_paths:
             os.remove(df)
