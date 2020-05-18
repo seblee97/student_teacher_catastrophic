@@ -238,6 +238,8 @@ class StudentTeacherRunner:
     def train(self) -> None:
         """Training loop
         """
+        self.logger.log("Starting training...")
+
         training_losses = []
         total_step_count = 0
         steps_per_task = []
@@ -249,11 +251,12 @@ class StudentTeacherRunner:
 
         while total_step_count < self.total_training_steps:
 
+            task_step_count = 0
+
             if self.log_to_df:
                 self.logger.add_row(row_label=total_step_count)
 
             teacher_index = next(self.curriculum)
-            task_step_count = 0
             latest_task_generalisation_error = np.inf
 
             # alert learner/teacher(s) of task change
@@ -269,7 +272,10 @@ class StudentTeacherRunner:
                 new_task=teacher_index
                 )
 
-            while total_step_count < self.total_training_steps:
+            while True:  # train on given teacher
+
+                total_step_count += 1
+                task_step_count += 1
 
                 batch: Dict[str, torch.Tensor] = self.data_module.get_batch()
                 batch_input: torch.Tensor = batch['x']
@@ -332,9 +338,6 @@ class StudentTeacherRunner:
                         step_count=total_step_count
                         )
 
-                total_step_count += 1
-                task_step_count += 1
-
                 # output layer weights
                 self.logger._log_output_weights(
                     step_count=total_step_count, student_network=self.learner
@@ -375,6 +378,10 @@ class StudentTeacherRunner:
                     steps_per_task.append(task_step_count)
                     break
 
+        # checkpoint outstanding data
+        if self.log_to_df:
+            self.logger.checkpoint_df(step=total_step_count)
+
     def consolidate_run(self) -> None:
         self.logger._consolidate_dfs()
 
@@ -414,7 +421,9 @@ class StudentTeacherRunner:
                     self.logger.log(
                         "Sequence of thresholds exhausted. Run complete..."
                         )
-                    self.logger._consolidate_dfs()
+                    # checkpoint outstanding data
+                    if self.log_to_df:
+                        self.logger.checkpoint_df(step=step)
                     sys.exit(0)
                 return True
             else:
@@ -511,26 +520,32 @@ class StudentTeacherRunner:
                         self.generalisation_errors[i][-2]
                         )
                     error_delta = error - last_error
+                    # log generalisation loss delta per teacher
                     if error_delta != 0.:
-                        # log generalisation loss delta per teacher
-                        self.logger.write_scalar_tb(
-                            'error_change/linear', error_delta,
-                            total_step_count, teacher_index=i
-                            )
-                        self.logger.write_scalar_tb(
-                            'error_change/log',
-                            np.sign(error_delta) * np.log10(abs(error_delta)),
-                            total_step_count, teacher_index=i
-                            )
-                        self._log_to_df(
-                            'teacher_{}_error_change/linear'.format(i),
-                            error_delta, total_step_count
-                            )
-                        self._log_to_df(
-                            'teacher_{}_error_change/log'.format(i),
-                            np.sign(error_delta) * np.log10(abs(error_delta)),
-                            total_step_count
-                            )
+                        log_error_change = \
+                            np.sign(error_delta) * np.log10(abs(error_delta))
+                    else:
+                        log_error_change = \
+                            0.
+
+                    self.logger.write_scalar_tb(
+                        'error_change/linear', error_delta,
+                        total_step_count, teacher_index=i
+                        )
+                    self.logger.write_scalar_tb(
+                        'error_change/log',
+                        log_error_change,
+                        total_step_count, teacher_index=i
+                        )
+                    self._log_to_df(
+                        'teacher_{}_error_change/linear'.format(i),
+                        error_delta, total_step_count
+                        )
+                    self._log_to_df(
+                        'teacher_{}_error_change/log'.format(i),
+                        log_error_change,
+                        total_step_count
+                        )
 
             if self.verbose and task_step_count % 500 == 0:
                 self.logger.log(
