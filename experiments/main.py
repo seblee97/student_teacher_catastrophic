@@ -179,7 +179,7 @@ def update_config_with_parser(args, params: Dict):
     # update specific parameters with (optional) args given in command line
     if args.to:
         overlaps = [int(op) for op in "".join(args.to).strip('[]').split(',')]
-        params["task"]["overlap_percentages"] = overlaps
+        params["teachers"]["overlap_percentages"] = overlaps
     if args.snl:
         params["model"]["student_nonlinearity"] = args.snl
     if args.tnl:
