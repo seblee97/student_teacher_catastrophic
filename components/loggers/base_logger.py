@@ -242,7 +242,10 @@ class _BaseLogger(ABC):
             all_df_paths,
             key=lambda x: float(x.split("iter_")[-1].strip(".csv"))
             )
+
+        self._logger.info("Loading all dataframes..")
         all_dfs = [pd.read_csv(df_path) for df_path in ordered_df_paths]
+        self._logger.info("Dataframes loaded. Merging..")
         merged_df = pd.concat(all_dfs)
 
         key_set = set()
