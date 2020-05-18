@@ -1,18 +1,16 @@
 from utils import Parameters
 from constants import Constants
+from postprocessing.plot_config import PlotConfigGenerator
 
 import os
 import pandas as pd
 import numpy as np
 import yaml
-import json
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import itertools
-import copy
 
-from typing import List
+from typing import List, Dict
 
 
 class StudentTeacherPostprocessor:
@@ -27,10 +25,9 @@ class StudentTeacherPostprocessor:
 
     def _setup_plotting(self) -> None:
 
-        with open(self._plot_config_path) as json_file:
-            self._plot_config = json.load(json_file)
-
-        self.plot_keys = list(self._plot_config["data"].keys())
+        self._plot_config = \
+            PlotConfigGenerator.generate_plotting_config(self._config)
+        self.plot_keys = list(self._plot_config.keys())
 
         self.number_of_graphs = len(self.plot_keys)
 
@@ -90,33 +87,33 @@ class StudentTeacherPostprocessor:
                 )
             if len(all_df_paths) > 1:
                 print("Note, other csv files are also still in save path.")
-            return
+            
+        else:
+            ordered_df_paths = sorted(
+                all_df_paths,
+                key=lambda x: float(x.split("iter_")[-1].strip(".csv"))
+                )
 
-        ordered_df_paths = sorted(
-            all_df_paths,
-            key=lambda x: float(x.split("iter_")[-1].strip(".csv"))
-            )
+            print("Loading all dataframes..")
+            all_dfs = [pd.read_csv(df_path) for df_path in ordered_df_paths]
+            print("Dataframes loaded. Merging..")
+            merged_df = pd.concat(all_dfs)
 
-        print("Loading all dataframes..")
-        all_dfs = [pd.read_csv(df_path) for df_path in ordered_df_paths]
-        print("Dataframes loaded. Merging..")
-        merged_df = pd.concat(all_dfs)
+            key_set = set()
+            for df in all_dfs:
+                key_set.update(df.keys())
 
-        key_set = set()
-        for df in all_dfs:
-            key_set.update(df.keys())
+            assert set(merged_df.keys()) == key_set, \
+                "Merged df does not have correct keys"
 
-        assert set(merged_df.keys()) == key_set, \
-            "Merged df does not have correct keys"
+            print("Dataframes merged. Saving...")
+            merged_df.to_csv(os.path.join(self._save_path, "data_logger.csv"))
 
-        print("Dataframes merged. Saving...")
-        merged_df.to_csv(os.path.join(self._save_path, "data_logger.csv"))
-
-        print("Saved. Removing individual dataframes...")
-        # remove individual dataframes
-        for df in all_df_paths:
-            os.remove(df)
-        print("Consolidation complete.")
+            print("Saved. Removing individual dataframes...")
+            # remove individual dataframes
+            for df in all_df_paths:
+                os.remove(df)
+            print("Consolidation complete.")
 
     def _make_summary_plot(self):
 
@@ -154,59 +151,22 @@ class StudentTeacherPostprocessor:
 
         attribute_title = self.plot_keys[graph_index]
         attribute_config = \
-            self._plot_config["data"][attribute_title]
+            self._plot_config[attribute_title]
+        attribute_keys = attribute_config['keys']
         attribute_plot_type = attribute_config['plot_type']
-        attribute_key_format = attribute_config['key_format']
-        attribute_scale_axes = attribute_config.get("scale_axes")
+        attribute_labels = attribute_config['labels']
 
-        if attribute_key_format == 'uniform':
-
-            attribute_keys = attribute_config['keys']
-            attribute_labels = attribute_config['labels']
-
-        elif attribute_key_format == 'recursive':
-
-            base_attribute_key = attribute_config['keys']
-            fill_ranges = [
-                list(range(r)) for r in attribute_config['key_format_ranges']
-                ]
-            fill_combos = list(itertools.product(*fill_ranges))
-
-            if attribute_plot_type == "scalar":
-                attribute_keys = []
-                attribute_labels = []
-                for fill_combo in fill_combos:
-                    attribute_key = copy.deepcopy(base_attribute_key)
-                    for i, fill in enumerate(fill_combo):
-                        attribute_key = \
-                            attribute_key.replace('%', str(fill), 1)
-                    attribute_keys.append(attribute_key)
-                    attribute_labels.append(tuple(fill_combo))
-
-            elif attribute_plot_type == 'image':
-
-                attribute_keys = {}
-                for fill_combo in fill_combos:
-                    attribute_key = copy.deepcopy(base_attribute_key)
-                    for i, fill in enumerate(fill_combo):
-                        attribute_key = \
-                            attribute_key.replace('%', str(fill), 1)
-                    attribute_keys[tuple(fill_combo)] = attribute_key
-
-        else:
-            raise ValueError(
-                "Key format {} not recognized".format(attribute_key_format)
-            )
-
+        scale_axes = len(self._data)
+    
         if attribute_plot_type == 'scalar':
             plot_data = [
                 self._data[attribute_key].dropna().tolist()
                 for attribute_key in attribute_keys
                 ]
-            self.add_subplot(
+            self.add_scalar_subplot(
                 plot_data=plot_data, row_index=row, column_index=col,
                 title=attribute_title, labels=attribute_labels,
-                scale_axes=attribute_scale_axes
+                scale_axes=scale_axes
                 )
 
         elif attribute_plot_type == 'image':
@@ -228,7 +188,7 @@ class StudentTeacherPostprocessor:
                 "Plot type {} not recognized".format(attribute_plot_type)
             )
 
-    def add_subplot(
+    def add_scalar_subplot(
         self,
         plot_data,
         row_index: int,
@@ -300,3 +260,46 @@ class StudentTeacherPostprocessor:
         fig_sub.set_ylabel(title)
         fig_sub.set_xticks([])
         fig_sub.set_yticks([])
+
+
+# attribute_key_format = attribute_config['key_format']
+        # attribute_scale_axes = attribute_config.get("scale_axes")
+
+        # if attribute_key_format == 'uniform':
+
+        #     attribute_keys = attribute_config['keys']
+        #     attribute_labels = attribute_config['labels']
+
+        # elif attribute_key_format == 'recursive':
+
+        #     base_attribute_key = attribute_config['keys']
+        #     fill_ranges = [
+        #         list(range(r)) for r in attribute_config['key_format_ranges']
+        #         ]
+        #     fill_combos = list(itertools.product(*fill_ranges))
+
+        #     if attribute_plot_type == "scalar":
+        #         attribute_keys = []
+        #         attribute_labels = []
+        #         for fill_combo in fill_combos:
+        #             attribute_key = copy.deepcopy(base_attribute_key)
+        #             for i, fill in enumerate(fill_combo):
+        #                 attribute_key = \
+        #                     attribute_key.replace('%', str(fill), 1)
+        #             attribute_keys.append(attribute_key)
+        #             attribute_labels.append(tuple(fill_combo))
+
+        #     elif attribute_plot_type == 'image':
+
+        #         attribute_keys = {}
+        #         for fill_combo in fill_combos:
+        #             attribute_key = copy.deepcopy(base_attribute_key)
+        #             for i, fill in enumerate(fill_combo):
+        #                 attribute_key = \
+        #                     attribute_key.replace('%', str(fill), 1)
+        #             attribute_keys[tuple(fill_combo)] = attribute_key
+
+        # else:
+        #     raise ValueError(
+        #         "Key format {} not recognized".format(attribute_key_format)
+        #     )
