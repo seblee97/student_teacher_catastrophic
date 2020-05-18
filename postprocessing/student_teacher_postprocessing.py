@@ -96,7 +96,10 @@ class StudentTeacherPostprocessor:
             all_df_paths,
             key=lambda x: float(x.split("iter_")[-1].strip(".csv"))
             )
+
+        print("Loading all dataframes..")
         all_dfs = [pd.read_csv(df_path) for df_path in ordered_df_paths]
+        print("Dataframes loaded. Merging..")
         merged_df = pd.concat(all_dfs)
 
         key_set = set()
@@ -106,11 +109,14 @@ class StudentTeacherPostprocessor:
         assert set(merged_df.keys()) == key_set, \
             "Merged df does not have correct keys"
 
+        print("Dataframes merged. Saving...")
         merged_df.to_csv(os.path.join(self._save_path, "data_logger.csv"))
 
+        print("Saved. Removing individual dataframes...")
         # remove individual dataframes
         for df in all_df_paths:
             os.remove(df)
+        print("Consolidation complete.")
 
     def _make_summary_plot(self):
 
