@@ -187,23 +187,29 @@ class _BaseLogger(ABC):
         else:
             self._save_df(step=step)
 
+    def _set_df_columns(self, columns: pd.core.indexes.base.Index) -> None:
+        self._df_columns = columns
+
     def _save_and_merge_df(self, step: int) -> None:
         """save dataframe and merge with previous"""
         self._logger.info("Checkpointing Dataframe...")
         t0 = time.time()
 
-        # check for existing dataframe
-        if step > self._checkpoint_frequency:
-            repeated_index = step - self._checkpoint_frequency
-            previous_df = pd.read_csv(self._logfile_path, index_col=0)
-            merged_df = pd.concat([previous_df, self._logger_df])
-            merged_row = merged_df.loc[repeated_index].groupby(level=0).max()
-            merged_df.drop([repeated_index])
-            merged_df = pd.concat([merged_df, merged_row]).sort_index()
-        else:
-            merged_df = self._logger_df
+        header = not os.path.exists(self._logfile_path)
 
-        merged_df.to_csv(self._logfile_path)
+        self._logger_df = self._logger_df.reindex(
+            sorted(self._logger_df.columns), axis=1
+            )
+
+        if header:
+            self._set_df_columns(len(self._logger_df.columns))
+
+        assert self._logger_df.columns == self._num_df_columns, \
+            "Incorrect dataframe columns for merging"
+
+        self._logger_df.to_csv(
+            self._logfile_path, mode='a', header=header, index=False
+            )
         if self._log_to_df:
             self._logger_df = pd.DataFrame()
         self._logger.info(
