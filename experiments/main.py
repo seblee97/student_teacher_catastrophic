@@ -163,8 +163,6 @@ def update_config_with_parser(args, params: Dict):
         params["curriculum"]["stopping_condition"] = args.sc
     if args.fp:
         params["curriculum"]["fixed_period"] = args.fp
-    if args.lt:
-        params["curriculum"]["loss_threshold"] = args.lt
     if args.ts:
         params["training"]["total_training_steps"] = args.ts
     if args.en:
@@ -197,6 +195,14 @@ def update_config_with_parser(args, params: Dict):
             int(h) for h in "".join(args.th).strip('[]').split(',')
             ]
         params["model"]["teacher_hidden_layers"] = teacher_hidden
+    if args.lt:
+        if isinstance(args.lt, float):
+            params["curriculum"]["loss_threshold"] = args.lt
+        else:
+            threshold_sequence = [
+                float(thr) for thr in "".join(args.lt).strip('[]').split(',')
+            ]
+            params["curriculum"]["loss_threshold"] = threshold_sequence
 
     return params
 
