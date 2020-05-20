@@ -41,6 +41,11 @@ class PostProcessingTemplate(_Template):
         name="plot_width", types=[int, float], reqs=[lambda x: x > 0]
     )
 
+    PLOT_THICKNESS = Field(
+        name="plot_thickness", types=[float, int],
+        reqs=[lambda x: x > 0]
+    )
+
     @classmethod
     def get_fields(cls) -> List:
         return [
@@ -48,5 +53,6 @@ class PostProcessingTemplate(_Template):
             cls.SHOW_LEGENDS,
             cls.CROP_X,
             cls.PLOT_HEIGHT,
-            cls.PLOT_WIDTH
+            cls.PLOT_WIDTH,
+            cls.PLOT_THICKNESS
         ]
