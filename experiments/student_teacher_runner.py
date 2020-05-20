@@ -272,7 +272,7 @@ class StudentTeacherRunner:
                 new_task=teacher_index
                 )
 
-            while True:  # train on given teacher
+            while total_step_count < self.total_training_steps:  # train on given teacher
 
                 total_step_count += 1
                 task_step_count += 1
