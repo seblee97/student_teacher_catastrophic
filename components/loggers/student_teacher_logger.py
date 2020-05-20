@@ -18,6 +18,144 @@ class StudentTeacherLogger(_BaseLogger):
     def __init__(self, config: Parameters):
         _BaseLogger.__init__(self, config)
 
+    def _get_df_columns(self) -> List[str]:
+
+        columns = [
+            "training_loss",
+            "mean_generalisation_error/log",
+            "mean_generalisation_error/linear"
+            ]
+
+        # training metrics
+        for t in range(self._num_teachers):
+            columns.append("teacher_{}_generalisation_error/linear".format(t))
+            columns.append("teacher_{}_generalisation_error/log".format(t))
+            columns.append("teacher_{}_error_change/log".format(t))
+            columns.append("teacher_{}_error_change/linear".format(t))
+
+        # student head weights
+        head_weight_combinations = itertools.product(*[
+            range(self._num_teachers),
+            range(self._student_hidden[-1] * self._output_dimension)
+        ])
+
+        for (t, output) in head_weight_combinations:
+            columns.append(
+                "student_head_{}_weight_{}".format(t, output)
+                )
+
+        # student-teacher hidden overlaps
+        for layer_index, layer in enumerate(self._student_hidden):
+            hidden_overlap_combinations = \
+                itertools.product(*[
+                    range(self._num_teachers),
+                    range(self._student_hidden[layer_index]),
+                    range(self._teacher_hidden[layer_index])
+                ])
+
+            for (t, i, j) in hidden_overlap_combinations:
+                columns.append(
+                    "layer_{}_student_teacher_overlaps/{}/values_{}_{}".format(
+                        layer_index, t, i, j
+                    )
+                )
+
+        # student-teacher head overlaps
+        for h, latent in enumerate(self._student_hidden):
+            output_head_overlap_combinations = \
+                itertools.product(*[
+                    range(self._num_teachers), range(self._num_teachers),
+                    range(self._student_hidden[h]),
+                    range(self._teacher_hidden[h])
+                    ])
+
+            for (t, t_rep, s_lat, t_lat) in output_head_overlap_combinations:
+                columns.append(
+                    "layer_output_head_{}_student_teacher_overlaps/"
+                    "{}/values_{}_{}".format(t, t_rep, s_lat, t_lat)
+                    )
+
+        # student hidden self-overlap
+        for h, latent in enumerate(self._student_hidden):
+            student_hidden_self_overlap_combos = \
+                itertools.product(*[range(latent), range(latent)])
+            for (i, j) in student_hidden_self_overlap_combos:
+                columns.append(
+                    "layer_{}_student_self_overlap/values_{}_{}".format(
+                        h, i, j
+                        )
+                )
+
+        # teacher hidden self-overlap
+        for t in range(self._num_teachers):
+            for h, latent in enumerate(self._teacher_hidden):
+                teacher_hidden_self_overlap_combos = \
+                    itertools.product(*[range(latent), range(latent)])
+                for (i, j) in teacher_hidden_self_overlap_combos:
+                    columns.append(
+                        "layer_{}_teacher_self_overlaps/"
+                        "{}/values_{}_{}".format(
+                            h, t, i, j
+                            )
+                    )
+
+        # student head self-overlap
+        student_head_self_overlap_combos = itertools.product(*[
+            range(self._num_teachers), range(self._output_dimension),
+            range(self._output_dimension)
+            ])
+
+        for (t, d, d_rep) in student_head_self_overlap_combos:
+            columns.append(
+                "layer_output_head_{}_student_self_overlap/"
+                "values_{}_{}".format(t, d, d_rep)
+            )
+
+        # teacher head self-overlap
+        teacher_head_self_overlap_combos = itertools.product(*[
+            range(self._num_teachers), range(self._num_teachers),
+            range(self._output_dimension), range(self._output_dimension)
+            ])
+
+        for (t, t_rep, d, d) in teacher_head_self_overlap_combos:
+            columns.append(
+                "layer_output_head_{}_teacher_self_overlaps/{}/"
+                "values_{}_{}".format(t, t_rep, d, d)
+            )
+
+        teacher_pairs = itertools.combinations(range(self._num_teachers), 2)
+        # teacher - teacher hidden overlaps
+        for h, hidden in enumerate(self._teacher_hidden):
+            for (t1, t2) in teacher_pairs:
+                index_combos = itertools.product(
+                    *[range(hidden), range(hidden)]
+                    )
+                for (i, j) in index_combos:
+                    columns.append(
+                        "layer_{}_teacher_teacher_overlaps/"
+                        "{}_{}/values_{}_{}".format(
+                            h, t1, t2, i, j
+                            )
+                        )
+        # teacher - teacher head overlaps
+        for t in range(self._num_teachers):
+            for t1 in range(self._num_teachers):
+                for t2 in range(t1 + 1, self._num_teachers):
+                    index_combos = itertools.product(*[
+                        range(self._teacher_hidden[-1]),
+                        range(self._output_dimension)
+                        ])
+                    for (i, j) in index_combos:
+                        columns.append(
+                            "layer_output_head_{}"
+                            "_teacher_teacher_overlaps/"
+                            "{}_{}/values_{}_{}".format(
+                                t, t1, t2, i, j
+                                )
+                            )
+
+        return columns
+
     def _compute_layer_overlaps(
         self,
         layer: str,
@@ -126,7 +264,7 @@ class StudentTeacherLogger(_BaseLogger):
                 )
 
         # generate visualisations
-        if self._verbose_tb:
+        if self._verbose_tb > 1:
             student_self_fig = visualise_matrix(
                 student_self_overlap, fig_title=r"$Q_{ik}^\mu$"
                 )
