@@ -5,7 +5,7 @@ from typing import Dict, List
 import torch.nn as nn
 import torch
 
-import numpy as np
+import math
 
 
 class MetaLearner(_BaseLearner):
@@ -52,7 +52,7 @@ class MetaLearner(_BaseLearner):
     def forward_all(self, x: torch.Tensor):
         for layer in self.layers:
             x = self.nonlinear_function(
-                layer(x) / np.sqrt(self.input_dimension)
+                self.forward_scaling * layer(x)
                 )
         task_outputs = self._output_forward(x)
         return task_outputs

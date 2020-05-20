@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import numpy as np
+import math
 
 from typing import Union, Callable
 
@@ -88,6 +88,7 @@ class Model(nn.Module, ABC):
             config.get(["task", "label_task_boundaries"])
         self.initialise_student_outputs = \
             config.get(["model", "initialise_student_outputs"])
+        self.forward_scaling = 1 / math.sqrt(self.input_dimension)
 
     def _get_nonlinear_function(self, config: Parameters) -> Callable:
         """
@@ -191,7 +192,7 @@ class Model(nn.Module, ABC):
         """
         for layer in self.layers:
             x = self.nonlinear_function(
-                layer(x) / np.sqrt(self.input_dimension)
+                self.forward_scaling * layer(x)
                 )
 
         y = self._output_forward(x)

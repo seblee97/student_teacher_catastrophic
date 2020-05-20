@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 
-import numpy as np
+import math
 
 from .base_learner import _BaseLearner
 
@@ -68,7 +68,7 @@ class ContinualLearner(_BaseLearner):
             x = batch['x']
             for layer in self.layers:
                 x = self.nonlinear_function(
-                    layer(x) / np.sqrt(self.input_dimension)
+                    self.forward_scaling * layer(x)
                     )
             task_output = self.heads[task_index](x)
             if self.classification_output:
@@ -80,7 +80,7 @@ class ContinualLearner(_BaseLearner):
     def forward_all(self, x: torch.Tensor):
         for layer in self.layers:
             x = self.nonlinear_function(
-                layer(x) / np.sqrt(self.input_dimension)
+                self.forward_scaling * layer(x)
                 )
         task_outputs = [self.heads[t](x) for t in range(self.num_teachers)]
         if self.classification_output:
