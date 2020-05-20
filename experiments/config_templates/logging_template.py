@@ -14,7 +14,8 @@ class LoggingTemplate(_Template):
     )
 
     VERBOSE_TB = Field(
-        name="verbose_tb", types=[bool], reqs=None
+        name="verbose_tb", types=[int],
+        reqs=[lambda x: x in [0, 1, 2]]
     )
 
     CHECKPOINT_FREQUENCY = Field(

@@ -22,14 +22,15 @@ class _BaseLogger(ABC):
 
         self._extract_parameters(config=config)
 
-        # initialise general tensorboard writer
-        self._writer = SummaryWriter(self._checkpoint_path)
+        if self._verbose_tb > 0:
+            # initialise general tensorboard writer
+            self._writer = SummaryWriter(self._checkpoint_path)
 
-        # initialise separate tb writers for each teacher
-        self._teacher_writers = [
-            SummaryWriter("{}/teacher_{}".format(self._checkpoint_path, t))
-            for t in range(self._num_teachers)
-            ]
+            # initialise separate tb writers for each teacher
+            self._teacher_writers = [
+                SummaryWriter("{}/teacher_{}".format(self._checkpoint_path, t))
+                for t in range(self._num_teachers)
+                ]
 
         # initialise dataframe to log metrics
         if self._log_to_df:
@@ -53,7 +54,7 @@ class _BaseLogger(ABC):
         self._log_to_df: bool = config.get(["logging", "log_to_df"])
         self._logfile_path: str = config.get("logfile_path")
         self._logfile_path_no_ext: str = self._logfile_path.split(".csv")[0]
-        self._verbose_tb: bool = config.get(["logging", "verbose_tb"])
+        self._verbose_tb: int = config.get(["logging", "verbose_tb"])
         self._checkpoint_frequency: int = \
             config.get(["logging", "checkpoint_frequency"])
         self._merge_at_checkpoint: bool = \
@@ -87,10 +88,13 @@ class _BaseLogger(ABC):
         :param step: current step count (x axis on tb)
         :param teacher_index: index of writer (uses general writer if None)
         """
-        if teacher_index is not None:
-            self._teacher_writers[teacher_index].add_scalar(tag, scalar, step)
-        else:
-            self._writer.add_scalar(tag, scalar, step)
+        if self._verbose_tb > 0:
+            if teacher_index is not None:
+                self._teacher_writers[teacher_index].add_scalar(
+                    tag, scalar, step
+                    )
+            else:
+                self._writer.add_scalar(tag, scalar, step)
 
     def write_scalar_df(
         self,
@@ -123,7 +127,7 @@ class _BaseLogger(ABC):
         for h, head in enumerate(student_output_layer_weights):
             flattened_weights = torch.flatten(head)
             for w, weight in enumerate(flattened_weights):
-                if self._verbose_tb:
+                if self._verbose_tb > 1:
                     self._writer.add_scalar(
                         'student_head_{}_weight_{}'.format(h, w),
                         float(weight), step_count

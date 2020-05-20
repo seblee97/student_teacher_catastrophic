@@ -93,7 +93,7 @@ class StudentTeacherLogger(_BaseLogger):
             matrix_shape = matrix.shape
             for i in range(matrix_shape[0]):
                 for j in range(matrix_shape[1]):
-                    if self._verbose_tb:
+                    if self._verbose_tb > 1:
                         self._writer.add_scalar(
                             "layer_{}_{}/values_{}_{}".format(
                                 layer, log_name, i, j
@@ -147,7 +147,7 @@ class StudentTeacherLogger(_BaseLogger):
             ]
 
         # log visualisations
-        if self._verbose_tb:
+        if self._verbose_tb > 1:
             self._writer.add_figure(
                 "layer_{}_student_self_overlap".format(str(layer)),
                 student_self_fig, step_count
