@@ -9,6 +9,7 @@ from .curriculum_template import CurriculumTemplate
 from .teachers_template import TeachersTemplate
 from .logging_template import LoggingTemplate
 from .data_template import DataTemplate
+from .post_processing_template import PostProcessingTemplate
 
 
 class ConfigTemplate(_Template):
@@ -39,6 +40,7 @@ class ConfigTemplate(_Template):
     MODEL_TEMPLATE = ModelTemplate
     CURRICULUM_TEMPLATE = CurriculumTemplate
     TEACHERS_TEMPLATE = TeachersTemplate
+    POST_PROCESSING_TEMPLATE = PostProcessingTemplate
 
     @classmethod
     def get_fields(cls) -> List:
@@ -54,5 +56,6 @@ class ConfigTemplate(_Template):
             cls.LOGGING_TEMPLATE,
             cls.MODEL_TEMPLATE,
             cls.CURRICULUM_TEMPLATE,
-            cls.TEACHERS_TEMPLATE
+            cls.TEACHERS_TEMPLATE,
+            cls.POST_PROCESSING_TEMPLATE
         ]
