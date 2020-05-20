@@ -34,7 +34,8 @@ class _BaseLogger(ABC):
 
         # initialise dataframe to log metrics
         if self._log_to_df:
-            self._logger_df = pd.DataFrame()
+            self._df_columns = self._get_df_columns()
+            self._logger_df = pd.DataFrame(columns=self._df_columns)
 
         # initialise logger
         self._logger = logging.getLogger(__name__)
@@ -62,8 +63,15 @@ class _BaseLogger(ABC):
 
         self._student_hidden: List[int] = \
             config.get(["model", "student_hidden_layers"])
+        self._teacher_hidden: List[int] = \
+            config.get(["model", "teacher_hidden_layers"])
         self._num_teachers: int = config.get(["task", "num_teachers"])
         self._input_dimension: int = config.get(["model", "input_dimension"])
+        self._output_dimension: int = config.get(["model", "output_dimension"])
+
+    @abstractmethod
+    def _get_df_columns(self) -> List[str]:
+        raise NotImplementedError("Base class method")
 
     def log(self, statement: str) -> None:
         """add to log file"""
@@ -191,22 +199,16 @@ class _BaseLogger(ABC):
         else:
             self._save_df(step=step)
 
-    def _set_df_columns(self, columns: pd.core.indexes.base.Index) -> None:
-        self._df_columns = columns
-
-    def _save_and_merge_df(self, step: int) -> None:
+    def _save_and_merge_df(self, step: int, final: bool = False) -> None:
         """save dataframe and merge with previous"""
         self._logger.info("Checkpointing Dataframe...")
         t0 = time.time()
 
         header = not os.path.exists(self._logfile_path)
 
-        self._logger_df = self._logger_df.reindex(
-            sorted(self._logger_df.columns), axis=1
-            )
-
-        if header:
-            self._set_df_columns(self._logger_df.columns)
+        # self._logger_df = self._logger_df.reindex(
+        #     sorted(self._logger_df.columns), axis=1
+        #     )
 
         assert all(self._logger_df.columns == self._df_columns), \
             "Incorrect dataframe columns for merging"
@@ -215,7 +217,7 @@ class _BaseLogger(ABC):
             self._logfile_path, mode='a', header=header, index=False
             )
         if self._log_to_df:
-            self._logger_df = pd.DataFrame()
+            self._logger_df = pd.DataFrame(columns=self._df_columns)
         self._logger.info(
             "Dataframe checkpointed in {}s".format(round(time.time() - t0, 5))
             )
