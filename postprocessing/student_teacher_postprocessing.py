@@ -25,8 +25,17 @@ class StudentTeacherPostprocessor:
 
     def _setup_plotting(self) -> None:
 
+        self.crop_x = self._config.get(["post_processing", "crop_x"])
+        self.combine_plots = \
+            self._config.get(["post_processing", "combine_plots"])
+        self.show_legends = \
+            self._config.get(["post_processing", "show_legends"])
+        self.plot_linewidth = \
+            self._config.get(["post_processing", "plot_thickness"])
+
         self._plot_config = \
             PlotConfigGenerator.generate_plotting_config(self._config)
+
         self.plot_keys = list(self._plot_config.keys())
 
         self.number_of_graphs = len(self.plot_keys)
@@ -34,21 +43,26 @@ class StudentTeacherPostprocessor:
         self.num_rows = Constants.GRAPH_LAYOUTS[self.number_of_graphs][0]
         self.num_columns = Constants.GRAPH_LAYOUTS[self.number_of_graphs][1]
 
-        width = self._plot_config['config']['width']
-        height = self._plot_config['config']['height']
+        self.width = self._config.get(["post_processing", "plot_width"])
+        self.height = self._config.get(["post_processing", "plot_height"])
 
-        heights = [height for _ in range(self.num_rows)]
-        widths = [width for _ in range(self.num_columns)]
+        heights = [self.height for _ in range(self.num_rows)]
+        widths = [self.width for _ in range(self.num_columns)]
 
-        self.fig = plt.figure(
-            constrained_layout=False,
-            figsize=(self.num_columns * width, self.num_rows * height)
-            )
+        if self.combine_plots:
 
-        self.spec = gridspec.GridSpec(
-            nrows=self.num_rows, ncols=self.num_columns,
-            width_ratios=widths, height_ratios=heights
-            )
+            self.fig = plt.figure(
+                constrained_layout=False,
+                figsize=(
+                    self.num_columns * self.width,
+                    self.num_rows * self.height
+                    )
+                )
+
+            self.spec = gridspec.GridSpec(
+                nrows=self.num_rows, ncols=self.num_columns,
+                width_ratios=widths, height_ratios=heights
+                )
 
     def _retrieve_config(self):
         # read parameters from config in save path
@@ -140,12 +154,13 @@ class StudentTeacherPostprocessor:
                         graph_index=graph_index
                         )
 
-        self.fig.suptitle("Summary Plot: {}".format(self.experiment_name))
+        if self.combine_plots:
+            self.fig.suptitle("Summary Plot: {}".format(self.experiment_name))
 
-        self.fig.savefig(
-            "{}/summary_plot.pdf".format(self._figure_save_path), dpi=500
-            )
-        plt.close()
+            self.fig.savefig(
+                "{}/summary_plot.pdf".format(self._figure_save_path), dpi=500
+                )
+            plt.close()
 
     def _create_subplot(self, row: int, col: int, graph_index: int):
 
@@ -155,18 +170,19 @@ class StudentTeacherPostprocessor:
         attribute_keys = attribute_config['keys']
         attribute_plot_type = attribute_config['plot_type']
         attribute_labels = attribute_config['labels']
+        plot_colours = attribute_config.get("colours")
 
         scale_axes = len(self._data)
-    
+
         if attribute_plot_type == 'scalar':
             plot_data = [
                 self._data[attribute_key].dropna().tolist()
                 for attribute_key in attribute_keys
                 ]
-            self.add_scalar_subplot(
+            self.add_scalar_plot(
                 plot_data=plot_data, row_index=row, column_index=col,
                 title=attribute_title, labels=attribute_labels,
-                scale_axes=scale_axes
+                scale_axes=scale_axes, colours=plot_colours
                 )
 
         elif attribute_plot_type == 'image':
@@ -188,22 +204,26 @@ class StudentTeacherPostprocessor:
                 "Plot type {} not recognized".format(attribute_plot_type)
             )
 
-    def add_scalar_subplot(
+    def add_scalar_plot(
         self,
         plot_data,
         row_index: int,
         column_index: int,
         title: str,
         labels: List,
-        scale_axes: int
+        scale_axes: int,
+        colours: List[str]
     ) -> None:
 
-        if len(labels) > 10:
-            linewidth = 0.05
-        else:
-            linewidth = 1
+        # if len(labels) > 10:
+        #     linewidth = 0.05
+        # else:
+        #     linewidth = 1
 
-        fig_sub = self.fig.add_subplot(self.spec[row_index, column_index])
+        if self.combine_plots:
+            fig_sub = self.fig.add_subplot(self.spec[row_index, column_index])
+        else:
+            fig, fig_sub = plt.subplots()
 
         for d, dataset in enumerate(plot_data):
             # scale axes
@@ -213,23 +233,42 @@ class StudentTeacherPostprocessor:
             else:
                 x_data = range(len(dataset))
 
-            fig_sub.plot(x_data, dataset, label=labels[d], linewidth=linewidth)
+            if self.crop_x:
+                uncropped_x_data_len = len(x_data)
+                x_data_indices = [
+                    round(self.crop_x[0] * uncropped_x_data_len),
+                    round(self.crop_x[1] * uncropped_x_data_len)
+                    ]
+            else:
+                x_data_indices = [0, len(x_data)]
+
+            fig_sub.plot(
+                x_data[x_data_indices[0]:x_data_indices[1]],
+                dataset[x_data_indices[0]:x_data_indices[1]],
+                label=labels[d], linewidth=self.plot_linewidth,
+                color=colours[d]
+                )
 
         # labelling
         fig_sub.set_xlabel("Step")
         fig_sub.set_ylabel(title)
-        if len(labels) < 9:
+        if len(labels) < 9 and self.show_legends:
             fig_sub.legend()
 
         # grids
         fig_sub.minorticks_on()
         fig_sub.grid(
             which='major', linestyle='-', linewidth='0.5',
-            color='red', alpha=0.5
+            color='red', alpha=0.2
             )
         fig_sub.grid(
             which='minor', linestyle=':', linewidth='0.5',
-            color='black', alpha=0.5
+            color='black', alpha=0.4
+            )
+
+        if not self.combine_plots:
+            fig.savefig(
+            "{}/{}.pdf".format(self._figure_save_path, title), dpi=500
             )
 
     def add_image(
@@ -241,7 +280,10 @@ class StudentTeacherPostprocessor:
         title: str
     ) -> None:
 
-        fig_sub = self.fig.add_subplot(self.spec[row_index, column_index])
+        if self.combine_plots:
+            fig_sub = self.fig.add_subplot(self.spec[row_index, column_index])
+        else:
+            fig, fig_sub = plt.subplots()
 
         matrix = np.zeros(matrix_dimensions)
 
@@ -254,52 +296,18 @@ class StudentTeacherPostprocessor:
         # colorbar
         divider = make_axes_locatable(fig_sub)
         cax = divider.append_axes('right', size='5%', pad=0.05)
-        self.fig.colorbar(im, cax=cax, orientation='vertical')
+
+        if self.combine_plots:
+            self.fig.colorbar(im, cax=cax, orientation='vertical')
+        else:
+            fig.colorbar(im, cax=cax, orientation='vertical')
 
         # title and ticks
         fig_sub.set_ylabel(title)
         fig_sub.set_xticks([])
         fig_sub.set_yticks([])
 
-
-# attribute_key_format = attribute_config['key_format']
-        # attribute_scale_axes = attribute_config.get("scale_axes")
-
-        # if attribute_key_format == 'uniform':
-
-        #     attribute_keys = attribute_config['keys']
-        #     attribute_labels = attribute_config['labels']
-
-        # elif attribute_key_format == 'recursive':
-
-        #     base_attribute_key = attribute_config['keys']
-        #     fill_ranges = [
-        #         list(range(r)) for r in attribute_config['key_format_ranges']
-        #         ]
-        #     fill_combos = list(itertools.product(*fill_ranges))
-
-        #     if attribute_plot_type == "scalar":
-        #         attribute_keys = []
-        #         attribute_labels = []
-        #         for fill_combo in fill_combos:
-        #             attribute_key = copy.deepcopy(base_attribute_key)
-        #             for i, fill in enumerate(fill_combo):
-        #                 attribute_key = \
-        #                     attribute_key.replace('%', str(fill), 1)
-        #             attribute_keys.append(attribute_key)
-        #             attribute_labels.append(tuple(fill_combo))
-
-        #     elif attribute_plot_type == 'image':
-
-        #         attribute_keys = {}
-        #         for fill_combo in fill_combos:
-        #             attribute_key = copy.deepcopy(base_attribute_key)
-        #             for i, fill in enumerate(fill_combo):
-        #                 attribute_key = \
-        #                     attribute_key.replace('%', str(fill), 1)
-        #             attribute_keys[tuple(fill_combo)] = attribute_key
-
-        # else:
-        #     raise ValueError(
-        #         "Key format {} not recognized".format(attribute_key_format)
-        #     )
+        if not self.combine_plots:
+            fig.savefig(
+            "{}/{}.pdf".format(self._figure_save_path, title), dpi=500
+            )
