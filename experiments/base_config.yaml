@@ -10,9 +10,9 @@ task:
   loss_type:                        regression                # classification or regression
 
 training:
-  total_training_steps:                
+  total_training_steps:             1000000
   train_batch_size:                 1                         
-  learning_rate:                    0.05                         
+  learning_rate:                    0.5                         
   weight_decay:                     0                      
   loss_function:                    mse                       # mse, bce
   scale_output_backward:            True                      # whether to add 1/N factor in lr of output layer  
@@ -26,7 +26,7 @@ logging:
   verbose_tb:                       False                     
   checkpoint_frequency:             5000                      
   log_to_df:                        True
-  merge_at_checkpoint:              False
+  merge_at_checkpoint:              True
   
 testing:
   test_batch_size:                  50000                     # generalisation error
@@ -53,7 +53,7 @@ curriculum:
   selection_type:                   cyclical                  # how to determine next task (random or cyclical)
   stopping_condition:               threshold_sequence        # condition on which to switch task (fixed_period or threshold)
   fixed_period:                     5000                      # period for changing tasks 
-  loss_threshold:                   [0.0001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001, 0.000000001, 0.000000001, 0.0000000001]                    # loss threshold under which teacher is changed
+  loss_threshold:                   [0.0001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001, 0.000000001, 0.0000000001]                    # loss threshold under which teacher is changed
   custom:                           [0, 1]                    # curriculum defined manually. Each entry defines next teacher index
 
 teachers:
@@ -80,3 +80,11 @@ trained_mnist:
   learning_rate:                    0.001
   output_dimension:                 1
   batch_size:                       32
+
+post_processing:
+  combine_plots:                    True
+  show_legends:                     True
+  crop_x:                           
+  plot_width:                       5
+  plot_height:                      4
+  plot_thickness:                   1.2
