@@ -38,6 +38,7 @@ class StudentTeacherParameters(Parameters):
         self._consistent_num_teachers()
         self._consistent_input_dimension()
         self._consistent_same_input()
+        self._consistent_curriculum()
 
     def _consistent_loss(self):
         # loss function
@@ -110,3 +111,11 @@ class StudentTeacherParameters(Parameters):
             assert same_input_distribution
         elif teacher_configuration == "overlapping":
             assert same_input_distribution
+
+    def _consistent_curriculum(self):
+        stopping_condition = self.get(["curriculum", "stopping_condition"])
+        loss_thresholds = self.get(["curriculum", "loss_threshold"])
+        if stopping_condition == "threshold_sequence":
+            assert isinstance(loss_thresholds, list)
+        elif stopping_condition == "single_threshold":
+            assert isinstance(loss_thresholds, float)
