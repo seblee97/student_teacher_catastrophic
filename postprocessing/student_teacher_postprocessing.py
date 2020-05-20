@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from typing import List, Dict
+from typing import List
 
 
 class StudentTeacherPostprocessor:
@@ -101,7 +101,7 @@ class StudentTeacherPostprocessor:
                 )
             if len(all_df_paths) > 1:
                 print("Note, other csv files are also still in save path.")
-            
+
         else:
             ordered_df_paths = sorted(
                 all_df_paths,
@@ -268,7 +268,7 @@ class StudentTeacherPostprocessor:
 
         if not self.combine_plots:
             fig.savefig(
-            "{}/{}.pdf".format(self._figure_save_path, title), dpi=500
+                "{}/{}.pdf".format(self._figure_save_path, title), dpi=500
             )
 
     def add_image(
@@ -309,5 +309,5 @@ class StudentTeacherPostprocessor:
 
         if not self.combine_plots:
             fig.savefig(
-            "{}/{}.pdf".format(self._figure_save_path, title), dpi=500
+                "{}/{}.pdf".format(self._figure_save_path, title), dpi=500
             )
