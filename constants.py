@@ -34,3 +34,21 @@ class Constants:
         6: (2, 3), 7: (2, 4), 8: (2, 4), 9: (3, 3), 10: (2, 5),
         11: (3, 4), 12: (3, 4)
     }
+
+    TEACHER_SHADES = ["#2A9D8F", "#E9C46A"]
+
+    STUDENT_SHADES = ["#264653", "#E9C46A"]
+
+    ORANGE_SHADES = ["#E9C46A", "#F4A261", "#E76F51"]
+
+    TORQUOISE_SHADES = ["#2A9D8F", "#4E8098", "#17301C"]
+
+    BLUE_SHADES = [
+        "#5465ff", "#788bff", "#9bb1ff",
+        "#bfd7ff", "#e2fdff"
+        ]
+
+    GREEN_SHADES = [
+        "#143601", "#245501", "#538d22",
+        "#73a942", "#aad576"
+        ]
