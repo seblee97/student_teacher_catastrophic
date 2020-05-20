@@ -204,7 +204,7 @@ class _BaseLogger(ABC):
         if header:
             self._set_df_columns(len(self._logger_df.columns))
 
-        assert self._logger_df.columns == self._num_df_columns, \
+        assert self._logger_df.columns == self._df_columns, \
             "Incorrect dataframe columns for merging"
 
         self._logger_df.to_csv(
