@@ -65,7 +65,6 @@ class _MNISTData(_BaseData, ABC):
 
         # transforms to add to data
         transform_list = [
-            torchvision.transforms.Grayscale(),
             torchvision.transforms.ToTensor(),
             torchvision.transforms.Normalize((0.1307,), (0.3081,)),
             custom_torch_transforms.CustomFlatten(),
