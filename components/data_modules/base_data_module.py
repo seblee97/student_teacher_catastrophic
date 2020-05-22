@@ -9,11 +9,18 @@ import torch
 
 
 class _BaseData(ABC):
+    """
+    Class for handling data
 
-    """Class for handling data"""
+    Abstract methods that need to be implemented:
+
+    - get_test_data
+    - get_batch
+    - signal_task_bounary_to_data_generator
+    """
 
     def __init__(self, config: Parameters):
-
+        """Init, extract relevant parameters from confg"""
         self._num_teachers: int = config.get(["task", "num_teachers"])
 
         self._train_batch_size: int = \
