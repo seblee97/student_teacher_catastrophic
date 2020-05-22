@@ -10,9 +10,31 @@ from torch.utils.data import Dataset
 
 
 class MNISTEvenGreaterData(_MNISTData):
+    """
+    Data class for the setting of two tasks where
+    one task is binary classification between even and odd
+    digits and the other is binary classification between
+    digits greater than / less than 5.
 
+    This class inherits from _MNISTData, which in turn
+    inherits from the base data class, _BaseData.
+
+    This class implements the following abstract methods from
+    _MNISTData:
+
+    - _generate_datasets
+
+    and the following abstract methods from _BaseData:
+
+    - get_test_data
+    - get_batch
+    - signal_task_boundary_to_data_generator
+    """
     def __init__(self, config: Parameters):
-
+        """
+        This method initialises the class. It loads the
+        datasets and creates iterators for the train and test data
+        """
         self._current_teacher_index: int
         self._num_teachers: int = config.get(["task", "num_teachers"])
 
@@ -41,6 +63,8 @@ class MNISTEvenGreaterData(_MNISTData):
         self
     ) -> Tuple[Constants.DATASET_TYPES, Constants.DATASET_TYPES]:
         """
+        This method loads the MNIST datasets and maps the output labels
+        to the relevant binary labels.
         """
         # first dataset
         even_odd_train_dataset = \
@@ -76,6 +100,18 @@ class MNISTEvenGreaterData(_MNISTData):
 
     def get_test_data(self) -> Constants.TEST_DATA_TYPES:
         """
+        This method returns fixed test data sets (data and labels).
+        In this task setting the input distribution is the same, so
+        the input test data is the same for both tasks.
+
+        Returns:
+            - test_data_dict: Dictionary containing 'x', the input 
+            test data and 'y' a list of two sets of output labels, one
+            for each task
+
+        Raises:
+            - AssertionError if the input data tensors do not match
+            for the two tasks
         """
         full_test_datasets: List[torch.Tensor] = [
             next(test_set_iterator)
@@ -91,19 +127,24 @@ class MNISTEvenGreaterData(_MNISTData):
 
         # arbitrarily have one of two dataset inputs as test set inputs
         input_data = full_test_datasets[0][0]
-        # labels obviously still differ between tasks
 
+        # labels obviously still differ between tasks
         labels = [test_set[1].unsqueeze(1) for test_set in full_test_datasets]
 
-        return {'x': input_data, 'y': labels}
+        test_data_dict = {'x': input_data, 'y': labels}
+
+        return test_data_dict
 
     def get_batch(self) -> Dict[str, torch.Tensor]:
         """
-        returns batch of training data. Retrieves next batch from dataloader
-        iterator.
-        If iterator is empty, it is reset. Returns both input and label.
+        This method returns batch of training data (input and labels).
+        Retrieves next batch from dataloader iterator.
 
-        return batch_input:
+        If iterator is empty, it is reset.
+
+        Returns:
+            batch: Dictionary containing 'x', input and 'y', label
+            of training data batch
         """
         try:
             batch = next(
@@ -123,7 +164,16 @@ class MNISTEvenGreaterData(_MNISTData):
             torch.FloatTensor
             )
 
-        return {'x': batch[0], 'y': y}
+        batch = {'x': batch[0], 'y': y}
+
+        return batch
 
     def signal_task_boundary_to_data_generator(self, new_task: int) -> None:
+        """
+        Tells class that task has switched. E.g. this allows get_batch to
+        provide data for the relevant task.
+
+        Args:
+            new_task: index of new task being trained
+        """
         self._current_teacher_index = new_task
