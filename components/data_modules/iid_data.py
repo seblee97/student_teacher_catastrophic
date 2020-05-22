@@ -8,26 +8,30 @@ from typing import Dict
 
 
 class IIDData(_BaseData):
-
-    """Class for dealing with data generated from IID Gaussian"""
-
+    """
+    Class for generating data drawn i.i.d from unit normal 
+    Gaussian.
+    """
     def __init__(self, config: Parameters):
         _BaseData.__init__(self, config)
 
     def get_test_data(self) -> Constants.TEST_DATA_TYPES:
         """
-        returns fixed test data set (data and labels)
+        This method gives a fixed test data set (input data only)
 
-        return test_input_batch: test data set
+        Returns:
+            test_input_batch: Dictionary with input data only
         """
         test_input_data = torch.randn(
             self._test_batch_size, self._input_dimension
             ).to(self._device)
 
-        return {'x': test_input_data}
+        test_data_dict = {'x': test_input_data}
+
+        return test_data_dict
 
     def get_batch(self) -> Dict[str, torch.Tensor]:
-        """returns batch of training data"""
+        """returns batch of training data (input only)"""
         batch = torch.randn(
             self._train_batch_size, self._input_dimension
             ).to(self._device)
