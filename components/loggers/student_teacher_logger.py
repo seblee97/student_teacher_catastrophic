@@ -1,8 +1,11 @@
 from .base_logger import _BaseLogger
 
-from typing import List, Union
+from typing import List, Union, Tuple, Dict
 
 import itertools
+
+import torch
+import numpy as np
 
 from utils import Parameters, visualise_matrix
 from models.learners import _BaseLearner
@@ -215,94 +218,49 @@ class StudentTeacherLogger(_BaseLogger):
         :param teacher_networks: list of teacher network modules
         :param step_count: current step of training
         """
-        # extract layer weights
-        if head is None:
-            student_layer = \
-                student_network.state_dict()[
-                    'layers.{}.weight'.format(layer)
-                    ].data
-            teacher_layers = [
-                teacher.state_dict()['layers.{}.weight'.format(layer)].data
-                for teacher in teacher_networks
-                ]
-        else:
-            student_layer = \
-                student_network.state_dict()[
-                    'heads.{}.weight'.format(str(head))
-                    ].data
-            teacher_layers = [
-                teacher.state_dict()['output_layer.weight'].data
-                for teacher in teacher_networks
-                ]
-            layer = layer + "_head_{}".format(str(head))
+        layer, student_layer, teacher_layers = self._extract_layer_weights(
+            layer=layer, student_network=student_network,
+            teacher_networks=teacher_networks, head=head
+        )
 
-        # compute overlap matrices
-        student_self_overlap = (
-            student_layer.mm(student_layer.t()) / self._input_dimension
-            ).cpu().numpy()
-        if head is None:
-            student_teacher_overlaps = [
-                (
-                    student_layer.mm(teacher_layer.t()) / self._input_dimension
-                ).cpu().numpy()
-                for teacher_layer in teacher_layers
-                ]
-        else:
-            student_teacher_overlaps = [
-                (
-                    student_layer.t().mm(teacher_layer) / self._input_dimension
-                ).cpu().numpy()
-                for teacher_layer in teacher_layers
-                ]
-        teacher_self_overlaps = [
-                (
-                    teacher_layer.mm(teacher_layer.t()) / self._input_dimension
-                ).cpu().numpy()
-                for teacher_layer in teacher_layers
-                ]
-        teacher_pairs = list(
-            itertools.combinations(range(len(teacher_layers)), 2)
+        student_self_overlap = self._compute_student_self_overlap(
+            student_layer=student_layer
             )
-        teacher_teacher_overlaps = {(i, j): (
-            teacher_layers[i].mm(teacher_layers[j].t()) / self._input_dimension
-            ).cpu().numpy() for (i, j) in teacher_pairs
-            }
+        self.log_matrix_values(
+            layer=layer, step_count=step_count,
+            log_name="student_self_overlap",
+            matrix=student_self_overlap
+            )
 
-        # log overlap values (scalars vs image graphs below)
-        def log_matrix_values(log_name: str, matrix):
-            matrix_shape = matrix.shape
-            for i in range(matrix_shape[0]):
-                for j in range(matrix_shape[1]):
-                    if self._verbose_tb > 1:
-                        self._writer.add_scalar(
-                            "layer_{}_{}/values_{}_{}".format(
-                                layer, log_name, i, j
-                                ),
-                            matrix[i][j],
-                            step_count
-                            )
-                    if self._log_to_df:
-                        self._logger_df.at[
-                            step_count,
-                            "layer_{}_{}/values_{}_{}".format(
-                                layer, log_name, i, j
-                                )
-                            ] = matrix[i][j]
-
-        log_matrix_values("student_self_overlap", student_self_overlap)
+        student_teacher_overlaps = self._compute_student_teacher_overlaps(
+            student_layer=student_layer, teacher_layers=teacher_layers,
+            head=head
+        )
         for s, student_teacher_overlap in enumerate(student_teacher_overlaps):
-            log_matrix_values(
-                "student_teacher_overlaps/{}".format(s),
-                student_teacher_overlap
+            self.log_matrix_values(
+                layer=layer, step_count=step_count,
+                log_name="student_teacher_overlaps/{}".format(s),
+                matrix=student_teacher_overlap
                 )
+
+        teacher_self_overlaps = self._compute_teacher_self_overlaps(
+            teacher_layers=teacher_layers
+        )
         for s, teacher_self_overlap in enumerate(teacher_self_overlaps):
-            log_matrix_values(
-                "teacher_self_overlaps/{}".format(s), teacher_self_overlap
+            self.log_matrix_values(
+                layer=layer, step_count=step_count,
+                log_name="teacher_self_overlaps/{}".format(s),
+                matrix=teacher_self_overlap
                 )
+
+        teacher_teacher_overlaps = self._compute_teacher_teacher_overlaps(
+            teacher_layers=teacher_layers
+        )
         for (i, j) in teacher_teacher_overlaps:
-            log_matrix_values(
-                "teacher_teacher_overlaps/{}_{}".format(i, j),
-                teacher_teacher_overlaps[(i, j)]
+            self.log_matrix_values(
+                layer=layer, step_count=step_count,
+                log_name="teacher_teacher_overlaps/{}_{}".format(i, j),
+                matrix=teacher_teacher_overlaps[(i, j)]
                 )
 
         # generate visualisations
@@ -325,9 +283,6 @@ class StudentTeacherLogger(_BaseLogger):
                 for t, student_teacher_overlap
                 in enumerate(student_teacher_overlaps)
             ]
-
-        # log visualisations
-        if self._verbose_tb > 1:
             self._writer.add_figure(
                 "layer_{}_student_self_overlap".format(str(layer)),
                 student_self_fig, step_count
@@ -353,3 +308,124 @@ class StudentTeacherLogger(_BaseLogger):
                         ),
                     teacher_cross_fig, step_count
                     )
+
+    def _extract_layer_weights(
+        self,
+        layer: str,
+        student_network: _BaseLearner,
+        teacher_networks: List[_Teacher],
+        head: Union[None, int],
+    ) -> Tuple[str, torch.Tensor, List[torch.Tensor]]:
+        # extract layer weights
+        if head is None:
+            student_layer = \
+                student_network.state_dict()[
+                    'layers.{}.weight'.format(layer)
+                    ].data
+            teacher_layers = [
+                teacher.state_dict()['layers.{}.weight'.format(layer)].data
+                for teacher in teacher_networks
+                ]
+        else:
+            if self._learner_configuration == "meta":
+                student_layer = \
+                    student_network.state_dict()[
+                        'output_layer.weight'
+                        ].data
+            elif self._learner_configuration == "continual":
+                student_layer = \
+                    student_network.state_dict()[
+                        'heads.{}.weight'.format(str(head))
+                        ].data
+            teacher_layers = [
+                teacher.state_dict()['output_layer.weight'].data
+                for teacher in teacher_networks
+                ]
+            layer = layer + "_head_{}".format(str(head))
+
+        return layer, student_layer, teacher_layers
+
+    def _compute_student_self_overlap(
+        self,
+        student_layer: torch.Tensor
+    ) -> np.ndarray:
+        # compute overlap matrices
+        student_self_overlap = (
+            student_layer.mm(student_layer.t()) / self._input_dimension
+            ).cpu().numpy()
+        return student_self_overlap
+
+    def _compute_student_teacher_overlaps(
+        self,
+        student_layer: torch.Tensor,
+        teacher_layers: List[torch.Tensor],
+        head: Union[None, int]
+    ) -> List[np.ndarray]:
+        if head is None:
+            student_teacher_overlaps = [
+                (
+                    student_layer.mm(teacher_layer.t()) / self._input_dimension
+                ).cpu().numpy()
+                for teacher_layer in teacher_layers
+                ]
+        else:
+            student_teacher_overlaps = [
+                (
+                    student_layer.t().mm(teacher_layer) / self._input_dimension
+                ).cpu().numpy()
+                for teacher_layer in teacher_layers
+                ]
+
+        return student_teacher_overlaps
+
+    def _compute_teacher_self_overlaps(
+        self,
+        teacher_layers: List[torch.Tensor]
+    ) -> List[np.ndarray]:
+        teacher_self_overlaps = [
+                (
+                    teacher_layer.mm(teacher_layer.t()) / self._input_dimension
+                ).cpu().numpy()
+                for teacher_layer in teacher_layers
+                ]
+        return teacher_self_overlaps
+
+    def _compute_teacher_teacher_overlaps(
+        self,
+        teacher_layers: List[torch.Tensor]
+    ) -> Dict[Tuple[int, int], np.ndarray]:
+        teacher_pairs = list(
+            itertools.combinations(range(len(teacher_layers)), 2)
+            )
+        teacher_teacher_overlaps = {(i, j): (
+            teacher_layers[i].mm(teacher_layers[j].t()) / self._input_dimension
+            ).cpu().numpy() for (i, j) in teacher_pairs
+            }
+        return teacher_teacher_overlaps
+
+    # log overlap values (scalars vs image graphs below)
+    def log_matrix_values(
+        self,
+        layer: str,
+        step_count: int,
+        log_name: str,
+        matrix: np.ndarray
+    ) -> None:
+        matrix_shape = matrix.shape
+        for i in range(matrix_shape[0]):
+            for j in range(matrix_shape[1]):
+                if self._verbose_tb > 1:
+                    self._writer.add_scalar(
+                        "layer_{}_{}/values_{}_{}".format(
+                            layer, log_name, i, j
+                            ),
+                        matrix[i][j],
+                        step_count
+                        )
+                if self._log_to_df:
+                    self._logger_df.at[
+                        step_count,
+                        "layer_{}_{}/values_{}_{}".format(
+                            layer, log_name, i, j
+                            )
+                        ] = matrix[i][j]
