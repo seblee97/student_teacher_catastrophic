@@ -1,11 +1,9 @@
 import torch.nn as nn
 import torch
 
-import math
-
 from .base_learner import _BaseLearner
 
-from typing import Dict, List, Iterable
+from typing import Dict, List, Iterable, Iterator
 
 
 class ContinualLearner(_BaseLearner):
@@ -43,6 +41,18 @@ class ContinualLearner(_BaseLearner):
             for param in output_layer.parameters():
                 param.requires_grad = False
             self.heads.append(output_layer)
+
+    def _get_trainable_head_parameters(
+        self
+    ) -> List[Dict[str, Iterator[torch.nn.Parameter]]]:
+        trainable_head_parameters = [
+            {
+                'params': head.parameters(),
+                'lr': self._learning_rate / self._input_dimension
+            }
+            for head in self.heads
+            ]
+        return trainable_head_parameters
 
     def set_task(self, task_index: int):
         # freeze weights of head for previous task
@@ -92,10 +102,18 @@ class ContinualLearner(_BaseLearner):
         return y
 
     def _get_head_weights(self) -> List[torch.Tensor]:
-        # extract weights of output layer. Multi-headed for continual setting
-        # => one set per teacher
+        """
+        This method extracts the weights of the outputs layers.
+        For the continual learning setting there is one head per teacher
+        so this method returns a list of tensors each of which corresponds
+        to the weights of one of these heads.
+
+        Returns:
+            head_weights: list of torch tensors that are the weights
+            of the heads.
+        """
         head_weights = [
-            self.state_dict()['heads.{}.weight'.format(h)]
+            self.heads[h].state_dict()['weight']
             for h in range(self.num_teachers)
             ]  # could use self.heads directly
         return head_weights
