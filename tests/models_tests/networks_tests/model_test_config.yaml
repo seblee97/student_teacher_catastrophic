@@ -23,7 +23,7 @@ data:
 
 logging:
   verbose:                          True                      
-  verbose_tb:                       False                     
+  verbose_tb:                       1                     
   checkpoint_frequency:             5000                      
   log_to_df:                        True
   merge_at_checkpoint:              False
@@ -80,3 +80,11 @@ trained_mnist:
   learning_rate:                    0.001
   output_dimension:                 1
   batch_size:                       32
+
+post_processing:
+  combine_plots:                    True
+  show_legends:                     True
+  crop_x:                           
+  plot_width:                       5
+  plot_height:                      4
+  plot_thickness:                   1.2
