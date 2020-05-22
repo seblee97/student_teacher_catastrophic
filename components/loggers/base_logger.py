@@ -117,6 +117,11 @@ class _BaseLogger(ABC):
         :param scalar: data to be written
         :param step: current step count (x axis on tb)
         """
+        assert tag in self._df_columns, \
+            (
+                "Scalar tag {} not in list of recognised columns \
+                for DataFrame provided: {}".format(tag, self._df_columns)
+            )
         self._logger_df.at[step, tag] = scalar
 
     def _log_output_weights(
