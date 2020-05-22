@@ -23,8 +23,8 @@ data:
 
 logging:
   verbose:                          True                      
-  verbose_tb:                       False                     
-  checkpoint_frequency:             1000                      
+  verbose_tb:                       1                     
+  checkpoint_frequency:             5000                      
   log_to_df:                        True
   merge_at_checkpoint:              False
   
