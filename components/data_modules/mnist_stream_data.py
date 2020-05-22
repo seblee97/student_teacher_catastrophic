@@ -10,8 +10,29 @@ from typing import Dict, Tuple
 
 
 class MNISTStreamData(_MNISTData):
+    """
+    Data class for the setting of MNIST digits being flattened
+    and fed as inputs to a student-teacher framework.
 
+    This class inherits from _MNISTData, which in turn
+    inherits from the base data class, _BaseData.
+
+    This class implements the following abstract methods from
+    _MNISTData:
+
+    - _generate_datasets
+
+    and the following abstract methods from _BaseData:
+
+    - get_test_data
+    - get_batch
+    - signal_task_boundary_to_data_generator
+    """
     def __init__(self, config: Parameters):
+        """
+        This method initialises the class. It loads the
+        datasets and creates the training and test iterator.
+        """
         _MNISTData.__init__(self, config)
 
         self.train_data: Dataset
@@ -30,7 +51,9 @@ class MNISTStreamData(_MNISTData):
     def _generate_datasets(
         self
     ) -> Tuple[Constants.DATASET_TYPES, Constants.DATASET_TYPES]:
-
+        """
+        This method loads the MNIST datasets
+        """
         train_data = \
             torchvision.datasets.MNIST(
                 self._full_data_path, transform=self.transform, train=True
@@ -43,16 +66,29 @@ class MNISTStreamData(_MNISTData):
         return train_data, test_data
 
     def get_test_data(self) -> Constants.TEST_DATA_TYPES:
+        """
+        This method returns fixed test data set (input data only).
+
+        Returns:
+            - test_data_dict: Dictionary containing 'x', the input
+            test data only.
+        """
         data, labels = next(self.test_data_iterator)
-        return {'x': data}
+
+        test_data_dict = {'x': data}
+
+        return test_data_dict
 
     def get_batch(self) -> Dict[str, torch.Tensor]:
         """
-        returns batch of training data. Retrieves next batch from
-        dataloader iterator.
+        This method returns batch of training data (input and labels).
+        Retrieves next batch from dataloader iterator.
+
         If iterator is empty, it is reset.
 
-        return batch_input:
+        Returns:
+            batch: Dictionary containing 'x', input
+            of training data batch
         """
         try:
             batch_input = next(self.training_data_iterator)[0]
