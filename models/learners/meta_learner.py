@@ -1,11 +1,9 @@
 from .base_learner import _BaseLearner
 
-from typing import Dict, List
+from typing import Dict, List, Iterator
 
 import torch.nn as nn
 import torch
-
-import math
 
 
 class MetaLearner(_BaseLearner):
@@ -40,6 +38,15 @@ class MetaLearner(_BaseLearner):
             for param in self.output_layer.parameters():
                 param.requires_grad = False
 
+    def _get_trainable_head_parameters(
+        self
+    ) -> List[Dict[str, Iterator[torch.nn.Parameter]]]:
+        trainable_head_parameters = [{
+                'params': self.output_layer.parameters(),
+                'lr': self._learning_rate / self._input_dimension
+            }]
+        return trainable_head_parameters
+
     def set_task(self, task_index: int):
         pass
 
@@ -55,11 +62,22 @@ class MetaLearner(_BaseLearner):
                 self.forward_scaling * layer(x)
                 )
         task_outputs = self._output_forward(x)
-        return task_outputs
+        all_task_outputs = [task_outputs for _ in range(self._num_teachers)]
+        return all_task_outputs
 
     def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
         y = self.output_layer(x)
         return y
 
-    def _get_head_weights(self):
-        raise NotImplementedError
+    def _get_head_weights(self) -> List[torch.Tensor]:
+        """
+        This method extracts the weights of the outputs layer.
+        For the meta learning setting there is only one head regardless
+        of the number of teachers.
+
+        Returns:
+            head_weights: list of torch tensors that are the weights
+            of the heads.
+        """
+        head_weights = [self.output_layer.state_dict()['weight']]
+        return head_weights
