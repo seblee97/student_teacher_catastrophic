@@ -67,7 +67,7 @@ drift_teachers:
 mnist_data:
   data_path:                        "../../data/"
   pca_input:                        -1                        # number of principle components (no PCA if -1, not applicable to iid_gaussian input)                         
-  standardise:                      True
+  standardise:                      False
   noise:
 
 pure_mnist:
