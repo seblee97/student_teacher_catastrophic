@@ -26,13 +26,31 @@ class StudentTeacherLogger(_BaseLogger):
             "mean_generalisation_error/linear"
             ]
 
+        columns.extend(self._get_training_metric_columns())
+        columns.extend(self._get_student_head_weight_columns())
+        columns.extend(self._get_student_teacher_hidden_overlap_columns())
+        columns.extend(self._get_student_teacher_head_overlap_columns())
+        columns.extend(self._get_student_hidden_self_overlap_columns())
+        columns.extend(self._get_teacher_hidden_self_overlap_columns())
+        columns.extend(self._get_student_head_self_overlap_columns())
+        columns.extend(self._get_teacher_head_self_overlap_columns())
+        columns.extend(self._get_teacher_teacher_hidden_overlap_columns())
+        columns.extend(self._get_teacher_teacher_head_overlap_columns())
+
+        return columns
+
+    def _get_training_metric_columns(self) -> List[str]:
+        columns = []
         # training metrics
         for t in range(self._num_teachers):
             columns.append("teacher_{}_generalisation_error/linear".format(t))
             columns.append("teacher_{}_generalisation_error/log".format(t))
             columns.append("teacher_{}_error_change/log".format(t))
             columns.append("teacher_{}_error_change/linear".format(t))
+        return columns
 
+    def _get_student_head_weight_columns(self) -> List[str]:
+        columns = []
         # student head weights
         head_weight_combinations = itertools.product(*[
             range(self._num_teachers),
@@ -43,7 +61,10 @@ class StudentTeacherLogger(_BaseLogger):
             columns.append(
                 "student_head_{}_weight_{}".format(t, output)
                 )
+        return columns
 
+    def _get_student_teacher_hidden_overlap_columns(self) -> List[str]:
+        columns = []
         # student-teacher hidden overlaps
         for layer_index, layer in enumerate(self._student_hidden):
             hidden_overlap_combinations = \
@@ -59,7 +80,10 @@ class StudentTeacherLogger(_BaseLogger):
                         layer_index, t, i, j
                     )
                 )
+        return columns
 
+    def _get_student_teacher_head_overlap_columns(self) -> List[str]:
+        columns = []
         # student-teacher head overlaps
         for h, latent in enumerate(self._student_hidden):
             output_head_overlap_combinations = \
@@ -74,7 +98,10 @@ class StudentTeacherLogger(_BaseLogger):
                     "layer_output_head_{}_student_teacher_overlaps/"
                     "{}/values_{}_{}".format(t, t_rep, s_lat, t_lat)
                     )
+        return columns
 
+    def _get_student_hidden_self_overlap_columns(self) -> List[str]:
+        columns = []
         # student hidden self-overlap
         for h, latent in enumerate(self._student_hidden):
             student_hidden_self_overlap_combos = \
@@ -85,7 +112,10 @@ class StudentTeacherLogger(_BaseLogger):
                         h, i, j
                         )
                 )
+        return columns
 
+    def _get_teacher_hidden_self_overlap_columns(self) -> List[str]:
+        columns = []
         # teacher hidden self-overlap
         for t in range(self._num_teachers):
             for h, latent in enumerate(self._teacher_hidden):
@@ -98,7 +128,10 @@ class StudentTeacherLogger(_BaseLogger):
                             h, t, i, j
                             )
                     )
+        return columns
 
+    def _get_student_head_self_overlap_columns(self) -> List[str]:
+        columns = []
         # student head self-overlap
         student_head_self_overlap_combos = itertools.product(*[
             range(self._num_teachers), range(self._output_dimension),
@@ -110,7 +143,10 @@ class StudentTeacherLogger(_BaseLogger):
                 "layer_output_head_{}_student_self_overlap/"
                 "values_{}_{}".format(t, d, d_rep)
             )
+        return columns
 
+    def _get_teacher_head_self_overlap_columns(self) -> List[str]:
+        columns = []
         # teacher head self-overlap
         teacher_head_self_overlap_combos = itertools.product(*[
             range(self._num_teachers), range(self._num_teachers),
@@ -122,7 +158,10 @@ class StudentTeacherLogger(_BaseLogger):
                 "layer_output_head_{}_teacher_self_overlaps/{}/"
                 "values_{}_{}".format(t, t_rep, d, d)
             )
+        return columns
 
+    def _get_teacher_teacher_hidden_overlap_columns(self) -> List[str]:
+        columns = []
         teacher_pairs = itertools.combinations(range(self._num_teachers), 2)
         # teacher - teacher hidden overlaps
         for h, hidden in enumerate(self._teacher_hidden):
@@ -137,6 +176,10 @@ class StudentTeacherLogger(_BaseLogger):
                             h, t1, t2, i, j
                             )
                         )
+        return columns
+
+    def _get_teacher_teacher_head_overlap_columns(self) -> List[str]:
+        columns = []
         # teacher - teacher head overlaps
         for t in range(self._num_teachers):
             for t1 in range(self._num_teachers):
@@ -153,7 +196,6 @@ class StudentTeacherLogger(_BaseLogger):
                                 t, t1, t2, i, j
                                 )
                             )
-
         return columns
 
     def _compute_layer_overlaps(
