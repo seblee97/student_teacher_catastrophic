@@ -52,3 +52,7 @@ class Constants:
         "#143601", "#245501", "#538d22",
         "#73a942", "#aad576"
         ]
+
+    MNIST_TRAIN_SET_SIZE = 60000
+    MNIST_TEST_SET_SIZE = 10000
+    MNIST_FLATTENED_DIM = 784
