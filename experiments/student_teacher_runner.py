@@ -332,7 +332,7 @@ class StudentTeacherRunner:
                     total_step_count % self.overlap_frequency == 0
                     and self.teacher_is_network
                         ):
-                    self.logger._compute_overlap_matrices(
+                    self.logger.compute_overlap_matrices(
                         student_network=self.learner,
                         teacher_networks=self.teachers.get_teacher_networks(),
                         step_count=total_step_count
