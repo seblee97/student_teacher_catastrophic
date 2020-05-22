@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from typing import Dict, List
+from typing import Dict, List, Iterator
 
 from models.networks.base_network import Model
 from utils import Parameters
@@ -22,6 +22,8 @@ class _BaseLearner(Model):
         self._learning_rate = config.get(["training", "learning_rate"])
         self._input_dimension = config.get(["model", "input_dimension"])
         self._soft_committee = config.get(["model", "soft_committee"])
+
+        self._num_teachers = config.get(["task", "num_teachers"])
 
         if config.get(["task", "loss_type"]) == "classification":
             self.classification_output = True
@@ -57,20 +59,21 @@ class _BaseLearner(Model):
         """
         trainable_parameters: Constants.TRAINABLE_PARAMETERS_TYPE
         if self._scale_output_backward:
+            # hidden layer parameters
             trainable_parameters = [
                 {'params': layer.parameters()} for layer in self.layers
                 ]
             if not self._soft_committee:
-                trainable_parameters += [
-                    {
-                        'params': head.parameters(),
-                        'lr': self._learning_rate / self._input_dimension
-                    }
-                    for head in self.heads
-                    ]
+                trainable_parameters += self._get_trainable_head_parameters()
         else:
             trainable_parameters = self.parameters()
         return trainable_parameters
+
+    @abstractmethod
+    def _get_trainable_head_parameters(
+        self
+    ) -> List[Dict[str, Iterator[torch.nn.Parameter]]]:
+        raise NotImplementedError("Base class method")
 
     def set_to_train(self) -> None:
         """set network to train mode
@@ -117,4 +120,5 @@ class _BaseLearner(Model):
 
     @abstractmethod
     def _get_head_weights(self) -> List[torch.Tensor]:
+        """This method gets the weights of the output layer(s)"""
         raise NotImplementedError("Base class method")
