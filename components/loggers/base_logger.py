@@ -61,6 +61,8 @@ class _BaseLogger(ABC):
         self._merge_at_checkpoint: bool = \
             config.get(["logging", "merge_at_checkpoint"])
 
+        self._learner_configuration = \
+            config.get(["task", "learner_configuration"])
         self._student_hidden: List[int] = \
             config.get(["model", "student_hidden_layers"])
         self._teacher_hidden: List[int] = \
@@ -150,7 +152,7 @@ class _BaseLogger(ABC):
                         step_count, 'student_head_{}_weight_{}'.format(h, w)
                         ] = float(weight)
 
-    def _compute_overlap_matrices(
+    def compute_overlap_matrices(
         self,
         student_network: _BaseLearner,
         teacher_networks: List[_Teacher],
@@ -171,12 +173,25 @@ class _BaseLogger(ABC):
                 step_count=step_count
                 )
 
-        for head_index in range(self._num_teachers):
+        if self._learner_configuration == "meta":   
             self._compute_layer_overlaps(
                 layer="output", student_network=student_network,
-                teacher_networks=teacher_networks, head=head_index,
+                teacher_networks=teacher_networks, head=1,
                 step_count=step_count
-                )
+            )
+        elif self._learner_configuration == "continual":
+            for head_index in range(self._num_teachers):
+                self._compute_layer_overlaps(
+                    layer="output", student_network=student_network,
+                    teacher_networks=teacher_networks, head=head_index,
+                    step_count=step_count
+                    )
+        else:
+            raise ValueError(
+                "Learner configuration {} not recognised".format(
+                    self._learner_configuration
+                    )
+            )
 
     @abstractmethod
     def _compute_layer_overlaps(
