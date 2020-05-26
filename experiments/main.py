@@ -121,6 +121,12 @@ def process_parser():
         default=None
         )
     parser.add_argument(
+        '-tb_verbosity', '--tbv', type=int, choices=[0, 1, 2],
+        help="how much to log to tensorboard 0: nothing, 1: basics,"
+        "2: everything",
+        default=None
+        )
+    parser.add_argument(
         '-checkpoint_path', '--cp', type=str, help="where to log results",
         default=None
         )
@@ -172,7 +178,9 @@ def update_config_with_parser(args, params: Dict):
     if args.cf:
         params["checkpoint_frequency"] = args.cf
     if args.v is not None:
-        params["verbose"] = bool(args.v)
+        params["logging"]["verbose"] = bool(args.v)
+    if args.tbv:
+        params["logging"]["verbose_tb"] = args.tbv
 
     # update specific parameters with (optional) args given in command line
     if args.to:
