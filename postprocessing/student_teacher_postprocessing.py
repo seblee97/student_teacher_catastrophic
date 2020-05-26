@@ -226,28 +226,29 @@ class StudentTeacherPostprocessor:
             fig, fig_sub = plt.subplots()
 
         for d, dataset in enumerate(plot_data):
-            # scale axes
-            if scale_axes:
-                scaling = scale_axes / len(dataset)
-                x_data = [i * scaling for i in range(len(dataset))]
-            else:
-                x_data = range(len(dataset))
+            if len(dataset):
+                # scale axes
+                if scale_axes:
+                    scaling = scale_axes / len(dataset)
+                    x_data = [i * scaling for i in range(len(dataset))]
+                else:
+                    x_data = range(len(dataset))
 
-            if self.crop_x:
-                uncropped_x_data_len = len(x_data)
-                x_data_indices = [
-                    round(self.crop_x[0] * uncropped_x_data_len),
-                    round(self.crop_x[1] * uncropped_x_data_len)
-                    ]
-            else:
-                x_data_indices = [0, len(x_data)]
+                if self.crop_x:
+                    uncropped_x_data_len = len(x_data)
+                    x_data_indices = [
+                        round(self.crop_x[0] * uncropped_x_data_len),
+                        round(self.crop_x[1] * uncropped_x_data_len)
+                        ]
+                else:
+                    x_data_indices = [0, len(x_data)]
 
-            fig_sub.plot(
-                x_data[x_data_indices[0]:x_data_indices[1]],
-                dataset[x_data_indices[0]:x_data_indices[1]],
-                label=labels[d], linewidth=self.plot_linewidth,
-                color=colours[d]
-                )
+                fig_sub.plot(
+                    x_data[x_data_indices[0]:x_data_indices[1]],
+                    dataset[x_data_indices[0]:x_data_indices[1]],
+                    label=labels[d], linewidth=self.plot_linewidth,
+                    color=colours[d]
+                    )
 
         # labelling
         fig_sub.set_xlabel("Step")
