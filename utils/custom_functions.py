@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-if os.environ["DISPLAY"]:
+if os.environ.get("DISPLAY"):
     import matplotlib.pyplot as plt
 
 from sklearn.decomposition import PCA

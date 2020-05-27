@@ -8,7 +8,7 @@ import numpy as np
 import yaml
 import itertools
 
-if os.environ["DISPLAY"]:
+if os.environ.get("DISPLAY"):
     import matplotlib.pyplot as plt
     import matplotlib.gridspec as gridspec
     from mpl_toolkits.axes_grid1 import make_axes_locatable
