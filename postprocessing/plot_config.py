@@ -17,6 +17,14 @@ class PlotConfigGenerator:
             config.get(["model", "teacher_hidden_layers"])
 
         teacher_shades = Constants.TEACHER_SHADES
+        assert len(teacher_shades) >= num_teachers, \
+            (
+                "Not enough shades given for teachers."
+                "{} given, {} needed".format(
+                    len(teacher_shades), num_teachers
+                    )
+            )
+
         student_shades = Constants.STUDENT_SHADES
         blue_shades = Constants.TORQUOISE_SHADES
         green_shades = Constants.ORANGE_SHADES
