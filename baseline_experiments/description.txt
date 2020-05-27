@@ -1,4 +1,0 @@
-This folder contains `baseline' results for the student-teacher setup in various regimes. 
-It IGNORES the continual learning aspect of the setup, i.e. has only one teacher. 
-These baselines are to illustrate the learning dymanics in isolation, of the student wrt teacher.
-It is designed to be independent of the experiments folder.
