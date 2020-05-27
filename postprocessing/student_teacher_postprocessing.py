@@ -6,28 +6,64 @@ import os
 import pandas as pd
 import numpy as np
 import yaml
+import itertools
+
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from typing import List
+from typing import List, Dict
 
 
 class StudentTeacherPostprocessor:
 
-    def __init__(self, save_path: str, plot_config_path: str):
+    def __init__(
+        self,
+        save_path: str,
+        extra_args: Dict
+    ):
 
         self._save_path = save_path
-        self._plot_config_path = plot_config_path
         self._config = self._retrieve_config()
+        self._update_config(extra_args=extra_args)
 
         self.experiment_name = self._config.get("experiment_name")
+
+    def _update_config(self, extra_args: Dict):
+        previously_specified_crop_x = \
+            self._config.get(["post_processing", "crop_x"])
+
+        if previously_specified_crop_x is None:
+            crop_x = [0, 1]
+        else:
+            crop_x = previously_specified_crop_x
+
+        if extra_args.get("crop_start"):
+            crop_x[0] = extra_args.get("crop_start")
+        if extra_args.get("crop_end"):
+            crop_x[1] = extra_args.get("crop_end")
+
+        self._config._config["post_processing"]["crop_x"] = crop_x
+
+        self._config._config["post_processing"]["combine_plots"] = \
+            extra_args.get("combine_plots")
+        self._config._config["post_processing"]["show_legends"] = \
+            extra_args.get("show_legends")
+
+        if extra_args.get("figure_name"):
+            self._figure_name = extra_args.get("figure_name")
+        else:
+            if self._config.get(["post_processing", "combine_plots"]):
+                self._figure_name = "summary_plot"
+            else:
+                self._figure_name = "individual_plot"
 
     def _setup_plotting(self) -> None:
 
         self.crop_x = self._config.get(["post_processing", "crop_x"])
         self.combine_plots = \
             self._config.get(["post_processing", "combine_plots"])
+
         self.show_legends = \
             self._config.get(["post_processing", "show_legends"])
         self.plot_linewidth = \
@@ -158,7 +194,8 @@ class StudentTeacherPostprocessor:
             self.fig.suptitle("Summary Plot: {}".format(self.experiment_name))
 
             self.fig.savefig(
-                "{}/summary_plot.pdf".format(self._figure_save_path), dpi=500
+                "{}/{}.pdf".format(self._figure_save_path, self._figure_name),
+                dpi=500
                 )
             plt.close()
 
@@ -215,10 +252,7 @@ class StudentTeacherPostprocessor:
         colours: List[str]
     ) -> None:
 
-        # if len(labels) > 10:
-        #     linewidth = 0.05
-        # else:
-        #     linewidth = 1
+        colour_cycle = itertools.cycle(colours)
 
         if self.combine_plots:
             fig_sub = self.fig.add_subplot(self.spec[row_index, column_index])
@@ -247,7 +281,7 @@ class StudentTeacherPostprocessor:
                     x_data[x_data_indices[0]:x_data_indices[1]],
                     dataset[x_data_indices[0]:x_data_indices[1]],
                     label=labels[d], linewidth=self.plot_linewidth,
-                    color=colours[d]
+                    color=next(colour_cycle)
                     )
 
         # labelling
@@ -269,7 +303,10 @@ class StudentTeacherPostprocessor:
 
         if not self.combine_plots:
             fig.savefig(
-                "{}/{}.pdf".format(self._figure_save_path, title), dpi=500
+                "{}/{}_{}.pdf".format(
+                    self._figure_save_path, title,
+                    self._figure_name
+                    ), dpi=500
             )
 
     def add_image(
