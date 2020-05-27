@@ -29,6 +29,7 @@ def post_process(args):
 
     post_process_args["combine_plots"] = not args.ipf
     post_process_args["show_legends"] = not args.nl
+    post_process_args["repeats"] = args.repeats
 
     post_processor = StudentTeacherPostprocessor(
         save_path=args.ppp,
