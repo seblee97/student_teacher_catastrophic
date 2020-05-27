@@ -180,6 +180,10 @@ class Argparser:
             '-no_legend', '--nl', action='store_true',
             help="Flag ensures plots do not render the legend"
             )
+        parser.add_argument(
+            '-repeats', action='store_true',
+            help="Flag states that save path is folder of repeats"
+            )
 
         args = parser.parse_args()
 
