@@ -1,8 +1,10 @@
 import numpy as np
 import os
 
-if os.environ.get("DISPLAY"):
+try:
     import matplotlib.pyplot as plt
+except OSError:
+    pass
 
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import normalize
