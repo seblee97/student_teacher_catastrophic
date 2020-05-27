@@ -39,9 +39,17 @@ class Constants:
 
     STUDENT_SHADES = ["#264653", "#E9C46A"]
 
-    ORANGE_SHADES = ["#E9C46A", "#F4A261", "#E76F51"]
+    ORANGE_SHADES = [
+        "#E9C46A", "#F4A261", "#E76F51",
+        "#D5B942", "#D9D375", "#EDFBC1",
+        "#FC9E4F", "#F17105"
+        ]
 
-    TORQUOISE_SHADES = ["#2A9D8F", "#4E8098", "#17301C"]
+    TORQUOISE_SHADES = [
+        "#2A9D8F", "#4E8098", "#17301C",
+        "#4B644A", "#89A894", "#1C3738",
+        "#32746D", "#01200F"
+        ]
 
     BLUE_SHADES = [
         "#5465ff", "#788bff", "#9bb1ff",
