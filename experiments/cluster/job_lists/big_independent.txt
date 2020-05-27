@@ -1,0 +1,3 @@
+python main.py --snl sigmoid --tnl '[sigmoid, sigmoid]' --sh '[8]' --th '[4]' --en sigmoid_big
+python main.py --snl relu --tnl '[relu, relu]' --sh '[8]' --th '[4]' --en relu_big
+python main.py --snl linear --tnl '[linear, linear]' --sh '[8]' --th '[4]' --en linear_big
