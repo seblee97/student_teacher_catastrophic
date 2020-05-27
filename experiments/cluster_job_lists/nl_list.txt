@@ -1,0 +1,5 @@
+python main.py --snl sigmoid --tnl '[sigmoid, sigmoid]' --en sigmoid
+python main.py --snl relu --tnl '[linear, linear]' --en relu_student_linear_teachers
+python main.py --snl relu --tnl '[sigmoid, sigmoid]' --en relu_student_sigmoid_teachers
+python main.py --lt '[0.000000001, 0.000000001, 0.0000000001, 0.00000000001, 0.000000000001]' --en long_relu_relu
+

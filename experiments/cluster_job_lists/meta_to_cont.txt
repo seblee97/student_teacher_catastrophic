@@ -1,0 +1,11 @@
+python main.py --lc meta --sc fixed_period --fp 1 --en meta_fp_1
+python main.py --lc meta --sc fixed_period --fp 10 --en meta_fp_10
+python main.py --lc meta --sc fixed_period --fp 100 --en meta_fp_100
+python main.py --lc meta --sc fixed_period --fp 1000 --en meta_fp_1000
+python main.py --lc meta --sc fixed_period --fp 10000 --en meta_fp_10000
+
+python main.py --sc fixed_period --fp 1 --en cont_fp_1
+python main.py --sc fixed_period --fp 10 --en cont_fp_10
+python main.py --sc fixed_period --fp 100 --en cont_fp_100
+python main.py --sc fixed_period --fp 1000 --en cont_fp_1000
+python main.py --sc fixed_period --fp 10000 --en cont_fp_10000

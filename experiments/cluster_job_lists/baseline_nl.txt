@@ -1,0 +1,3 @@
+python main.py --snl relu --tnl '[relu]' --ts 5000000 --en baseline_relu --nt 1
+python main.py --snl linear --tnl '[linear]' --ts 5000000 --en baseline_linear --nt 1
+python main.py --snl sigmoid --tnl '[sigmoid]' --ts 5000000 --en baseline_sigmoid --nt 1

@@ -1,0 +1,24 @@
+python main.py -config base_config.yaml --ac configs/ --en regression_relu_relu/seed1 --lty regression --snl relu --tnl '[relu, relu]' --lr 0.1 --lf mse --tc overlapping --id 784 --inp_s iid_gaussian --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en regression_relu_relu/seed2 --lty regression --snl relu --tnl '[relu, relu]' --lr 0.5 --lf mse --tc overlapping --id 784 --inp_s iid_gaussian --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en regression_relu_relu/seed3 --lty regression --snl relu --tnl '[relu, relu]' --lr 1 --lf mse --tc overlapping --id 784 --inp_s iid_gaussian --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en regression_relu_relu/seed3 --lty regression --snl relu --tnl '[relu, relu]' --lr 2 --lf mse --tc overlapping --id 784 --inp_s iid_gaussian --nt 2 --fp 5000
+
+python main.py -config base_config.yaml --ac configs/ --en clssification_relu_relu/seed1 --lty classification --snl relu --tnl '[relu, relu]' --lr 0.1 --lf nll --tc overlapping --id 784 --inp_s iid_gaussian --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en clssification_relu_relu/seed2 --lty classification --snl relu --tnl '[relu, relu]' --lr 0.5 --lf nll --tc overlapping --id 784 --inp_s iid_gaussian --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en clssification_relu_relu/seed3 --lty classification --snl relu --tnl '[relu, relu]' --lr 1 --lf nll --tc overlapping --id 784 --inp_s iid_gaussian --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en clssification_relu_relu/seed3 --lty classification --snl relu --tnl '[relu, relu]' --lr 2 --lf nll --tc overlapping --id 784 --inp_s iid_gaussian --nt 2 --fp 5000
+
+python main.py -config base_config.yaml --ac configs/ --en mnist_regression_relu_relu/seed1 --lty regression --snl relu --tnl '[relu, relu]' --lr 0.1 --lf mse --tc overlapping --id 784 --inp_s mnist --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en mnist_regression_relu_relu/seed2 --lty regression --snl relu --tnl '[relu, relu]' --lr 0.5 --lf mse --tc overlapping --id 784 --inp_s mnist --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en mnist_regression_relu_relu/seed3 --lty regression --snl relu --tnl '[relu, relu]' --lr 1 --lf mse --tc overlapping --id 784 --inp_s mnist --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en mnist_regression_relu_relu/seed3 --lty regression --snl relu --tnl '[relu, relu]' --lr 2 --lf mse --tc overlapping --id 784 --inp_s mnist --nt 2 --fp 5000
+
+python main.py -config base_config.yaml --ac configs/ --en mnist_classification_relu_relu/seed1 --lty classification --snl relu --tnl '[relu, relu]' --lr 0.1 --lf nll --tc overlapping --id 784 --inp_s mnist --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en mnist_classification_relu_relu/seed2 --lty classification --snl relu --tnl '[relu, relu]' --lr 0.5 --lf nll --tc overlapping --id 784 --inp_s mnist --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en mnist_classification_relu_relu/seed3 --lty classification --snl relu --tnl '[relu, relu]' --lr 1 --lf nll --tc overlapping --id 784 --inp_s mnist --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en mnist_classification_relu_relu/seed3 --lty classification --snl relu --tnl '[relu, relu]' --lr 2 --lf nll --tc overlapping --id 784 --inp_s mnist --nt 2 --fp 5000
+
+python main.py -config base_config.yaml --ac configs/ --en pure_mnist_classification_relu/seed1 --lty not_applicable --snl relu --lr 0.1 --lf cross_entropy --tc mnist --id 784 --inp_s iid_gaussian --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en pure_mnist_classification_relu/seed2 --lty not_applicable --snl relu --lr 0.5 --lf cross_entropy --tc mnist --id 784 --inp_s iid_gaussian --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en pure_mnist_classification_relu/seed3 --lty not_applicable --snl relu --lr 1 --lf cross_entropy --tc mnist --id 784 --inp_s iid_gaussian --nt 2 --fp 5000
+python main.py -config base_config.yaml --ac configs/ --en pure_mnist_classification_relu/seed3 --lty not_applicable --snl relu --lr 2 --lf cross_entropy --tc mnist --id 784 --inp_s iid_gaussian --nt 2 --fp 5000

@@ -1,0 +1,4 @@
+python main.py --lr 0.005 --en lr0005
+python main.py --lr 0.05 --en lr005
+python main.py --lr 0.5 --en lr05
+python main.py --lr 5 --en lr5

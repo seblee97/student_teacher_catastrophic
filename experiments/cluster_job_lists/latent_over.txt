@@ -1,0 +1,9 @@
+python main.py --th '[1]' --sh '[1]' --en latent_over_1_1
+python main.py --th '[1]' --sh '[2]' --en latent_over_1_2
+python main.py --th '[1]' --sh '[4]' --en latent_over_1_4
+python main.py --th '[1]' --sh '[8]' --en latent_over_1_8
+python main.py --th '[2]' --sh '[1]' --en latent_over_2_1
+python main.py --th '[2]' --sh '[2]' --en latent_over_2_2
+python main.py --th '[2]' --sh '[4]' --en latent_over_2_4
+python main.py --th '[2]' --sh '[8]' --en latent_over_2_8
+python main.py --th '[2]' --sh '[16]' --en latent_over_2_16
