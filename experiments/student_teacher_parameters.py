@@ -36,6 +36,7 @@ class StudentTeacherParameters(Parameters):
 
         self._consistent_loss()
         self._consistent_num_teachers()
+        self._consistent_layers()
         self._consistent_input_dimension()
         self._consistent_same_input()
         self._consistent_curriculum()
@@ -55,22 +56,34 @@ class StudentTeacherParameters(Parameters):
         # number of teachers
         num_teachers = self.get(["task", "num_teachers"])
         teacher_nonlinearities = self.get(["model", "teacher_nonlinearities"])
-        teacher_overlaps = self.get(["teachers", "overlap_percentages"])
         teacher_noises = self.get(["teachers", "teacher_noise"])
         assert len(teacher_nonlinearities) == num_teachers, \
             "number of teacher nonlinearities provided ({}) does not match \
                 num_teachers specification ({})".format(
                     len(teacher_nonlinearities), num_teachers
                     )
-        assert len(teacher_overlaps) == num_teachers, \
-            "number of teacher overlaps provided ({}) does not match \
-                num_teachers specification ({})".format(
-                    len(teacher_overlaps), num_teachers
-                    )
         assert len(teacher_noises) == num_teachers, \
             "number of teacher noises provided ({}) does not match \
                 num_teachers specification ({})".format(
                     len(teacher_noises), num_teachers
+                    )
+
+        curriculum_type = self.get(["curriculum", "type"])
+        if curriculum_type == "custom":
+            custom_curriculum = self.get(["curriculum", "custom"])
+            assert len(custom_curriculum) == num_teachers, \
+                (
+                    "Custom curriculum specified is not compatible with"
+                    " number of teachers."
+                )
+
+    def _consistent_layers(self):
+        teacher_overlaps = self.get(["teachers", "overlap_percentages"])
+        teacher_layers = self.get(["model", "teacher_hidden_layers"])
+        assert len(teacher_overlaps) == len(teacher_layers) + 1, \
+            "number of teacher overlaps provided ({}) does not match \
+                layers specified for teachers ({})".format(
+                    len(teacher_overlaps), teacher_layers
                     )
 
     def _consistent_input_dimension(self):
