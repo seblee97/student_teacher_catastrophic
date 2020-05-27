@@ -1,7 +1,9 @@
 import numpy as np
 import os
-import matplotlib.pyplot as plt
-import matplotlib
+
+if os.environ["DISPLAY"]:
+    import matplotlib.pyplot as plt
+
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import normalize
 
@@ -20,7 +22,7 @@ def visualise_matrix(
     matrix_data: np.ndarray,
     fig_title: str = None,
     normalised: bool = True
-) -> matplotlib.figure.Figure:
+):
     """
     Show heatmap of matrix
 

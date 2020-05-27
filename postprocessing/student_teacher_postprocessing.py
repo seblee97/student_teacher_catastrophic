@@ -8,9 +8,10 @@ import numpy as np
 import yaml
 import itertools
 
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+if os.environ["DISPLAY"]:
+    import matplotlib.pyplot as plt
+    import matplotlib.gridspec as gridspec
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from typing import List, Dict
 
