@@ -8,10 +8,12 @@ import numpy as np
 import yaml
 import itertools
 
-if os.environ.get("DISPLAY"):
+try:
     import matplotlib.pyplot as plt
     import matplotlib.gridspec as gridspec
     from mpl_toolkits.axes_grid1 import make_axes_locatable
+except OSError:
+    pass
 
 from typing import List, Dict
 
@@ -59,6 +61,29 @@ class StudentTeacherPostprocessor:
             else:
                 self._figure_name = "individual_plot"
 
+    def _retrieve_config(self):
+        # read parameters from config in save path
+        config_path = os.path.join(self._save_path, "config.yaml")
+        with open(config_path, 'r') as yaml_file:
+            params = yaml.load(yaml_file, yaml.SafeLoader)
+
+        # create object in which to store experiment parameters and
+        # validate config file
+        config_parameters = Parameters(params)
+
+        return config_parameters
+
+    def post_process(self) -> None:
+
+        self._consolidate_dfs()
+
+        self._data = pd.read_csv(
+            os.path.join(self._save_path, "data_logger.csv")
+            )
+
+        self._setup_plotting()
+        self._make_summary_plot()
+
     def _setup_plotting(self) -> None:
 
         self.crop_x = self._config.get(["post_processing", "crop_x"])
@@ -100,29 +125,6 @@ class StudentTeacherPostprocessor:
                 nrows=self.num_rows, ncols=self.num_columns,
                 width_ratios=widths, height_ratios=heights
                 )
-
-    def _retrieve_config(self):
-        # read parameters from config in save path
-        config_path = os.path.join(self._save_path, "config.yaml")
-        with open(config_path, 'r') as yaml_file:
-            params = yaml.load(yaml_file, yaml.SafeLoader)
-
-        # create object in which to store experiment parameters and
-        # validate config file
-        config_parameters = Parameters(params)
-
-        return config_parameters
-
-    def post_process(self) -> None:
-
-        self._consolidate_dfs()
-
-        self._data = pd.read_csv(
-            os.path.join(self._save_path, "data_logger.csv")
-            )
-
-        self._setup_plotting()
-        self._make_summary_plot()
 
     def _consolidate_dfs(self):
         print("Consolidating/Merging all dataframes..")
@@ -309,6 +311,7 @@ class StudentTeacherPostprocessor:
                     self._figure_name
                     ), dpi=500
             )
+            plt.close()
 
     def add_image(
         self,
@@ -350,3 +353,4 @@ class StudentTeacherPostprocessor:
             fig.savefig(
                 "{}/{}.pdf".format(self._figure_save_path, title), dpi=500
             )
+            plt.close()
