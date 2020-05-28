@@ -15,7 +15,7 @@ try:
 except OSError:
     pass
 
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 
 class StudentTeacherPostprocessor:
@@ -25,7 +25,7 @@ class StudentTeacherPostprocessor:
         save_path: str,
         extra_args: Dict
     ):
-
+        self._repeats = extra_args["repeats"]
         self._save_path = save_path
         self._config = self._retrieve_config()
         self._update_config(extra_args=extra_args)
@@ -63,13 +63,28 @@ class StudentTeacherPostprocessor:
 
     def _retrieve_config(self):
         # read parameters from config in save path
-        config_path = os.path.join(self._save_path, "config.yaml")
-        with open(config_path, 'r') as yaml_file:
-            params = yaml.load(yaml_file, yaml.SafeLoader)
+        if self._repeats:
+            config_paths = [
+                os.path.join(self._save_path, f, "config.yaml")
+                for f in os.listdir(self._save_path)
+                if f != 'figures' and f != '.DS_Store'
+            ]
+            configs = []
+            for config_path in config_paths:
+                with open(config_path, 'r') as yaml_file:
+                    params = yaml.load(yaml_file, yaml.SafeLoader)
+                    configs.append(params)
+            # TODO assertion about identical configs
+            config_parameters = Parameters(configs[0])
 
-        # create object in which to store experiment parameters and
-        # validate config file
-        config_parameters = Parameters(params)
+        else:
+            config_path = os.path.join(self._save_path, "config.yaml")
+            with open(config_path, 'r') as yaml_file:
+                params = yaml.load(yaml_file, yaml.SafeLoader)
+
+            # create object in which to store experiment parameters and
+            # validate config file
+            config_parameters = Parameters(params)
 
         return config_parameters
 
@@ -77,9 +92,20 @@ class StudentTeacherPostprocessor:
 
         self._consolidate_dfs()
 
-        self._data = pd.read_csv(
-            os.path.join(self._save_path, "data_logger.csv")
-            )
+        if self._repeats:
+            data_logger_paths = [
+                os.path.join(self._save_path, f, "data_logger.csv")
+                for f in os.listdir(self._save_path)
+                if f != 'figures' and f != '.DS_Store'
+                ]
+            self._data = [
+                pd.read_csv(data_logger_path)
+                for data_logger_path in data_logger_paths
+            ]
+        else:
+            self._data = pd.read_csv(
+                os.path.join(self._save_path, "data_logger.csv")
+                )
 
         self._setup_plotting()
         self._make_summary_plot()
@@ -127,46 +153,49 @@ class StudentTeacherPostprocessor:
                 )
 
     def _consolidate_dfs(self):
-        print("Consolidating/Merging all dataframes..")
-        all_df_paths = [
-            os.path.join(self._save_path, f)
-            for f in os.listdir(self._save_path) if f.endswith('.csv')
-            ]
+        if not self._repeats:
+            print("Consolidating/Merging all dataframes..")
+            all_df_paths = [
+                os.path.join(self._save_path, f)
+                for f in os.listdir(self._save_path) if f.endswith('.csv')
+                ]
 
-        if any("data_logger.csv" in path for path in all_df_paths):
-            print(
-                "'data_logger.csv' file already in save path "
-                "specified. Consolidation already complete."
-                )
-            if len(all_df_paths) > 1:
-                print("Note, other csv files are also still in save path.")
+            if any("data_logger.csv" in path for path in all_df_paths):
+                print(
+                    "'data_logger.csv' file already in save path "
+                    "specified. Consolidation already complete."
+                    )
+                if len(all_df_paths) > 1:
+                    print("Note, other csv files are also still in save path.")
 
-        else:
-            ordered_df_paths = sorted(
-                all_df_paths,
-                key=lambda x: float(x.split("iter_")[-1].strip(".csv"))
-                )
+            else:
+                ordered_df_paths = sorted(
+                    all_df_paths,
+                    key=lambda x: float(x.split("iter_")[-1].strip(".csv"))
+                    )
 
-            print("Loading all dataframes..")
-            all_dfs = [pd.read_csv(df_path) for df_path in ordered_df_paths]
-            print("Dataframes loaded. Merging..")
-            merged_df = pd.concat(all_dfs)
+                print("Loading all dataframes..")
+                all_dfs = [
+                    pd.read_csv(df_path) for df_path in ordered_df_paths
+                    ]
+                print("Dataframes loaded. Merging..")
+                merged_df = pd.concat(all_dfs)
 
-            key_set = set()
-            for df in all_dfs:
-                key_set.update(df.keys())
+                key_set = set()
+                for df in all_dfs:
+                    key_set.update(df.keys())
 
-            assert set(merged_df.keys()) == key_set, \
-                "Merged df does not have correct keys"
+                assert set(merged_df.keys()) == key_set, \
+                    "Merged df does not have correct keys"
 
-            print("Dataframes merged. Saving...")
-            merged_df.to_csv(os.path.join(self._save_path, "data_logger.csv"))
+                print("Dataframes merged. Saving...")
+                merged_df.to_csv(os.path.join(self._save_path, "data_logger.csv"))
 
-            print("Saved. Removing individual dataframes...")
-            # remove individual dataframes
-            for df in all_df_paths:
-                os.remove(df)
-            print("Consolidation complete.")
+                print("Saved. Removing individual dataframes...")
+                # remove individual dataframes
+                for df in all_df_paths:
+                    os.remove(df)
+                print("Consolidation complete.")
 
     def _make_summary_plot(self):
 
@@ -198,9 +227,119 @@ class StudentTeacherPostprocessor:
 
             self.fig.savefig(
                 "{}/{}.pdf".format(self._figure_save_path, self._figure_name),
-                dpi=500
+                dpi=50
                 )
             plt.close()
+
+    def _get_scalar_data(self, attribute_keys: List[str]):
+        if self._repeats:
+            plot_data = [
+                [
+                    data[attribute_key].dropna().tolist()
+                    for attribute_key in attribute_keys
+                    ]
+                for data in self._data
+                ]
+        else:
+            plot_data = [
+                self._data[attribute_key].dropna().tolist()
+                for attribute_key in attribute_keys
+                ]
+
+        return plot_data
+
+    def _get_image_data(self, attribute_keys: List):
+        if self._repeats:
+            plot_data = [
+                {
+                    index: data[attribute_keys[index]].dropna().tolist()
+                    for index in attribute_keys
+                }
+                for data in self._data
+                ]
+        else:
+            plot_data = {
+                index: self._data[attribute_keys[index]].dropna().tolist()
+                for index in attribute_keys
+                }
+
+        return plot_data
+
+    def _smooth_data(
+        self,
+        data: List[List[float]],
+        window_width: int
+    ) -> List[List[float]]:
+        """
+        Calculuates moving average of list of values
+
+        Args:
+            data: raw data
+            window_width: width over which to take moving averags
+
+        Returns:
+            smoothed_values: averaged data
+        """
+        smoothed_data = []
+        for dataset in data:
+            cumulative_sum = np.cumsum(dataset, dtype=float)
+            cumulative_sum[window_width:] = \
+                cumulative_sum[window_width:] - cumulative_sum[:-window_width]
+            smoothed_values = cumulative_sum[window_width - 1:] / window_width
+            smoothed_data.append(smoothed_values)
+        return smoothed_data
+
+    def _average_datasets(
+        self,
+        data: List[List[List[float]]]
+    ) -> Tuple[List[List[float]]]:
+        assert all(len(rep) == len(data[0]) for rep in data), \
+            (
+                "Varying number of data attributes are provided for"
+                " different repeats"
+            )
+
+        averaged_data = []
+        data_deviations = []
+
+        for attribute_index in range(len(data[0])):
+            attribute_repeats = [
+                data[r][attribute_index] for r in range(len(data))
+            ]
+            maximum_data_length = max([
+                len(dataset) for dataset in attribute_repeats
+                ])
+            processed_sub_data = [
+                np.pad(
+                    dataset,
+                    (0, maximum_data_length - len(dataset)),
+                    'constant'
+                    )
+                for dataset in attribute_repeats
+                ]
+
+            nonzero_count = np.count_nonzero(processed_sub_data, axis=0)
+            nonzero_masks = [
+                (data != 0).astype(int) for data in processed_sub_data
+                ]
+            attribute_sum = np.sum(processed_sub_data, axis=0)
+
+            attribute_averaged_data = attribute_sum / nonzero_count
+
+            attribute_differences = [
+                mask * (attribute_averaged_data - data) ** 2
+                for mask, data in zip(nonzero_masks, processed_sub_data)
+                ]
+
+            attribute_data_deviations \
+                = np.sqrt(
+                    np.sum(attribute_differences, axis=0)
+                    ) / nonzero_count
+
+            averaged_data.append(attribute_averaged_data)
+            data_deviations.append(attribute_data_deviations)
+
+        return averaged_data, data_deviations
 
     def _create_subplot(self, row: int, col: int, graph_index: int):
 
@@ -211,14 +350,14 @@ class StudentTeacherPostprocessor:
         attribute_plot_type = attribute_config['plot_type']
         attribute_labels = attribute_config['labels']
         plot_colours = attribute_config.get("colours")
+        smoothing = attribute_config.get('smoothing')
 
         scale_axes = len(self._data)
 
         if attribute_plot_type == 'scalar':
-            plot_data = [
-                self._data[attribute_key].dropna().tolist()
-                for attribute_key in attribute_keys
-                ]
+            plot_data = self._get_scalar_data(attribute_keys)
+            if smoothing is not None:
+                plot_data = self._smooth_data(plot_data, smoothing)
             self.add_scalar_plot(
                 plot_data=plot_data, row_index=row, column_index=col,
                 title=attribute_title, labels=attribute_labels,
@@ -226,18 +365,16 @@ class StudentTeacherPostprocessor:
                 )
 
         elif attribute_plot_type == 'image':
-            plot_data = {
-                index: self._data[attribute_keys[index]].dropna().tolist()
-                for index in attribute_keys
-                }
-            self.add_image(
-                plot_data=plot_data,
-                matrix_dimensions=tuple(
-                    attribute_config['key_format_ranges']
-                    ),
-                row_index=row, column_index=col,
-                title=attribute_title
-            )
+            if not self._repeats:
+                plot_data = self._get_image_data(attribute_keys)
+                self.add_image(
+                    plot_data=plot_data,
+                    matrix_dimensions=tuple(
+                        attribute_config['key_format_ranges']
+                        ),
+                    row_index=row, column_index=col,
+                    title=attribute_title
+                )
 
         else:
             raise ValueError(
@@ -262,6 +399,9 @@ class StudentTeacherPostprocessor:
         else:
             fig, fig_sub = plt.subplots()
 
+        if self._repeats:
+            plot_data, deviations = self._average_datasets(plot_data)
+
         for d, dataset in enumerate(plot_data):
             if len(dataset):
                 # scale axes
@@ -280,12 +420,30 @@ class StudentTeacherPostprocessor:
                 else:
                     x_data_indices = [0, len(x_data)]
 
+                current_cycle_color = next(colour_cycle)
+
                 fig_sub.plot(
                     x_data[x_data_indices[0]:x_data_indices[1]],
                     dataset[x_data_indices[0]:x_data_indices[1]],
                     label=labels[d], linewidth=self.plot_linewidth,
-                    color=next(colour_cycle)
+                    color=current_cycle_color
                     )
+                if self._repeats:
+                    plus_deviation = \
+                        (dataset + deviations[d])[
+                            x_data_indices[0]:x_data_indices[1]
+                            ]
+                    minus_deviation = \
+                        (dataset - deviations[d])[
+                            x_data_indices[0]:x_data_indices[1]
+                            ]
+                    fig_sub.fill_between(
+                        x_data[x_data_indices[0]:x_data_indices[1]],
+                        minus_deviation,
+                        plus_deviation,
+                        color=current_cycle_color,
+                        alpha=0.3
+                        )
 
         # labelling
         fig_sub.set_xlabel("Step")
