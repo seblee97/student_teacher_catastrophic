@@ -10,7 +10,10 @@ class PlotConfigGenerator:
     SHADES = [Constants.TORQUOISE_SHADES, Constants.ORANGE_SHADES]
 
     @staticmethod
-    def generate_plotting_config(config: Parameters) -> Dict[str, Dict]:
+    def generate_plotting_config(
+        config: Parameters,
+        gradient_overlaps: bool
+    ) -> Dict[str, Dict]:
 
         num_teachers = config.get(["task", "num_teachers"])
         student_hidden_layers = \
@@ -41,11 +44,16 @@ class PlotConfigGenerator:
                 ),
             **PlotConfigGenerator._get_student_self_overlap_config(
                 student_hidden_layers
-                ),
-            **PlotConfigGenerator._get_student_grad_self_overlap_config(
-                student_hidden_layers
                 )
             }
+
+        if gradient_overlaps:
+            attribute_config = {
+                **attribute_config,
+                **PlotConfigGenerator._get_student_grad_self_overlap_config(
+                    student_hidden_layers
+                    )
+                }
 
         return attribute_config
 
