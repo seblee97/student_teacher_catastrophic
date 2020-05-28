@@ -34,8 +34,10 @@ class StudentTeacherLogger(_BaseLogger):
         columns.extend(self._get_student_teacher_hidden_overlap_columns())
         columns.extend(self._get_student_teacher_head_overlap_columns())
         columns.extend(self._get_student_hidden_self_overlap_columns())
+        columns.extend(self._get_student_hidden_grad_overlap_columns())
         columns.extend(self._get_teacher_hidden_self_overlap_columns())
         columns.extend(self._get_student_head_self_overlap_columns())
+        columns.extend(self._get_student_head_grad_overlap_columns())
         columns.extend(self._get_teacher_head_self_overlap_columns())
         columns.extend(self._get_teacher_teacher_hidden_overlap_columns())
         columns.extend(self._get_teacher_teacher_head_overlap_columns())
@@ -117,6 +119,20 @@ class StudentTeacherLogger(_BaseLogger):
                 )
         return columns
 
+    def _get_student_hidden_grad_overlap_columns(self) -> List[str]:
+        columns = []
+        for h, latent in enumerate(self._student_hidden):
+            student_hidden_grad_overlap_combos = \
+                itertools.product(*[range(latent), range(latent)])
+            for (i, j) in student_hidden_grad_overlap_combos:
+                columns.append(
+                    "layer_{}_student_grad_student_overlap"
+                    "/values_{}_{}".format(
+                        h, i, j
+                        )
+                )
+        return columns
+
     def _get_teacher_hidden_self_overlap_columns(self) -> List[str]:
         columns = []
         # teacher hidden self-overlap
@@ -144,6 +160,21 @@ class StudentTeacherLogger(_BaseLogger):
         for (t, d, d_rep) in student_head_self_overlap_combos:
             columns.append(
                 "layer_output_head_{}_student_self_overlap/"
+                "values_{}_{}".format(t, d, d_rep)
+            )
+        return columns
+
+    def _get_student_head_grad_overlap_columns(self) -> List[str]:
+        columns = []
+        # student head self-overlap
+        student_head_grad_overlap_combos = itertools.product(*[
+            range(self._num_teachers), range(self._output_dimension),
+            range(self._output_dimension)
+            ])
+
+        for (t, d, d_rep) in student_head_grad_overlap_combos:
+            columns.append(
+                "layer_output_head_{}_student_grad_student_overlap/"
                 "values_{}_{}".format(t, d, d_rep)
             )
         return columns
@@ -218,10 +249,11 @@ class StudentTeacherLogger(_BaseLogger):
         :param teacher_networks: list of teacher network modules
         :param step_count: current step of training
         """
-        layer, student_layer, teacher_layers = self._extract_layer_weights(
-            layer=layer, student_network=student_network,
-            teacher_networks=teacher_networks, head=head
-        )
+        layer, student_layer, student_layer_gradients, teacher_layers = \
+            self._extract_layer_weights(
+                layer=layer, student_network=student_network,
+                teacher_networks=teacher_networks, head=head
+            )
 
         student_self_overlap = self._compute_student_self_overlap(
             student_layer=student_layer
@@ -230,6 +262,18 @@ class StudentTeacherLogger(_BaseLogger):
             layer=layer, step_count=step_count,
             log_name="student_self_overlap",
             matrix=student_self_overlap
+            )
+
+        if student_layer_gradients is not None:
+            student_grad_student_overlap = \
+                self._compute_student_grad_student_overlap(
+                    student_layer=student_layer,
+                    student_layer_gradients=student_layer_gradients
+                )
+            self.log_matrix_values(
+                layer=layer, step_count=step_count,
+                log_name="student_grad_student_overlap",
+                matrix=student_grad_student_overlap
             )
 
         student_teacher_overlaps = self._compute_student_teacher_overlaps(
@@ -315,13 +359,15 @@ class StudentTeacherLogger(_BaseLogger):
         student_network: _BaseLearner,
         teacher_networks: List[_Teacher],
         head: Union[None, int],
-    ) -> Tuple[str, torch.Tensor, List[torch.Tensor]]:
+    ) -> Tuple[str, torch.Tensor, torch.Tensor, List[torch.Tensor]]:
         # extract layer weights
         if head is None:
             student_layer = \
                 student_network.state_dict()[
                     'layers.{}.weight'.format(layer)
                     ].data
+            student_layer_gradients = \
+                student_network.layers[int(layer)].weight.grad
             teacher_layers = [
                 teacher.state_dict()['layers.{}.weight'.format(layer)].data
                 for teacher in teacher_networks
@@ -332,18 +378,33 @@ class StudentTeacherLogger(_BaseLogger):
                     student_network.state_dict()[
                         'output_layer.weight'
                         ].data
+                student_layer_gradients = \
+                    student_network.output_layer.weight.grad
             elif self._learner_configuration == "continual":
                 student_layer = \
                     student_network.state_dict()[
                         'heads.{}.weight'.format(str(head))
                         ].data
+                student_layer_gradients = \
+                    student_network.heads[int(head)].weight.grad
             teacher_layers = [
                 teacher.state_dict()['output_layer.weight'].data
                 for teacher in teacher_networks
                 ]
             layer = layer + "_head_{}".format(str(head))
 
-        return layer, student_layer, teacher_layers
+        return layer, student_layer, student_layer_gradients, teacher_layers
+
+    def _compute_student_grad_student_overlap(
+        self,
+        student_layer: torch.Tensor,
+        student_layer_gradients: torch.Tensor
+    ) -> np.ndarray:
+        student_grad_student_overlap = (
+            student_layer_gradients.mm(student_layer.t()) /
+            self._input_dimension
+            ).cpu().numpy()
+        return student_grad_student_overlap
 
     def _compute_student_self_overlap(
         self,
