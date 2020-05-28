@@ -379,6 +379,7 @@ class StudentTeacherRunner:
                     break
 
         # checkpoint outstanding data
+        self.logger.log("TRAINING COMPLETE")
         if self.log_to_df:
             self.logger.checkpoint_df(step=total_step_count)
 
