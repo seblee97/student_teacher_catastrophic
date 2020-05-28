@@ -37,7 +37,7 @@ class Constants:
 
     TEACHER_SHADES = ["#2A9D8F", "#E9C46A"]
 
-    STUDENT_SHADES = ["#264653", "#E9C46A"]
+    STUDENT_SHADES = ["#264653", "#E9C46A", "#878E88", "#76BED0"]
 
     ORANGE_SHADES = [
         "#E9C46A", "#F4A261", "#E76F51",
