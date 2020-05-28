@@ -27,6 +27,7 @@ def post_process(args):
     if args.pfn:
         post_process_args["figure_name"] = args.pfn
 
+    post_process_args["gradient_overlaps"] = not args.ngo
     post_process_args["combine_plots"] = not args.ipf
     post_process_args["show_legends"] = not args.nl
     post_process_args["repeats"] = args.repeats
