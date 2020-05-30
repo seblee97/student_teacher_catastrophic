@@ -102,10 +102,15 @@ class StudentTeacherPostprocessor:
                 pd.read_csv(data_logger_path)
                 for data_logger_path in data_logger_paths
             ]
+            columns = self._data[0].columns
         else:
             self._data = pd.read_csv(
                 os.path.join(self._save_path, "data_logger.csv")
                 )
+            columns = self._data.columns
+
+        self._gradient_overlaps = any('grad' in key for key in columns)
+        self._overlap_differences = any('difference' in key for key in columns)
 
         self._setup_plotting()
         self._make_summary_plot()
@@ -122,7 +127,10 @@ class StudentTeacherPostprocessor:
             self._config.get(["post_processing", "plot_thickness"])
 
         self._plot_config = \
-            PlotConfigGenerator.generate_plotting_config(self._config)
+            PlotConfigGenerator.generate_plotting_config(
+                self._config, gradient_overlaps=self._gradient_overlaps,
+                overlap_differences=self._overlap_differences
+                )
 
         self.plot_keys = list(self._plot_config.keys())
 
@@ -259,8 +267,8 @@ class StudentTeacherPostprocessor:
                 ]
         else:
             plot_data = {
-                index: self._data[attribute_keys[index]].dropna().tolist()
-                for index in attribute_keys
+                    index: self._data[attribute_keys[index]].dropna().tolist()
+                    for index in attribute_keys
                 }
 
         return plot_data
@@ -351,6 +359,7 @@ class StudentTeacherPostprocessor:
         attribute_labels = attribute_config['labels']
         plot_colours = attribute_config.get("colours")
         smoothing = attribute_config.get('smoothing')
+        transform_data = attribute_config.get('transform_data')
 
         scale_axes = len(self._data)
 
@@ -358,6 +367,8 @@ class StudentTeacherPostprocessor:
             plot_data = self._get_scalar_data(attribute_keys)
             if smoothing is not None:
                 plot_data = self._smooth_data(plot_data, smoothing)
+            if transform_data is not None:
+                plot_data = transform_data(plot_data)
             self.add_scalar_plot(
                 plot_data=plot_data, row_index=row, column_index=col,
                 title=attribute_title, labels=attribute_labels,
@@ -435,12 +446,13 @@ class StudentTeacherPostprocessor:
                             ]
                     minus_deviation = \
                         (dataset - deviations[d])[
-                            x_data_indices[0]:x_data_indices[1]
-                            ]
+                            x_data_indices[0]:x_data_indices[1]]
+
+                    # only sample every 100th point for fill
                     fig_sub.fill_between(
-                        x_data[x_data_indices[0]:x_data_indices[1]],
-                        minus_deviation,
-                        plus_deviation,
+                        x_data[x_data_indices[0]:x_data_indices[1]][::500],
+                        minus_deviation[::500],
+                        plus_deviation[::500],
                         color=current_cycle_color,
                         alpha=0.3
                         )
@@ -467,7 +479,7 @@ class StudentTeacherPostprocessor:
                 "{}/{}_{}.pdf".format(
                     self._figure_save_path, title,
                     self._figure_name
-                    ), dpi=500
+                    ), dpi=50
             )
             plt.close()
 
