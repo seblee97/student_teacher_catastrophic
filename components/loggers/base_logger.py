@@ -226,10 +226,6 @@ class _BaseLogger(ABC):
 
         header = not os.path.exists(self._logfile_path)
 
-        # self._logger_df = self._logger_df.reindex(
-        #     sorted(self._logger_df.columns), axis=1
-        #     )
-
         assert all(self._logger_df.columns == self._df_columns), \
             "Incorrect dataframe columns for merging"
 
