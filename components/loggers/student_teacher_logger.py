@@ -32,6 +32,7 @@ class StudentTeacherLogger(_BaseLogger):
         columns.extend(self._get_training_metric_columns())
         columns.extend(self._get_student_head_weight_columns())
         columns.extend(self._get_student_teacher_hidden_overlap_columns())
+        columns.extend(self._get_student_teacher_hidden_overlap_diff_columns())
         columns.extend(self._get_student_teacher_head_overlap_columns())
         columns.extend(self._get_student_hidden_self_overlap_columns())
         columns.extend(self._get_student_hidden_grad_overlap_columns())
@@ -83,6 +84,29 @@ class StudentTeacherLogger(_BaseLogger):
                 columns.append(
                     "layer_{}_student_teacher_overlaps/{}/values_{}_{}".format(
                         layer_index, t, i, j
+                    )
+                )
+        return columns
+
+    def _get_student_teacher_hidden_overlap_diff_columns(self) -> List[str]:
+        columns = []
+        for layer_index, layer in enumerate(self._student_hidden):
+            hidden_overlap_combinations = \
+                itertools.product(*[
+                    range(self._num_teachers),
+                    range(self._student_hidden[layer_index]),
+                    range(self._teacher_hidden[layer_index]),
+                    range(self._student_hidden[layer_index]),
+                    range(self._teacher_hidden[layer_index])
+                ])
+
+            for (t, i1, j1, i2, j2) in hidden_overlap_combinations:
+                columns.append(
+                    (
+                        "layer_{}_student_teacher_overlaps/{}/"
+                        "difference_{}_{}_vs_{}_{}"
+                    ).format(
+                        layer_index, t, i1, j1, i2, j2
                     )
                 )
         return columns
@@ -258,7 +282,7 @@ class StudentTeacherLogger(_BaseLogger):
         student_self_overlap = self._compute_student_self_overlap(
             student_layer=student_layer
             )
-        self.log_matrix_values(
+        self._log_matrix_values(
             layer=layer, step_count=step_count,
             log_name="student_self_overlap",
             matrix=student_self_overlap
@@ -270,7 +294,7 @@ class StudentTeacherLogger(_BaseLogger):
                     student_layer=student_layer,
                     student_layer_gradients=student_layer_gradients
                 )
-            self.log_matrix_values(
+            self._log_matrix_values(
                 layer=layer, step_count=step_count,
                 log_name="student_grad_student_overlap",
                 matrix=student_grad_student_overlap
@@ -280,18 +304,29 @@ class StudentTeacherLogger(_BaseLogger):
             student_layer=student_layer, teacher_layers=teacher_layers,
             head=head
         )
+
         for s, student_teacher_overlap in enumerate(student_teacher_overlaps):
-            self.log_matrix_values(
+            self._log_matrix_values(
                 layer=layer, step_count=step_count,
                 log_name="student_teacher_overlaps/{}".format(s),
                 matrix=student_teacher_overlap
+                )
+            if head is None:
+                student_teacher_overlap_differences = \
+                    self._compute_overlap_differences(
+                        student_teacher_overlap
+                        )
+                self._log_difference_matrix_values(
+                    layer=layer, step_count=step_count,
+                    log_name="student_teacher_overlaps/{}".format(s),
+                    matrix=student_teacher_overlap_differences
                 )
 
         teacher_self_overlaps = self._compute_teacher_self_overlaps(
             teacher_layers=teacher_layers
         )
         for s, teacher_self_overlap in enumerate(teacher_self_overlaps):
-            self.log_matrix_values(
+            self._log_matrix_values(
                 layer=layer, step_count=step_count,
                 log_name="teacher_self_overlaps/{}".format(s),
                 matrix=teacher_self_overlap
@@ -301,7 +336,7 @@ class StudentTeacherLogger(_BaseLogger):
             teacher_layers=teacher_layers
         )
         for (i, j) in teacher_teacher_overlaps:
-            self.log_matrix_values(
+            self._log_matrix_values(
                 layer=layer, step_count=step_count,
                 log_name="teacher_teacher_overlaps/{}_{}".format(i, j),
                 matrix=teacher_teacher_overlaps[(i, j)]
@@ -395,6 +430,24 @@ class StudentTeacherLogger(_BaseLogger):
 
         return layer, student_layer, student_layer_gradients, teacher_layers
 
+    def _compute_overlap_differences(
+        self,
+        layer_overlaps: np.ndarray
+    ) -> np.ndarray:
+        overlap_differences = np.zeros((
+            len(layer_overlaps), len(layer_overlaps[0]),
+            len(layer_overlaps), len(layer_overlaps[0])
+        ))
+        for l1 in range(len(layer_overlaps)):
+            for l2 in range(len(layer_overlaps[l1])):
+                it = layer_overlaps[l1][l2]
+                for i in range(len(layer_overlaps)):
+                    for j in range(len(layer_overlaps[l2])):
+                        it2 = layer_overlaps[i][j]
+                        overlap_differences[l1, l2, i, j] = \
+                            it - it2
+        return overlap_differences
+
     def _compute_student_grad_student_overlap(
         self,
         student_layer: torch.Tensor,
@@ -465,7 +518,7 @@ class StudentTeacherLogger(_BaseLogger):
         return teacher_teacher_overlaps
 
     # log overlap values (scalars vs image graphs below)
-    def log_matrix_values(
+    def _log_matrix_values(
         self,
         layer: str,
         step_count: int,
@@ -490,3 +543,31 @@ class StudentTeacherLogger(_BaseLogger):
                             layer, log_name, i, j
                             )
                         ] = matrix[i][j]
+
+    def _log_difference_matrix_values(
+        self,
+        layer: str,
+        step_count: int,
+        log_name: str,
+        matrix: np.ndarray
+    ) -> None:
+        matrix_shape = matrix.shape
+        for i in range(matrix_shape[0]):
+            for j in range(matrix_shape[1]):
+                for k in range(matrix_shape[2]):
+                    for m in range(matrix_shape[3]):
+                        if self._verbose_tb > 1:
+                            self._writer.add_scalar(
+                                "layer_{}_{}/difference_{}_{}_vs_{}_{}".format(
+                                    layer, log_name, i, j, k, m
+                                    ),
+                                matrix[i][j][k][m],
+                                step_count
+                                )
+                        if self._log_to_df:
+                            self._logger_df.at[
+                                step_count,
+                                "layer_{}_{}/difference_{}_{}_vs_{}_{}".format(
+                                    layer, log_name, i, j, k, m
+                                    )
+                                ] = matrix[i][j][k][m]
