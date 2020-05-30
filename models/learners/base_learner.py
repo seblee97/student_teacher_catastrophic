@@ -114,6 +114,9 @@ class _BaseLearner(Model):
     def _threshold(self, y):
         return torch.sigmoid(y)
 
+    def save_weights(self, path: str):
+        torch.save(self.state_dict(), path)
+
     @abstractmethod
     def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError("Base class method")
