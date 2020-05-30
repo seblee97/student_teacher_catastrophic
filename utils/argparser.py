@@ -184,10 +184,6 @@ class Argparser:
             '-repeats', action='store_true',
             help="Flag states that save path is folder of repeats"
             )
-        parser.add_argument(
-            '-no_gradient_overlaps', '--ngo', action='store_true',
-            help="Flag states that gradient overlaps are not in logger"
-            )
 
         args = parser.parse_args()
 
