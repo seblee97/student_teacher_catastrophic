@@ -3,6 +3,7 @@ import copy
 import time
 import itertools
 import sys
+import os
 
 import torch
 import torch.optim as optim
@@ -77,9 +78,15 @@ class StudentTeacherRunner:
         """
         self.verbose = config.get(["logging", "verbose"])
         self.logfile_path = config.get("logfile_path")
+        self.experiment_path = config.get("checkpoint_path")
         self.checkpoint_frequency = \
             config.get(["logging", "checkpoint_frequency"])
         self.log_to_df = config.get(["logging", "log_to_df"])
+        self._save_weights_at_switch = \
+            config.get(["logging", "save_weights_at_switch"])
+        self._weight_save_path = \
+            os.path.join(self.experiment_path, "learner_weights")
+        os.makedirs(self._weight_save_path, exist_ok=False)
 
         self.total_training_steps = \
             config.get(["training", "total_training_steps"])
@@ -243,6 +250,7 @@ class StudentTeacherRunner:
         training_losses = []
         total_step_count = 0
         steps_per_task = []
+        num_switches = 0
 
         iter_time = time.time()
 
@@ -372,10 +380,25 @@ class StudentTeacherRunner:
                     step=task_step_count,
                     generalisation_error=latest_task_generalisation_error
                         ):
+                    num_switches += 1
                     self.logger.write_scalar_tb(
                         'steps_per_task', task_step_count, total_step_count
                         )
                     steps_per_task.append(task_step_count)
+                    if self._save_weights_at_switch:
+                        save_path = os.path.join(
+                            self._weight_save_path,
+                            "switch_{}_step_{}_saved_weights.pt".format(
+                                num_switches,
+                                total_step_count
+                                )
+                            )
+                        self.logger.log(
+                            "Saving weights after {}th task switch".format(
+                                num_switches
+                            )
+                            )
+                        self.learner.save_weights(save_path)
                     break
 
         # checkpoint outstanding data
