@@ -8,7 +8,7 @@ import os
 import torch
 import torch.optim as optim
 
-from typing import List, Dict
+from typing import List, Dict, Union
 
 from components import data_modules, loss_modules, loggers
 from models import teachers, learners
@@ -52,6 +52,9 @@ class StudentTeacherRunner:
         t5 = time.time()
         print("Loss module setup in {}s".format(round(t5 - t4, 5)))
 
+        if self._save_initial_weights:
+            self._save_network_initial_weights()
+
         # compute test outputs for teachers
         self.test_data: Constants.TEST_DATA_TYPES = \
             self.data_module.get_test_data()
@@ -84,6 +87,8 @@ class StudentTeacherRunner:
         self.log_to_df = config.get(["logging", "log_to_df"])
         self._save_weights_at_switch = \
             config.get(["logging", "save_weights_at_switch"])
+        self._save_initial_weights = \
+            config.get(["logging", "save_initial_weights"])
         self._weight_save_path = \
             os.path.join(self.experiment_path, "learner_weights")
         os.makedirs(self._weight_save_path, exist_ok=False)
@@ -109,6 +114,22 @@ class StudentTeacherRunner:
         self.input_source = config.get(["data", "input_source"])
         self.same_input_distribution = \
             config.get(["data", "same_input_distribution"])
+
+    def _save_network_initial_weights(self):
+        # save initial student weights
+        learner_save_path = os.path.join(
+                self._weight_save_path,
+                "switch_0_step_0_saved_weights.pt"
+                )
+        self.logger.log("Saving initial weights")
+        self.learner.save_weights(learner_save_path)
+        # save teacher weights
+        for t in range(self.num_teachers):
+            teacher_save_path = os.path.join(
+                self._weight_save_path,
+                "teacher_{}_weights.pt".format(t)
+            )
+            self.teachers.save_weights(t, teacher_save_path)
 
     def _setup_learner(self, config: Parameters) -> learners._BaseLearner:
         if self.learner_configuration == "continual":
@@ -376,10 +397,12 @@ class StudentTeacherRunner:
                         ):
                     self.logger.checkpoint_df(step=total_step_count)
 
-                if self._switch_task(
+                to_switch = self._switch_task(
                     step=task_step_count,
                     generalisation_error=latest_task_generalisation_error
-                        ):
+                    )
+
+                if to_switch is True:
                     num_switches += 1
                     self.logger.write_scalar_tb(
                         'steps_per_task', task_step_count, total_step_count
@@ -395,11 +418,24 @@ class StudentTeacherRunner:
                             )
                         self.logger.log(
                             "Saving weights after {}th task switch".format(
-                                num_switches
-                            )
+                                    num_switches
+                                )
                             )
                         self.learner.save_weights(save_path)
                     break
+                elif to_switch is None:
+                    # checkpoint outstanding data
+                    self.logger.log("TRAINING COMPLETE")
+                    if self.log_to_df:
+                        self.logger.checkpoint_df(step=total_step_count)
+                    # set step to infinity to break out of loop
+                    total_step_count = np.inf
+                elif to_switch is False:
+                    continue
+                else:
+                    raise ValueError(
+                        "Output of switch _task call must be bool or None"
+                        )
 
         # checkpoint outstanding data
         self.logger.log("TRAINING COMPLETE")
@@ -413,18 +449,24 @@ class StudentTeacherRunner:
         self,
         step: int,
         generalisation_error: float
-    ) -> bool:
+    ) -> Union[bool, None]:
         """
         Method to determine whether to switch task
         (i.e. whether condition set out by curriculum
-        for switching has been met)
+        for switching has been met).
 
-        :param step: number of steps completed for current task being trained
-                     (not overall step count)
-        :param generalisation_error: generalisation error associated
-                                     with current teacher
+        Args:
+            step: number of steps completed for current task
+            being trained (not overall step count).
 
-        :return True / False: whether or not to switch task
+            generalisation_error: generalisation error associated
+            with current teacher.
+
+        Returns:
+            True - if switch condition has been met.
+            False - if switch condition has not been met.
+            None - if switch condition ha been met and all tasks
+            in cycle have been exhausted (end of training).
         """
         if self.curriculum_stopping_condition == "fixed_period":
             if step == self.curriculum_period:
@@ -441,6 +483,7 @@ class StudentTeacherRunner:
                 try:
                     self.current_loss_threshold = \
                         next(self.curriculum_loss_threshold)
+                    return True
                 except StopIteration:
                     self.logger.log(
                         "Sequence of thresholds exhausted. Run complete..."
@@ -448,8 +491,7 @@ class StudentTeacherRunner:
                     # checkpoint outstanding data
                     if self.log_to_df:
                         self.logger.checkpoint_df(step=step)
-                    sys.exit(0)
-                return True
+                    return None
             else:
                 return False
         else:
