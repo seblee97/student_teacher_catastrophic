@@ -119,8 +119,23 @@ def run(args):
     student_teacher.train()
 
     if args.app:
+
+        post_process_args = {}
+        if args.crop_start:
+            post_process_args["crop_start"] = args.crop_start
+        if args.crop_end:
+            post_process_args["crop_end"] = args.crop_end
+        if args.pfn:
+            post_process_args["figure_name"] = args.pfn
+
+        post_process_args["combine_plots"] = not args.ipf
+        post_process_args["show_legends"] = not args.nl
+        post_process_args["repeats"] = args.repeats
+
         post_processor = StudentTeacherPostprocessor(
-            save_path=checkpoint_path, plot_config_path=args.pcp)
+            save_path=checkpoint_path,
+            extra_args=post_process_args
+            )
         post_processor.post_process()
 
 
