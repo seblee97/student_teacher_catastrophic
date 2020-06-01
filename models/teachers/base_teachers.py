@@ -44,6 +44,9 @@ class _BaseTeachers(ABC):
                 config=config, index=index
                 ).to(self._device)
 
+    def save_weights(self, teacher_index: int, save_path: str):
+        torch.save(self._teachers[teacher_index].state_dict(), save_path)
+
     @overload
     @abstractmethod
     def test_set_forward(
