@@ -78,6 +78,10 @@ class Model(nn.Module, ABC):
             config.get(
                 ["model", "{}_initialisation_std".format(self.model_type)]
                 )
+        self.zero_hidden_overlap = \
+            config.get(
+                ["model", "{}_zero_hidden_overlap".format(self.model_type)]
+            )
         self.bias = \
             config.get(["model", "{}_bias_parameters".format(self.model_type)])
         self.soft_committee = config.get(["model", "soft_committee"])
@@ -173,6 +177,12 @@ class Model(nn.Module, ABC):
             torch.nn.init.normal_(layer.weight, std=self.initialisation_std)
             if self.bias:
                 torch.nn.init.normal_(layer.bias, std=self.initialisation_std)
+        if self.zero_hidden_overlap:
+            # copy first component of weight matrix to
+            # others to ensure zero overlap
+            base_parameters = layer.weight[0]
+            for dim in range(1, len(layer.weight)):
+                layer.weight[dim] = base_parameters
 
     def freeze_weights(self) -> None:
         """Freezes weights in graph (always called for teacher)"""
