@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import math
+import copy
 
 from typing import Union, Callable
 
@@ -180,9 +181,9 @@ class Model(nn.Module, ABC):
         if self.zero_hidden_overlap:
             # copy first component of weight matrix to
             # others to ensure zero overlap
-            base_parameters = layer.weight[0]
-            for dim in range(1, len(layer.weight)):
-                layer.weight[dim] = base_parameters
+            base_parameters = copy.deepcopy(layer.state_dict()['weight'][0])
+            for dim in range(1, len(layer.state_dict()['weight'])):
+                layer.state_dict()['weight'][dim] = base_parameters
 
     def freeze_weights(self) -> None:
         """Freezes weights in graph (always called for teacher)"""
