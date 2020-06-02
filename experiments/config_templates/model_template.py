@@ -69,6 +69,14 @@ class ModelTemplate(_Template):
         name="student_bias_parameters", types=[bool], reqs=None
     )
 
+    STUDENT_ZERO_HIDDEN_OVERLAP = Field(
+        name="student_zero_hidden_overlap", types=[bool], reqs=None
+    )
+
+    TEACHER_ZERO_HIDDEN_OVERLAP = Field(
+        name="teacher_zero_hidden_overlap", types=[bool], reqs=None
+    )
+
     @classmethod
     def get_fields(cls) -> List:
         return [
@@ -83,5 +91,7 @@ class ModelTemplate(_Template):
             cls.INITIALISE_STUDENT_OUTPUTS,
             cls.SOFT_COMMITTEE,
             cls.TEACHER_BIAS_PARAMETERS,
-            cls.STUDENT_BIAS_PARAMETERS
+            cls.STUDENT_BIAS_PARAMETERS,
+            cls.STUDENT_ZERO_HIDDEN_OVERLAP,
+            cls.TEACHER_ZERO_HIDDEN_OVERLAP
         ]
