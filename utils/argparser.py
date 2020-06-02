@@ -117,6 +117,16 @@ class Argparser:
                 in student", default=None
             )
         parser.add_argument(
+            '-zero_student_overlap', '--zsho', action='store_true',
+            help='manually ensure zero self-overlap in initialisation \
+                of student'
+        )
+        parser.add_argument(
+            '-zero_teacher_overlap', '--ztho', action='store_true',
+            help='manually ensure zero self-overlap in initialisation \
+                of teachers'
+        )
+        parser.add_argument(
             '-learning_rate', '--lr', type=float,
             help="base learning rate",
             default=None
@@ -229,7 +239,11 @@ class Argparser:
             params["logging"]["verbose"] = bool(args.v)
         if args.tbv:
             params["logging"]["verbose_tb"] = args.tbv
-        
+        if args.zsho:
+            params["model"]["student_zero_hidden_overlap"] = args.zsho
+        if args.ztho:
+            params["model"]["teacher_zero_hidden_overlap"] = args.ztho
+
         # update specific parameters with (optional) args given in command line
         if args.cc:
             custom = [
