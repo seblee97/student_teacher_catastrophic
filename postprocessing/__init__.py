@@ -1,3 +1,3 @@
-from .student_teacher_postprocessing import StudentTeacherPostprocessor
+from .student_teacher_post_processing import StudentTeacherPostProcessor
 
-__all__ = ["StudentTeacherPostprocessor"]
+__all__ = ["StudentTeacherPostProcessor"]

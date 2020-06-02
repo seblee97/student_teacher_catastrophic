@@ -29,7 +29,7 @@ class Argparser:
         parser.add_argument(
             '-auto_post_process', '--app', action='store_false',
             help='whether to \
-                automatically go into postprocessing after training loop'
+                automatically go into post processing after training loop'
         )
         parser.add_argument(
             '-post_processing_path', '--ppp', type=str,

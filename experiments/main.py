@@ -1,6 +1,6 @@
 from utils import Argparser
 
-from postprocessing import StudentTeacherPostprocessor
+from post_processing import StudentTeacherPostprocessor
 from experiments.student_teacher_runner import StudentTeacherRunner
 from experiments.student_teacher_parameters import StudentTeacherParameters
 from experiments.config_templates import ConfigTemplate, MNISTDataTemplate, \

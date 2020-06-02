@@ -1,5 +1,5 @@
 from utils import Parameters, get_figure_skeleton, smooth_data
-from postprocessing.plot_config import PlotConfigGenerator
+from post_processing.plot_config import PlotConfigGenerator
 from constants import Constants
 
 import os

@@ -7,11 +7,11 @@ import yaml
 
 from typing import List, Dict, Tuple
 
-from postprocessing.df_plotter import DataFramePlotter
-from postprocessing.weight_plotter import WeightPlotter
+from post_processing.df_plotter import DataFramePlotter
+from post_processing.weight_plotter import WeightPlotter
 
 
-class StudentTeacherPostprocessor:
+class StudentTeacherPostProcessor:
 
     def __init__(
         self,
