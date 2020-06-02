@@ -3,6 +3,7 @@ import os
 
 try:
     import matplotlib.pyplot as plt
+    import matplotlib.gridspec as gridspec
 except OSError:
     pass
 
@@ -15,9 +16,95 @@ from torch.utils.data import DataLoader
 
 from utils import custom_torch_transforms
 
+from typing import Tuple, Union, List, overload
+
 
 def linear_function(x: torch.Tensor) -> torch.Tensor:
     return x
+
+
+def get_figure_skeleton(
+    height: Union[int, float],
+    width: Union[int, float],
+    num_columns: int,
+    num_rows: int
+) -> Tuple:
+
+    fig = plt.figure(
+        constrained_layout=False,
+        figsize=(
+            num_columns * width,
+            num_rows * height
+            )
+        )
+
+    heights = [height for _ in range(num_rows)]
+    widths = [width for _ in range(num_columns)]
+
+    spec = gridspec.GridSpec(
+        nrows=num_rows, ncols=num_columns,
+        width_ratios=widths, height_ratios=heights
+        )
+
+    return fig, spec
+
+
+@overload
+def smooth_data(
+    data: List[List[float]],
+    window_width: int
+) -> List[List[float]]: ...
+
+
+@overload
+def smooth_data(
+    data: List[float],
+    window_width: int
+) -> List[float]: ...
+
+
+def smooth_data(
+    data,
+    window_width
+):
+    """
+    Calculuates moving average of list of values
+
+    Args:
+        data: raw data
+        window_width: width over which to take moving averags
+
+    Returns:
+        smoothed_values: averaged data
+    """
+    def _smooth(single_dataset: List[float]):
+        cumulative_sum = np.cumsum(single_dataset, dtype=float)
+        cumulative_sum[window_width:] = \
+            cumulative_sum[window_width:] - cumulative_sum[:-window_width]
+        smoothed_values = cumulative_sum[window_width - 1:] / window_width
+        return smoothed_values
+
+    if all(isinstance(d, list) for d in data):
+        smoothed_data = []
+        for dataset in data:
+            smoothed_data.append(_smooth(dataset))
+    elif all(isinstance(d, float) for d in data):
+        smoothed_data = _smooth(data)
+
+    return smoothed_data
+
+
+def close_sqrt_factors(n: int) -> Tuple[int, int]:
+    root = np.ceil(np.sqrt(n))
+    solution = False
+    factor_1 = root
+    while not solution:
+        factor_2 = int(n / factor_1)
+        if factor_2 * factor_1 == float(n):
+            solution = True
+        else:
+            factor_1 -= 1
+    return (factor_1, factor_2)
 
 
 def visualise_matrix(
