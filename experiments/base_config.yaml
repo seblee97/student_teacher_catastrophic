@@ -49,6 +49,8 @@ model:
   soft_committee:                   False                     # whether or not to freeze output layer (scm)
   teacher_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (teacher)
   student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
+  teacher_zero_hidden_overlap:      False                     # mean field student self overlap will be zero, here set it to exactly zero
+  student_zero_hidden_overlap:      False                     # same as above with teacher
 
 curriculum:
   type:                             custom                    # curriculum type (custom - declarative or standard - imperative)
