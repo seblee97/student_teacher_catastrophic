@@ -1,0 +1,7 @@
+python main.py --sc fixed_period --fp 50000 --snl sigmoid --tnl '[sigmoid, sigmoid]' --zsho --en sigmoid_zero_student_self_fp
+python main.py --sc fixed_period --fp 50000 --snl relu --tnl '[relu, relu]' --zsho --en relu_zero_student_self_fp
+python main.py --sc fixed_period --fp 50000 --snl linear --tnl '[linear, linear]' --zsho --en linear_zero_student_self_fp
+
+python main.py --sc fixed_period --fp 50000 --snl sigmoid --tnl '[sigmoid, sigmoid]' --en sigmoid_fp
+python main.py --sc fixed_period --fp 50000 --snl relu --tnl '[relu, relu]' --en relu_fp
+python main.py --sc fixed_period --fp 50000 --snl linear --tnl '[linear, linear]' --en linear__fp
