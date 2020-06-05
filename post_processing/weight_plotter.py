@@ -53,6 +53,8 @@ class WeightPlotter:
 
     def make_per_layer_weight_plot(self, plot_type: str) -> None:
 
+        print("Generating weight plots: {}...".format(plot_type))
+
         if plot_type == "weight_pdf":
             plot_fn = self._weight_pdf_plot
             plot_title = "Weight Distribution PDFs"
@@ -114,6 +116,8 @@ class WeightPlotter:
                             )
 
             fig.suptitle("Layer {} {}".format(layer_index, plot_title))
+
+            print("Saving weight plots: {}...".format(plot_type))
 
             fig.savefig(
                 "{}/layer_{}_{}.pdf".format(
