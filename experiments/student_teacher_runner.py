@@ -303,6 +303,9 @@ class StudentTeacherRunner:
 
             while total_step_count < self.total_training_steps:  # train on given teacher
 
+                pre_step_learner_weights = \
+                    copy.deepcopy(self.learner.state_dict())
+
                 total_step_count += 1
                 task_step_count += 1
 
@@ -366,6 +369,13 @@ class StudentTeacherRunner:
                         teacher_networks=self.teachers.get_teacher_networks(),
                         step_count=total_step_count
                         )
+
+                # weight changes
+                self.logger._log_weight_diff(
+                    step_count=total_step_count,
+                    old_weights=pre_step_learner_weights,
+                    student_network=self.learner
+                )
 
                 # output layer weights
                 self.logger._log_output_weights(
