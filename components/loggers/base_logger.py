@@ -9,6 +9,7 @@ from typing import List, Union
 import logging
 import os
 import time
+import copy
 
 from tensorboardX import SummaryWriter
 
@@ -152,11 +153,47 @@ class _BaseLogger(ABC):
                         step_count, 'student_head_{}_weight_{}'.format(h, w)
                         ] = float(weight)
 
+    def _log_weight_diff(
+        self,
+        step_count: int,
+        old_weights,
+        student_network: _BaseLearner
+    ) -> None:
+        """
+        Compute for each pairwise component of each hidden layer the number
+        of weight differences that are pointing in the same direction.
+
+        Args:
+            step_count: the current step of training
+            old_weights: the weights of the learner prior to the latest
+            training step
+            student_network: the current learner
+        """
+        new_weights = copy.deepcopy(student_network.state_dict())
+        for layer_index, layer in enumerate(self._student_hidden):
+            new_layer_weights = \
+                new_weights["layers.{}.weight".format(layer_index)]
+            old_layer_weights = \
+                old_weights["layers.{}.weight".format(layer_index)]
+            layer_weight_differences = new_layer_weights - old_layer_weights
+            for i in range(layer):
+                for j in range(layer):
+                    i_differences = torch.sign(layer_weight_differences[i])
+                    j_differences = torch.sign(layer_weight_differences[j])
+                    i_j_same_direction = \
+                        int(torch.sum(i_differences == j_differences))
+                    self._logger_df.at[
+                        step_count,
+                        'student_layer_{}_weight_diff_direction_{}_{}'.format(
+                            layer_index, i, j
+                            )
+                        ] = i_j_same_direction
+
     def compute_overlap_matrices(
         self,
+        step_count: int,
         student_network: _BaseLearner,
-        teacher_networks: List[_Teacher],
-        step_count: int
+        teacher_networks: List[_Teacher]
     ) -> None:
         """
         calculate overlap matrices between student and teacher and across

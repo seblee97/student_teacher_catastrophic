@@ -42,6 +42,7 @@ class StudentTeacherLogger(_BaseLogger):
         columns.extend(self._get_teacher_head_self_overlap_columns())
         columns.extend(self._get_teacher_teacher_hidden_overlap_columns())
         columns.extend(self._get_teacher_teacher_head_overlap_columns())
+        columns.extend(self._get_student_difference_direction_columns())
 
         return columns
 
@@ -254,6 +255,18 @@ class StudentTeacherLogger(_BaseLogger):
                                 t, t1, t2, i, j
                                 )
                             )
+        return columns
+
+    def _get_student_difference_direction_columns(self) -> List[str]:
+        columns = []
+        for layer_index, layer in enumerate(self._student_hidden):
+            for i in range(layer):
+                for j in range(layer):
+                    columns.append(
+                        'student_layer_{}_weight_diff_direction_{}_{}'.format(
+                            layer_index, i, j
+                            )
+                        )
         return columns
 
     def _compute_layer_overlaps(
