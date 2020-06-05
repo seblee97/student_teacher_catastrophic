@@ -31,7 +31,7 @@ def post_process(args):
     post_process_args["show_legends"] = not args.nl
     post_process_args["repeats"] = args.repeats
 
-    post_processor = StudentTeacherPostprocessor(
+    post_processor = StudentTeacherPostProcessor(
         save_path=args.ppp,
         extra_args=post_process_args
         )
