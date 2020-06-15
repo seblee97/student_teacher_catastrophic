@@ -3,6 +3,7 @@ from utils import Parameters
 from constants import Constants
 
 import torch
+import torch.distributions as tdist
 
 from typing import Dict
 
@@ -15,6 +16,11 @@ class IIDData(_BaseData):
     def __init__(self, config: Parameters):
         _BaseData.__init__(self, config)
 
+        mean = config.get(["iid_data", "mean"])
+        variance = config.get(["iid_data", "variance"])
+
+        self._data_distribution = tdist.Normal(mean, variance)
+
     def get_test_data(self) -> Constants.TEST_DATA_TYPES:
         """
         This method gives a fixed test data set (input data only)
@@ -22,8 +28,8 @@ class IIDData(_BaseData):
         Returns:
             test_input_batch: Dictionary with input data only
         """
-        test_input_data = torch.randn(
-            self._test_batch_size, self._input_dimension
+        test_input_data = self._data_distribution.sample(
+            (self._test_batch_size, self._input_dimension)
             ).to(self._device)
 
         test_data_dict = {'x': test_input_data}
@@ -32,8 +38,8 @@ class IIDData(_BaseData):
 
     def get_batch(self) -> Dict[str, torch.Tensor]:
         """returns batch of training data (input only)"""
-        batch = torch.randn(
-            self._train_batch_size, self._input_dimension
+        batch = self._data_distribution.sample(
+            (self._train_batch_size, self._input_dimension)
             ).to(self._device)
         return {'x': batch}
 
