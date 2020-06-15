@@ -5,6 +5,7 @@ from constants import Constants
 import torch
 import torchvision
 from torch.utils.data import Dataset
+import torch.distributions as tdist
 
 from typing import Dict, Tuple
 
@@ -47,6 +48,9 @@ class MNISTStreamData(_MNISTData):
             dataset=self.test_data, batch_size=None,
             shuffle=False
         )
+
+        if self._noise is not None:
+            self._noise_distribution = tdist.Normal(0, self._noise)
 
     def _generate_datasets(
         self
@@ -100,6 +104,11 @@ class MNISTStreamData(_MNISTData):
                     shuffle=True
                 )
             batch_input = next(self.training_data_iterator)[0]
+
+        if self._noise is not None:
+            batch_input_noise = \
+                self._noise_distribution.sample(batch_input.shape)
+            batch_input += batch_input_noise
 
         return {'x': batch_input}
 
