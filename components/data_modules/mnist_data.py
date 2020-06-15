@@ -113,10 +113,10 @@ class _MNISTData(_BaseData, ABC):
                 custom_torch_transforms.Standardize(data_mu, data_sigma)
             transform_list.append(normalise_transform)
 
-        if self._noise is not None:
-            add_noise_transform = \
-                custom_torch_transforms.AddGaussianNoise(self._noise)
-            transform_list.append(add_noise_transform)
+        # if self._noise is not None:
+        #     add_noise_transform = \
+        #         custom_torch_transforms.AddGaussianNoise(self._noise)
+        #     transform_list.append(add_noise_transform)
 
         composed_transform_list = \
             torchvision.transforms.Compose(transform_list)
