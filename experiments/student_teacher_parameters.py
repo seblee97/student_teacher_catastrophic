@@ -9,6 +9,7 @@ class StudentTeacherParameters(Parameters):
         self,
         params: Dict,
         root_config_template: _Template,
+        iid_data_config_template: _Template,
         mnist_data_config_template: _Template,
         pure_mnist_config_template: _Template,
         trained_mnist_config_template: _Template
@@ -16,6 +17,7 @@ class StudentTeacherParameters(Parameters):
         Parameters.__init__(self, params)
 
         self.root_config_template = root_config_template
+        self.iid_data_config_template = iid_data_config_template
         self.mnist_data_config_template = mnist_data_config_template
         self.pure_mnist_config_template = pure_mnist_config_template
         self.trained_mnist_config_template = trained_mnist_config_template
@@ -29,8 +31,14 @@ class StudentTeacherParameters(Parameters):
         if self.get(["task", "teacher_configuration"]) == "trained_mnist":
             self.check_template(self.trained_mnist_config_template)
 
-        if self.get(["data", "input_source"]) == "mnist":
+        input_source = self.get(["data", "input_source"])
+
+        if input_source == "iid_gaussian":
+            self.check_template(self.iid_data_config_template)
+        elif input_source == "mnist_stream":
             self.check_template(self.mnist_data_config_template)
+        elif input_source == "even_greater" or input_source == "mnist_digits":
+            self.check_template(self.pure_mnist_config_template)
 
     def _ensure_consistent_config(self):
 
