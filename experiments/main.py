@@ -4,7 +4,7 @@ from post_processing import StudentTeacherPostProcessor
 from experiments.student_teacher_runner import StudentTeacherRunner
 from experiments.student_teacher_parameters import StudentTeacherParameters
 from experiments.config_templates import ConfigTemplate, MNISTDataTemplate, \
-    TrainedMNISTTemplate, PureMNISTTemplate
+    TrainedMNISTTemplate, PureMNISTTemplate, IIDDataTemplate
 
 import argparse
 import yaml
@@ -51,6 +51,7 @@ def run(args):
     # config file
     student_teacher_parameters = StudentTeacherParameters(
         params, root_config_template=ConfigTemplate,
+        iid_data_config_template=IIDDataTemplate,
         mnist_data_config_template=MNISTDataTemplate,
         trained_mnist_config_template=TrainedMNISTTemplate,
         pure_mnist_config_template=PureMNISTTemplate
