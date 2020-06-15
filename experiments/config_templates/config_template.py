@@ -16,7 +16,7 @@ class ConfigTemplate(_Template):
 
     LEVELS = "ROOT"
     OPTIONAL: List[str] = [
-        "drift_teachers", "mnist_data", "pure_mnist", "trained_mnist"
+        "drift_teachers", "mnist_data", "pure_mnist", "trained_mnist", "iid_data"
         ]
 
     # root level fields
