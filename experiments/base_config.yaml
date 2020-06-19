@@ -18,7 +18,7 @@ training:
   scale_output_backward:            True                      # whether to add 1/N factor in lr of output layer  
 
 data:
-  input_source:                     iid_gaussian              # iid_gaussian, mnist (see README)
+  input_source:                     iid_gaussian              # iid_gaussian, mnist_stream, mnist_digits, even_greater (see README)
   same_input_distribution:          True
 
 logging:
@@ -68,11 +68,15 @@ drift_teachers:
   drift_size:                       0.01
   drift_frequency:                  1
 
+iid_data:
+  mean:                             0
+  variance:                         2
+
 mnist_data:
   data_path:                        "../../data/"
   pca_input:                        -1                        # number of principle components (no PCA if -1, not applicable to iid_gaussian input)                         
   standardise:                      False
-  noise:
+  noise:                            0.1
 
 pure_mnist:
   teacher_digits:                   [[0, 1], [4, 5]]
