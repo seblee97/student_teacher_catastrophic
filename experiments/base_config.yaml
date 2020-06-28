@@ -20,6 +20,8 @@ training:
 data:
   input_source:                     iid_gaussian              # iid_gaussian, mnist_stream, mnist_digits, even_greater (see README)
   same_input_distribution:          True
+  noise:                            0.1
+  noise_to_teacher:                 False
 
 logging:
   verbose:                          True                      
@@ -70,13 +72,12 @@ drift_teachers:
 
 iid_data:
   mean:                             0
-  variance:                         2
+  variance:                         1
 
 mnist_data:
   data_path:                        "../../data/"
   pca_input:                        -1                        # number of principle components (no PCA if -1, not applicable to iid_gaussian input)                         
   standardise:                      False
-  noise:                            0.1
 
 pure_mnist:
   teacher_digits:                   [[0, 1], [4, 5]]
