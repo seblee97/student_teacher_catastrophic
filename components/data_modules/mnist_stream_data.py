@@ -49,9 +49,6 @@ class MNISTStreamData(_MNISTData):
             shuffle=False
         )
 
-        if self._noise is not None:
-            self._noise_distribution = tdist.Normal(0, self._noise)
-
     def _generate_datasets(
         self
     ) -> Tuple[Constants.DATASET_TYPES, Constants.DATASET_TYPES]:
@@ -104,11 +101,6 @@ class MNISTStreamData(_MNISTData):
                     shuffle=True
                 )
             batch_input = next(self.training_data_iterator)[0]
-
-        if self._noise is not None:
-            batch_input_noise = \
-                self._noise_distribution.sample(batch_input.shape)
-            batch_input += batch_input_noise
 
         return {'x': batch_input}
 
