@@ -71,6 +71,7 @@ drift_teachers:
   drift_frequency:                  1
 
 iid_data:
+  dataset_size:                     inf
   mean:                             0
   variance:                         1
 
