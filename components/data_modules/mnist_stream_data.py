@@ -5,7 +5,6 @@ from constants import Constants
 import torch
 import torchvision
 from torch.utils.data import Dataset
-import torch.distributions as tdist
 
 from typing import Dict, Tuple
 
