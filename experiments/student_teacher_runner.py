@@ -7,6 +7,7 @@ import os
 
 import torch
 import torch.optim as optim
+import torch.distributions as tdist
 
 from typing import List, Dict, Union
 
@@ -114,6 +115,12 @@ class StudentTeacherRunner:
         self.input_source = config.get(["data", "input_source"])
         self.same_input_distribution = \
             config.get(["data", "same_input_distribution"])
+
+        self._noise = config.get(["data", "noise"])
+        self._noise_to_teacher = config.get(["data", "noise_to_teacher"])
+
+        if self._noise is not None:
+            self._noise_distribution = tdist.Normal(0, self._noise)
 
     def _save_network_initial_weights(self):
         # save initial student weights
@@ -312,13 +319,22 @@ class StudentTeacherRunner:
                 batch: Dict[str, torch.Tensor] = self.data_module.get_batch()
                 batch_input: torch.Tensor = batch['x']
 
+                if self._noise is not None:
+                    batch_input_noise = \
+                        self._noise_distribution.sample(batch_input.shape)
+                    batch_input_student = batch_input + batch_input_noise
+                else:
+                    batch_input_student = batch_input
+                if self._noise_to_teacher:
+                    batch['x'] = batch_input_student
+
                 # feed full batch into teachers (i.e. potentially with label
                 # since come teacher configurations will simply return label)
                 teacher_output = self.teachers.forward(teacher_index, batch)
 
                 # student on the other hand only gets input
                 # (avoids accidentally accessing label)
-                student_output = self.learner.forward(batch_input)
+                student_output = self.learner.forward(batch_input_student)
 
                 assert teacher_output.shape == student_output.shape, \
                     "Shape of student and teacher outputs are different. \
