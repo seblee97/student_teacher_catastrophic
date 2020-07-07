@@ -20,16 +20,10 @@ class MNISTDataTemplate(_Template):
         name="standardise", types=[bool], reqs=None
     )
 
-    NOISE = Field(
-        name="noise", types=[type(None), float, int],
-        reqs=[lambda x: x is None or x > 0]
-    )
-
     @classmethod
     def get_fields(cls) -> List:
         return [
             cls.DATA_PATH,
             cls.PCA_INPUT,
             cls.STANDARDISE,
-            cls.NOISE,
         ]
