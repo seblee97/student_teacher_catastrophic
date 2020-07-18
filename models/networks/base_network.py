@@ -79,9 +79,9 @@ class Model(nn.Module, ABC):
             config.get(
                 ["model", "{}_initialisation_std".format(self.model_type)]
                 )
-        self.zero_hidden_overlap = \
+        self.symmetric_student_initialisation = \
             config.get(
-                ["model", "{}_zero_hidden_overlap".format(self.model_type)]
+                ["model", "symmetric_student_initialisation"]
             )
         self.bias = \
             config.get(["model", "{}_bias_parameters".format(self.model_type)])
@@ -94,6 +94,7 @@ class Model(nn.Module, ABC):
         self.initialise_student_outputs = \
             config.get(["model", "initialise_student_outputs"])
         self.forward_scaling = 1 / math.sqrt(self.input_dimension)
+        self.normalise_teachers = config.get(["model", "normalise_teachers"])
 
     def _get_nonlinear_function(self, config: Parameters) -> Callable:
         """
@@ -154,6 +155,14 @@ class Model(nn.Module, ABC):
             self._initialise_weights(hidden_layer)
             self.layers.append(hidden_layer)
 
+        if 'teacher' in self.model_type and self.normalise_teachers:
+            for i, layer in enumerate(self.layers):
+                with torch.no_grad():
+                    layer_weights = layer.state_dict()['weight']
+                    layer_norm = torch.norm(layer_weights)
+                    normalised_layer = layer_weights / layer_norm
+                    self.layers[i].weight[0] = normalised_layer[0]
+
         self._construct_output_layers()
 
     @abstractmethod
@@ -178,7 +187,7 @@ class Model(nn.Module, ABC):
             torch.nn.init.normal_(layer.weight, std=self.initialisation_std)
             if self.bias:
                 torch.nn.init.normal_(layer.bias, std=self.initialisation_std)
-        if self.zero_hidden_overlap:
+        if self.model_type == "student" and self.symmetric_student_initialisation:
             # copy first component of weight matrix to
             # others to ensure zero overlap
             base_parameters = copy.deepcopy(layer.state_dict()['weight'][0])
