@@ -1,6 +1,9 @@
 experiment_name:                    
 use_gpu:                            True                      
-seed:                               5                         
+seed:                               5
+
+network_simulation: True
+analytic_simulation: True
 
 task:
   label_task_boundaries:            True                      
@@ -20,7 +23,7 @@ training:
 data:
   input_source:                     iid_gaussian              # iid_gaussian, mnist_stream, mnist_digits, even_greater (see README)
   same_input_distribution:          True
-  noise:                            0.1
+  noise:                            
   noise_to_teacher:                 False
 
 logging:
@@ -43,16 +46,16 @@ model:
   student_hidden_layers:            [2]                       
   teacher_hidden_layers:            [1]                       
   output_dimension:                 1                         
-  student_nonlinearity:             relu                      
-  teacher_nonlinearities:           [relu, relu]              # per teacher
+  student_nonlinearity:             sigmoid                      
+  teacher_nonlinearities:           [sigmoid, sigmoid]              # per teacher
+  normalise_teachers:               True
   teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
   student_initialisation_std:       0.001                     # std of normal initialisation for student network
   initialise_student_outputs:       False                     # whether or not to initialise hidden -> output weights of student
   soft_committee:                   False                     # whether or not to freeze output layer (scm)
   teacher_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (teacher)
   student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
-  teacher_zero_hidden_overlap:      False                     # mean field student self overlap will be zero, here set it to exactly zero
-  student_zero_hidden_overlap:      False                     # same as above with teacher
+  symmetric_student_initialisation: False                     # identically initialised student hidden units
 
 curriculum:
   type:                             custom                    # curriculum type (custom - declarative or standard - imperative)
