@@ -61,6 +61,10 @@ class ModelTemplate(_Template):
         name="soft_committee", types=[bool], reqs=None
     )
 
+    NORMALISE_TEACHERS = Field(
+        name="normalise_teachers", types=[bool], reqs=None
+    )
+
     TEACHER_BIAS_PARAMETERS = Field(
         name="teacher_bias_parameters", types=[bool], reqs=None
     )
@@ -69,12 +73,8 @@ class ModelTemplate(_Template):
         name="student_bias_parameters", types=[bool], reqs=None
     )
 
-    STUDENT_ZERO_HIDDEN_OVERLAP = Field(
-        name="student_zero_hidden_overlap", types=[bool], reqs=None
-    )
-
-    TEACHER_ZERO_HIDDEN_OVERLAP = Field(
-        name="teacher_zero_hidden_overlap", types=[bool], reqs=None
+    SYMMETRIC_STUDENT_INITIALISATION = Field(
+        name="symmetric_student_initialisation", types=[bool], reqs=None
     )
 
     @classmethod
@@ -90,8 +90,8 @@ class ModelTemplate(_Template):
             cls.STUDENT_INITIALISATION_STD,
             cls.INITIALISE_STUDENT_OUTPUTS,
             cls.SOFT_COMMITTEE,
+            cls.NORMALISE_TEACHERS,
             cls.TEACHER_BIAS_PARAMETERS,
             cls.STUDENT_BIAS_PARAMETERS,
-            cls.STUDENT_ZERO_HIDDEN_OVERLAP,
-            cls.TEACHER_ZERO_HIDDEN_OVERLAP
+            cls.SYMMETRIC_STUDENT_INITIALISATION
         ]
