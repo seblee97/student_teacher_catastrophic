@@ -63,6 +63,10 @@ class WeightPlotter:
                 return len(layer_weights)
 
         elif plot_type == "weight_diffs":
+
+            if len(self.loaded_weights) < 2:
+                return
+
             plot_fn = self._weight_diff_plot
             plot_title = "Weight Differences"
 
@@ -72,6 +76,9 @@ class WeightPlotter:
         elif plot_type == "weight_diff_pdf":
             plot_fn = self._weight_diff_pdf_plot
             plot_title = "Weight Difference PDFs"
+
+            if len(self.loaded_weights) < 2:
+                return
 
             def _extract_num_plots(layer_weights):
                 return len(layer_weights) - 1
