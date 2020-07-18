@@ -32,6 +32,14 @@ class ConfigTemplate(_Template):
         name="seed", types=[int], reqs=None
     )
 
+    NETWORK_SIMULATION = Field(
+        name="network_simulation", types=[bool], reqs=None
+    )
+
+    ANALYTIC_SIMULATION = Field(
+        name="analytic_simulation", types=[bool], reqs=None
+    )
+
     TASK_TEMPLATE = TaskTemplate
     TRAINING_TEMPLATE = TrainingTemplate
     DATA_TEMPLATE = DataTemplate
@@ -48,6 +56,8 @@ class ConfigTemplate(_Template):
             cls.EXPERIMENT_NAME,
             cls.USE_GPU,
             cls.SEED,
+            cls.NETWORK_SIMULATION,
+            cls.ANALYTIC_SIMULATION,
 
             cls.TASK_TEMPLATE,
             cls.TRAINING_TEMPLATE,
