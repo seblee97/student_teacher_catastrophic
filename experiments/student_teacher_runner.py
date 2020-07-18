@@ -15,6 +15,8 @@ from components import data_modules, loss_modules, loggers
 from models import teachers, learners
 from utils import Parameters
 from constants import Constants
+from ode import configuration
+from ode import dynamics
 
 
 class StudentTeacherRunner:
@@ -108,10 +110,19 @@ class StudentTeacherRunner:
             config.get(["task", "teacher_configuration"])
         self.loss_type = config.get(["task", "loss_type"])
 
+        self.test_batch_size = config.get(["testing", "test_batch_size"])
         self.test_frequency = config.get(["testing", "test_frequency"])
         self.overlap_frequency = config.get(["testing", "overlap_frequency"])
 
         self.input_dimension = config.get(["model", "input_dimension"])
+        self.student_hidden_layers = config.get(["model", "student_hidden_layers"])
+        self.teacher_hidden_layers = config.get(["model", "teacher_hidden_layers"])
+        self.student_initialisation_std = config.get(["model", "student_initialisation_std"])
+        self.teacher_initialisation_std = config.get(["model", "teacher_initialisation_std"])
+        self.initialise_student_outputs = config.get(["model", "initialise_student_outputs"])
+        self.nonlinearity = config.get(["model", "student_nonlinearity"])
+        self.normalise_teachers = config.get(["model", "normalise_teachers"])
+        self.symmetric_student_initialisation = config.get(["model", "symmetric_student_initialisation"])
         self.input_source = config.get(["data", "input_source"])
         self.same_input_distribution = \
             config.get(["data", "same_input_distribution"])
@@ -269,6 +280,77 @@ class StudentTeacherRunner:
             self.logger.write_scalar_df(
                 tag=tag, scalar=scalar, step=step
             )
+
+    def run_ode(self) -> None:
+        """Use configuration established in initialisation to run ODE equations.
+        """
+        self.logger.log("Starting ODE run...")
+
+        student_weight_vector_1 = self.learner.state_dict()["layers.0.weight"].numpy()[0]
+        student_weight_vector_2 = self.learner.state_dict()["layers.0.weight"].numpy()[1]
+
+        student_weight_vectors = [student_weight_vector_1, student_weight_vector_2]
+
+        teacher_1_weight_vector = self.teachers._teachers[0].state_dict()["layers.0.weight"].numpy()
+        teacher_2_weight_vector = self.teachers._teachers[1].state_dict()["layers.0.weight"].numpy()
+
+        Q = configuration.RandomStudentTwoTeacherConfiguration.weight_overlap_matrix(
+            student_weight_vectors, student_weight_vectors,
+            N=self.input_dimension
+            )
+
+        R = configuration.RandomStudentTwoTeacherConfiguration.weight_overlap_matrix(
+            student_weight_vectors, teacher_1_weight_vector, N=self.input_dimension
+            )
+
+        U = configuration.RandomStudentTwoTeacherConfiguration.weight_overlap_matrix(
+            student_weight_vectors, teacher_2_weight_vector, N=self.input_dimension
+            )
+        
+        T = configuration.RandomStudentTwoTeacherConfiguration.weight_overlap_matrix(
+            teacher_1_weight_vector, teacher_1_weight_vector, N=self.input_dimension
+            )
+    
+        S = configuration.RandomStudentTwoTeacherConfiguration.weight_overlap_matrix(
+            teacher_2_weight_vector, teacher_2_weight_vector, N=self.input_dimension
+            )
+
+        V = configuration.RandomStudentTwoTeacherConfiguration.weight_overlap_matrix(
+            teacher_1_weight_vector, teacher_2_weight_vector, N=self.input_dimension
+            )
+
+        import pdb; pdb.set_trace()
+
+        h1 = self.learner.state_dict()["heads.0.weight"].numpy().T
+        h2 = self.learner.state_dict()["heads.1.weight"].numpy().T
+
+        th1 = self.teachers._teachers[0].state_dict()["output_layer.weight"].numpy().T
+        th2 = self.teachers._teachers[1].state_dict()["output_layer.weight"].numpy().T
+
+        ode_configuration = \
+            configuration.StudentTwoTeacherConfiguration(
+                Q=Q,
+                R=R, 
+                U=U, 
+                T=T, 
+                S=S,
+                V=V,
+                h1=h1,
+                h2=h2,
+                th1=th1,
+                th2=th2
+            )
+
+        ode = dynamics.StudentTeacherODE(
+            overlap_configuration=ode_configuration,
+            nonlinearity=self.nonlinearity,
+            w_learning_rate=self.learning_rate,
+            h_learning_rate=self.learning_rate / self.input_dimension, curriculum=None
+            )
+
+        ode.step(self.total_training_steps)
+
+        ode.make_plot(save_path=self.experiment_path)
 
     def train(self) -> None:
         """Training loop
