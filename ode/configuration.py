@@ -1,3 +1,4 @@
+import copy
 import itertools
 import numpy as np
 
@@ -186,7 +187,8 @@ class StudentTwoTeacherConfiguration:
 
     def step_h1(self, delta_h1: np.ndarray) -> None:
         self._h1 += delta_h1
-        self._log_head(values=self._h1, log=self._h1_log)
+        current_h1 = copy.deepcopy(self._h1)
+        self._log_head(values=current_h1, log=self._h1_log)
 
     @property
     def h1_log(self):
@@ -198,7 +200,8 @@ class StudentTwoTeacherConfiguration:
 
     def step_h2(self, delta_h2: np.ndarray) -> None:
         self._h2 += delta_h2
-        self._log_head(values=self._h2, log=self._h2_log)
+        current_h2 = copy.deepcopy(self._h2)
+        self._log_head(values=current_h2, log=self._h2_log)
 
     @property
     def h2_log(self):
