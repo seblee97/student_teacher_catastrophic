@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 import math
 import copy
+import numpy as np
 
 from typing import Union, Callable
 
@@ -125,6 +126,8 @@ class Model(nn.Module, ABC):
             return F.relu
         elif self.nonlinearity_name == 'sigmoid':
             return torch.sigmoid
+        elif self.nonlinearity_name == 'scaled_erf':
+            return lambda x: torch.erf(x / math.sqrt(2))
         elif self.nonlinearity_name == 'linear':
             return linear_function
         elif self.nonlinearity_name == 'leaky_relu':
@@ -160,7 +163,7 @@ class Model(nn.Module, ABC):
                 with torch.no_grad():
                     layer_weights = layer.state_dict()['weight']
                     layer_norm = torch.norm(layer_weights)
-                    normalised_layer = layer_weights / layer_norm
+                    normalised_layer = np.sqrt(self.input_dimension) * (layer_weights / layer_norm)
                     self.layers[i].weight[0] = normalised_layer[0]
 
         self._construct_output_layers()
