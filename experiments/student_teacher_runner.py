@@ -319,8 +319,6 @@ class StudentTeacherRunner:
             teacher_1_weight_vector, teacher_2_weight_vector, N=self.input_dimension
             )
 
-        import pdb; pdb.set_trace()
-
         h1 = self.learner.state_dict()["heads.0.weight"].numpy().T
         h2 = self.learner.state_dict()["heads.1.weight"].numpy().T
 
@@ -341,16 +339,24 @@ class StudentTeacherRunner:
                 th2=th2
             )
 
+        curriculum = self._get_ode_curriculum()
+
         ode = dynamics.StudentTeacherODE(
             overlap_configuration=ode_configuration,
             nonlinearity=self.nonlinearity,
-            w_learning_rate=self.learning_rate,
-            h_learning_rate=self.learning_rate / self.input_dimension, curriculum=None
+            w_learning_rate=self.learning_rate / np.sqrt(self.input_dimension),
+            h_learning_rate=self.learning_rate / self.input_dimension, 
+            curriculum=curriculum
             )
 
         ode.step(self.total_training_steps)
 
         ode.make_plot(save_path=self.experiment_path)
+
+    def _get_ode_curriculum(self) -> List[int]:
+        return list(np.arange(
+            0, self.total_training_steps, self.curriculum_period
+            ))
 
     def train(self) -> None:
         """Training loop
