@@ -29,7 +29,7 @@ class ModelTemplate(_Template):
 
     STUDENT_NONLINEARITY = Field(
         name="student_nonlinearity", types=[str],
-        reqs=[lambda x: x in ["relu", "linear", "sigmoid"]]
+        reqs=[lambda x: x in ["relu", "linear", "sigmoid", "scaled_erf"]]
     )
 
     TEACHER_NONLINEARITIES = Field(
@@ -37,7 +37,7 @@ class ModelTemplate(_Template):
         reqs=[
             lambda x: all(
                 isinstance(y, str)
-                and y in ["relu", "linear", "sigmoid"]
+                and y in ["relu", "linear", "sigmoid", "scaled_erf"]
                 for y in x
                 )
             ]
