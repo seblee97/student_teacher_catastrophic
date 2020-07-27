@@ -1,11 +1,10 @@
-from .base_teacher import _Teacher
-from utils import Parameters
-
 import torch
+
+from utils import Parameters
+from .base_teacher import _Teacher
 
 
 class ClassificationTeacher(_Teacher):
-
     """Classification - threshold output"""
 
     def __init__(self, config: Parameters, index: int) -> None:
@@ -29,9 +28,7 @@ class ClassificationTeacher(_Teacher):
             tanh_y = torch.tanh(y)
             labels = tanh_y > 0
         else:
-            raise NotImplementedError(
-                "Teacher thresholding for {} nonlinearity not yet \
-                implemented".format(self.nonlinearity_name)
-            )
+            raise NotImplementedError("Teacher thresholding for {} nonlinearity not yet \
+                implemented".format(self.nonlinearity_name))
 
-        return labels.long().reshape(len(labels),) 
+        return labels.long().reshape(len(labels),)
