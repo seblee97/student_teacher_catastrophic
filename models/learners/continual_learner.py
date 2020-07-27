@@ -1,13 +1,15 @@
-import torch.nn as nn
+from typing import Dict
+from typing import Iterable
+from typing import Iterator
+from typing import List
+
 import torch
+import torch.nn as nn
 
 from .base_learner import _BaseLearner
 
-from typing import Dict, List, Iterable, Iterator
-
 
 class ContinualLearner(_BaseLearner):
-
     """Orchestrates students in continual learning setting
     (one head per task)
     """
@@ -28,30 +30,26 @@ class ContinualLearner(_BaseLearner):
         self.heads: Iterable[nn.Module] = nn.ModuleList([])
         for _ in range(self.num_teachers):
             output_layer = nn.Linear(
-                self.hidden_dimensions[-1], self.output_dimension,
-                bias=self.bias
-                )
-            if self.initialise_student_outputs:
-                output_layer = self._initialise_weights(output_layer)
+                self.hidden_dimensions[-1], self.output_dimension, bias=self.bias)
+            if self.soft_committee:
+                output_layer.weight.data.fill_(1)
             else:
-                torch.nn.init.zeros_(output_layer.weight)
-                if self.bias:
-                    torch.nn.init.zeros_(output_layer.bias)
+                if self.initialise_student_outputs:
+                    output_layer = self._initialise_weights(output_layer)
+                else:
+                    torch.nn.init.zeros_(output_layer.weight)
+                    if self.bias:
+                        torch.nn.init.zeros_(output_layer.bias)
             # freeze heads (unfrozen when current task)
             for param in output_layer.parameters():
                 param.requires_grad = False
             self.heads.append(output_layer)
 
-    def _get_trainable_head_parameters(
-        self
-    ) -> List[Dict[str, Iterator[torch.nn.Parameter]]]:
-        trainable_head_parameters = [
-            {
-                'params': head.parameters(),
-                'lr': self._learning_rate / self._input_dimension
-            }
-            for head in self.heads
-            ]
+    def _get_trainable_head_parameters(self) -> List[Dict[str, Iterator[torch.nn.Parameter]]]:
+        trainable_head_parameters = [{
+            'params': head.parameters(),
+            'lr': self._learning_rate / self._input_dimension
+        } for head in self.heads]
         return trainable_head_parameters
 
     def set_task(self, task_index: int):
@@ -64,10 +62,8 @@ class ContinualLearner(_BaseLearner):
             param.requires_grad = True
         self._current_teacher = task_index
 
-    def forward_batch_per_task(
-        self,
-        batch_list: List[Dict[str, torch.Tensor]]
-    ) -> List[torch.Tensor]:
+    def forward_batch_per_task(self,
+                               batch_list: List[Dict[str, torch.Tensor]]) -> List[torch.Tensor]:
         assert len(batch_list) == self.num_teachers, \
             "Forward of one batch per head requires equal number \
                 of batches to heads"
@@ -77,9 +73,7 @@ class ContinualLearner(_BaseLearner):
         for task_index, batch in enumerate(batch_list):
             x = batch['x']
             for layer in self.layers:
-                x = self.nonlinear_function(
-                    self.forward_scaling * layer(x)
-                    )
+                x = self.nonlinear_function(self.forward_scaling * layer(x))
             task_output = self.heads[task_index](x)
             if self.classification_output:
                 task_output = self._threshold(task_output)
@@ -89,9 +83,7 @@ class ContinualLearner(_BaseLearner):
 
     def forward_all(self, x: torch.Tensor):
         for layer in self.layers:
-            x = self.nonlinear_function(
-                self.forward_scaling * layer(x)
-                )
+            x = self.nonlinear_function(self.forward_scaling * layer(x))
         task_outputs = [self.heads[t](x) for t in range(self.num_teachers)]
         if self.classification_output:
             return [self._threshold(t) for t in task_outputs]
@@ -112,8 +104,6 @@ class ContinualLearner(_BaseLearner):
             head_weights: list of torch tensors that are the weights
             of the heads.
         """
-        head_weights = [
-            self.heads[h].state_dict()['weight']
-            for h in range(self.num_teachers)
-            ]  # could use self.heads directly
+        head_weights = [self.heads[h].state_dict()['weight'] for h in range(self.num_teachers)
+                       ]  # could use self.heads directly
         return head_weights
