@@ -1,28 +1,20 @@
 import copy
 import itertools
+from typing import Dict
+from typing import List
+from typing import Tuple
+
 import numpy as np
 
-from ode.overlaps import SelfOverlap, CrossOverlap
 from ode.covariance import CovarianceMatrix
-
-from typing import List, Tuple, Dict
+from ode.overlaps import CrossOverlap
+from ode.overlaps import SelfOverlap
 
 
 class StudentTwoTeacherConfiguration:
 
-    def __init__(
-        self, 
-        Q: np.ndarray,
-        R: np.ndarray, 
-        U: np.ndarray, 
-        T: np.ndarray, 
-        S: np.ndarray,
-        V: np.ndarray,
-        h1: np.ndarray,
-        h2: np.ndarray,
-        th1: np.ndarray,
-        th2: np.ndarray
-    ):
+    def __init__(self, Q: np.ndarray, R: np.ndarray, U: np.ndarray, T: np.ndarray, S: np.ndarray,
+                 V: np.ndarray, h1: np.ndarray, h2: np.ndarray, th1: np.ndarray, th2: np.ndarray):
         self._Q = SelfOverlap(Q, final=False)
         self._R = CrossOverlap(R, final=False)
         self._U = CrossOverlap(U, final=False)
@@ -40,12 +32,18 @@ class StudentTwoTeacherConfiguration:
         self._teacher1_indices = ["m", "n", "o"]
         self._teacher2_indices = ["p", "q", "r"]
 
-        student_student_index_duos = self.generate_index_combos(self._student_indices, self._student_indices)
-        student_teacher1_index_duos = self.generate_index_combos(self._student_indices, self._teacher1_indices)
-        student_teacher2_index_duos = self.generate_index_combos(self._student_indices, self._teacher2_indices)
-        teacher1_teacher2_index_duos = self.generate_index_combos(self._teacher1_indices, self._teacher2_indices)
-        teacher1_teacher1_index_duos = self.generate_index_combos(self._teacher1_indices, self._teacher1_indices)
-        teacher2_teacher2_index_duos = self.generate_index_combos(self._teacher2_indices, self._teacher2_indices)
+        student_student_index_duos = self.generate_index_combos(self._student_indices,
+                                                                self._student_indices)
+        student_teacher1_index_duos = self.generate_index_combos(self._student_indices,
+                                                                 self._teacher1_indices)
+        student_teacher2_index_duos = self.generate_index_combos(self._student_indices,
+                                                                 self._teacher2_indices)
+        teacher1_teacher2_index_duos = self.generate_index_combos(self._teacher1_indices,
+                                                                  self._teacher2_indices)
+        teacher1_teacher1_index_duos = self.generate_index_combos(self._teacher1_indices,
+                                                                  self._teacher1_indices)
+        teacher2_teacher2_index_duos = self.generate_index_combos(self._teacher2_indices,
+                                                                  self._teacher2_indices)
 
         self._index_duo_overlap_map = {
             **{duo: self.Q for duo in student_student_index_duos},
@@ -56,42 +54,26 @@ class StudentTwoTeacherConfiguration:
             **{duo: self.S for duo in teacher2_teacher2_index_duos},
         }
 
-        self._Q_log = {
-            "".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(Q)
-        }
-        self._T_log = {
-            "".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(T)
-        }
-        self._R_log = {
-            "".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(R)
-        }
-        self._U_log = {
-            "".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(U)
-        }
-        self._V_log = {
-            "".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(V)
-        }
-        self._S_log = {
-            "".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(S)
-        }
+        self._Q_log = {"".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(Q)}
+        self._T_log = {"".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(T)}
+        self._R_log = {"".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(R)}
+        self._U_log = {"".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(U)}
+        self._V_log = {"".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(V)}
+        self._S_log = {"".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(S)}
 
-        self._h1_log = {
-            str(i): [] for i in range(len(h1))
-        }
-        self._h2_log = {
-            str(i): [] for i in range(len(h2))
-        }
+        self._h1_log = {str(i): [] for i in range(len(h1))}
+        self._h2_log = {str(i): [] for i in range(len(h2))}
 
     @staticmethod
     def generate_index_combos(index_set_1: List[str], index_set_2: List[str]) -> List[str]:
-        index_duos = list(set([
-            "".join(st) for st in itertools.chain(
-                itertools.product(index_set_1, index_set_2),
-                itertools.product(index_set_2, index_set_1)
-                )
-        ]))
+        index_duos = list(
+            set([
+                "".join(st) for st in itertools.chain(
+                    itertools.product(index_set_1, index_set_2),
+                    itertools.product(index_set_2, index_set_1))
+            ]))
         return index_duos
-    
+
     def generate_covariance_matrix(self, indices: List[Tuple[str, int]]) -> CovarianceMatrix:
         covariance = np.zeros((len(indices), len(indices)))
         for i, index_i in enumerate(indices):
@@ -218,17 +200,9 @@ class StudentTwoTeacherConfiguration:
 
 class RandomStudentTwoTeacherConfiguration(StudentTwoTeacherConfiguration):
 
-    def __init__(
-        self,
-        N: int,
-        M: int,
-        K: int,
-        student_weight_initialisation_std: float,
-        teacher_weight_initialisation_std: float,
-        initialise_student_heads: bool,
-        normalise_teachers: bool,
-        symmetric_student_initialisation: bool
-        ):
+    def __init__(self, N: int, M: int, K: int, student_weight_initialisation_std: float,
+                 teacher_weight_initialisation_std: float, initialise_student_heads: bool,
+                 normalise_teachers: bool, symmetric_student_initialisation: bool):
 
         self._N = N
         self._M = M
@@ -252,20 +226,15 @@ class RandomStudentTwoTeacherConfiguration(StudentTwoTeacherConfiguration):
             h1=h1,
             h2=h2,
             th1=th1,
-            th2=th2
-            )
+            th2=th2)
 
     @staticmethod
     def weight_overlap(w1, w2, N):
         return sum(w1 * w2) / N
 
     @classmethod
-    def weight_overlap_matrix(
-        cls, weight_vectors_1: List, weight_vectors_2: List, N: int
-    ):
-        overlap_matrix = np.zeros(
-            shape=(len(weight_vectors_1), len(weight_vectors_2))
-            )
+    def weight_overlap_matrix(cls, weight_vectors_1: List, weight_vectors_2: List, N: int):
+        overlap_matrix = np.zeros(shape=(len(weight_vectors_1), len(weight_vectors_2)))
         for i, w1 in enumerate(weight_vectors_1):
             for j, w2 in enumerate(weight_vectors_2):
                 overlap_matrix[i][j] = cls.weight_overlap(w1, w2, N)
@@ -273,15 +242,12 @@ class RandomStudentTwoTeacherConfiguration(StudentTwoTeacherConfiguration):
         return overlap_matrix
 
     def _initialise_random_weight_vector(self, scale, length):
-        weight_vector = np.random.normal(
-            scale=scale, size=length
-            )
+        weight_vector = np.random.normal(scale=scale, size=length)
         return weight_vector
 
     def _initialise_random_teacher_vector(self, length: int):
         weight_vector = self._initialise_random_weight_vector(
-            scale=self._teacher_weight_initialisation_std, length=length
-            )
+            scale=self._teacher_weight_initialisation_std, length=length)
 
         if self._nomalise_teachers:
             weight_vector = np.sqrt(length) * weight_vector / np.linalg.norm(weight_vector)
@@ -289,49 +255,39 @@ class RandomStudentTwoTeacherConfiguration(StudentTwoTeacherConfiguration):
         return weight_vector
 
     def _initialise_weights(self):
-        
+
         if self._symmetric_student_initialisation:
             student_weight_vector = self._initialise_random_weight_vector(
-                    scale=self._student_weight_initialisation_std, length=self._N
-                    )
-            student_weight_vectors = [
-                student_weight_vector for _ in range(self._M)
-            ]
+                scale=self._student_weight_initialisation_std, length=self._N)
+            student_weight_vectors = [student_weight_vector for _ in range(self._M)]
         else:
             student_weight_vectors = [
                 self._initialise_random_weight_vector(
-                    scale=self._student_weight_initialisation_std, length=self._N
-                    )
+                    scale=self._student_weight_initialisation_std, length=self._N)
                 for _ in range(self._M)
             ]
-        
+
         teacher_1_weight_vectors = [
-            self._initialise_random_teacher_vector(length=self._N)
-            for _ in range(self._K)
+            self._initialise_random_teacher_vector(length=self._N) for _ in range(self._K)
         ]
-        
+
         teacher_2_weight_vectors = [
-            self._initialise_random_teacher_vector(length=self._N)
-            for _ in range(self._K)
+            self._initialise_random_teacher_vector(length=self._N) for _ in range(self._K)
         ]
 
         if self._initialise_student_heads:
             student_head_1 = self._initialise_random_weight_vector(
-                scale=self._student_weight_initialisation_std, length=self._M
-                )
+                scale=self._student_weight_initialisation_std, length=self._M)
             student_head_2 = self._initialise_random_weight_vector(
-                scale=self._student_weight_initialisation_std, length=self._M
-                )
+                scale=self._student_weight_initialisation_std, length=self._M)
         else:
             student_head_1 = np.zeros(self._M)
             student_head_2 = np.zeros(self._M)
 
         teacher_1_head = self._initialise_random_weight_vector(
-            scale=self._teacher_weight_initialisation_std, length=self._K
-            )
+            scale=self._teacher_weight_initialisation_std, length=self._K)
         teacher_2_head = self._initialise_random_weight_vector(
-            scale=self._teacher_weight_initialisation_std, length=self._K
-            )
+            scale=self._teacher_weight_initialisation_std, length=self._K)
 
         return student_weight_vectors, teacher_1_weight_vectors, \
             teacher_2_weight_vectors, student_head_1, student_head_2, \
