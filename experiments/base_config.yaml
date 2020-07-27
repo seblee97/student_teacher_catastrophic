@@ -18,7 +18,9 @@ training:
   learning_rate:                    0.5                         
   weight_decay:                     0                      
   loss_function:                    mse                       # mse, bce
-  scale_output_backward:            True                      # whether to add 1/N factor in lr of output layer  
+  scale_head_lr:                    True                      # whether to add 1/N factor in lr of output layer  
+  scale_hidden_lr_forward:          True                      # whether to add 1/\sqrt{N} factor in forward of hidden layer(s)
+  scale_hidden_lr_backward:         False                      # whether to add 1/\sqrt{N} factor in lr of hidden layer(s)
 
 data:
   input_source:                     iid_gaussian              # iid_gaussian, mnist_stream, mnist_digits, even_greater (see README)
@@ -51,8 +53,9 @@ model:
   normalise_teachers:               True
   teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
   student_initialisation_std:       0.001                     # std of normal initialisation for student network
+  unit_norm_teacher_head:           True                      # choose head weight from 1, -1 or initialise using normal
   initialise_student_outputs:       False                     # whether or not to initialise hidden -> output weights of student
-  soft_committee:                   False                     # whether or not to freeze output layer (scm)
+  soft_committee:                   False                     # whether or not to fix output layer of student to 1 (scm)
   teacher_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (teacher)
   student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
   symmetric_student_initialisation: False                     # identically initialised student hidden units
