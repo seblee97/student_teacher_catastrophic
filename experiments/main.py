@@ -1,18 +1,19 @@
-from utils import Argparser
-
-from post_processing import StudentTeacherPostProcessor
-from experiments.student_teacher_runner import StudentTeacherRunner
-from experiments.student_teacher_parameters import StudentTeacherParameters
-from experiments.config_templates import ConfigTemplate, MNISTDataTemplate, \
-    TrainedMNISTTemplate, PureMNISTTemplate, IIDDataTemplate
-
 import argparse
-import yaml
-import time
 import datetime
 import os
+import time
 
-from typing import Dict
+import yaml
+
+from experiments.config_templates import ConfigTemplate
+from experiments.config_templates import IIDDataTemplate
+from experiments.config_templates import MNISTDataTemplate
+from experiments.config_templates import PureMNISTTemplate
+from experiments.config_templates import TrainedMNISTTemplate
+from experiments.student_teacher_parameters import StudentTeacherParameters
+from experiments.student_teacher_runner import StudentTeacherRunner
+from post_processing import StudentTeacherPostProcessor
+from utils import Argparser
 
 MAIN_FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -31,10 +32,7 @@ def post_process(args):
     post_process_args["show_legends"] = not args.nl
     post_process_args["repeats"] = args.repeats
 
-    post_processor = StudentTeacherPostProcessor(
-        save_path=args.ppp,
-        extra_args=post_process_args
-        )
+    post_processor = StudentTeacherPostProcessor(save_path=args.ppp, extra_args=post_process_args)
     post_processor.post_process()
 
 
@@ -50,12 +48,12 @@ def run(args):
     # create object in which to store experiment parameters and validate
     # config file
     student_teacher_parameters = StudentTeacherParameters(
-        params, root_config_template=ConfigTemplate,
+        params,
+        root_config_template=ConfigTemplate,
         iid_data_config_template=IIDDataTemplate,
         mnist_data_config_template=MNISTDataTemplate,
         trained_mnist_config_template=TrainedMNISTTemplate,
-        pure_mnist_config_template=PureMNISTTemplate
-        )
+        pure_mnist_config_template=PureMNISTTemplate)
 
     # establish experiment name / log path etc.
     raw_datetime = datetime.datetime.fromtimestamp(time.time())
@@ -69,19 +67,13 @@ def run(args):
         results_folder_base = 'results/'
 
     if experiment_name:
-        checkpoint_path = '{}/{}/{}/{}/'.format(
-            MAIN_FILE_PATH, results_folder_base, exp_timestamp,
-            experiment_name
-            )
+        checkpoint_path = '{}/{}/{}/{}/'.format(MAIN_FILE_PATH, results_folder_base, exp_timestamp,
+                                                experiment_name)
     else:
-        checkpoint_path = '{}/{}/{}/'.format(
-            MAIN_FILE_PATH, results_folder_base, exp_timestamp
-            )
+        checkpoint_path = '{}/{}/{}/'.format(MAIN_FILE_PATH, results_folder_base, exp_timestamp)
 
     student_teacher_parameters.set_property("checkpoint_path", checkpoint_path)
-    student_teacher_parameters.set_property(
-        "experiment_timestamp", exp_timestamp
-        )
+    student_teacher_parameters.set_property("experiment_timestamp", exp_timestamp)
 
     # get specified random seed value from config
     seed_value = student_teacher_parameters.get("seed")
@@ -139,9 +131,7 @@ def run(args):
             post_process_args["repeats"] = args.repeats
 
             post_processor = StudentTeacherPostProcessor(
-                save_path=checkpoint_path,
-                extra_args=post_process_args
-                )
+                save_path=checkpoint_path, extra_args=post_process_args)
             post_processor.post_process()
 
 
