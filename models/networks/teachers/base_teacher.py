@@ -1,20 +1,20 @@
-from models.networks.base_network import Model
-from utils import Parameters
+import random
+from abc import ABC
+from abc import abstractmethod
 
 import torch
 import torch.distributions as tdist
 import torch.nn as nn
 
-from abc import ABC, abstractmethod
+from models.networks.base_network import Model
+from utils import Parameters
 
 
 class _Teacher(Model, ABC):
 
     def __init__(self, config: Parameters, index: int) -> None:
 
-        Model.__init__(
-            self, config=config, model_type='teacher_{}'.format(str(index))
-            )
+        Model.__init__(self, config=config, model_type='teacher_{}'.format(str(index)))
         self.noisy = False
 
     def get_output_statistics(self, repeats=5000):
@@ -44,11 +44,13 @@ class _Teacher(Model, ABC):
         self.load_state_dict(torch.load(weights_path))
 
     def _construct_output_layers(self):
-
         self.output_layer = nn.Linear(
-            self.hidden_dimensions[-1], self.output_dimension, bias=self.bias
-            )
-        self._initialise_weights(self.output_layer)
+            self.hidden_dimensions[-1], self.output_dimension, bias=self.bias)
+        if self.unit_norm_teacher_head:
+            head_weight = random.choice([1, -1])
+            self.output_layer.weight.data.fill_(head_weight)
+        else:
+            self._initialise_weights(self.output_layer)
         if self.soft_committee:
             for param in self.output_layer.parameters():
                 param.requires_grad = False
