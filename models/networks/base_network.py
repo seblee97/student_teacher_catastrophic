@@ -1,16 +1,17 @@
+import copy
+import math
+from abc import ABC
+from abc import abstractmethod
+from typing import Callable
+from typing import Union
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import math
-import copy
-import numpy as np
-
-from typing import Union, Callable
-
-from abc import ABC, abstractmethod
-
-from utils import Parameters, linear_function
+from utils import Parameters
+from utils import custom_activations
 
 
 class Model(nn.Module, ABC):
@@ -26,6 +27,7 @@ class Model(nn.Module, ABC):
     This base class does the relevant initialisation and makes the
     forward up to the last layer, which is implemented by the child.
     """
+
     def __init__(self, config: Parameters, model_type: str) -> None:
         """
         Initialisation.
@@ -41,11 +43,9 @@ class Model(nn.Module, ABC):
 
         model_index: Union[int, None]
 
-        assert (model_type == 'student' or 'teacher_' in model_type), \
-            (
-                "model_type variable has incorrect format. Should be 'student'"
-                " or 'teacher_i' where i is and integer"
-            )
+        assert (
+            model_type == 'student' or 'teacher_' in model_type
+        ), "model_type variable has incorrect format. Should be 'student' or 'teacher_i' where i is and integer"
 
         if 'teacher' in model_type:
             self.model_type, model_index_str = model_type.split("_")
@@ -76,10 +76,8 @@ class Model(nn.Module, ABC):
         self.output_dimension = config.get(["model", "output_dimension"])
         self.hidden_dimensions = \
             config.get(["model", "{}_hidden_layers".format(self.model_type)])
-        self.initialisation_std = \
-            config.get(
-                ["model", "{}_initialisation_std".format(self.model_type)]
-                )
+        self.initialisation_std = config.get(
+            ["model", "{}_initialisation_std".format(self.model_type)])
         self.symmetric_student_initialisation = \
             config.get(
                 ["model", "symmetric_student_initialisation"]
@@ -94,7 +92,12 @@ class Model(nn.Module, ABC):
             config.get(["task", "label_task_boundaries"])
         self.initialise_student_outputs = \
             config.get(["model", "initialise_student_outputs"])
-        self.forward_scaling = 1 / math.sqrt(self.input_dimension)
+        self.unit_norm_teacher_head = \
+            config.get(["model", "unit_norm_teacher_head"])
+        if config.get(["training", "scale_hidden_lr_forward"]):
+            self.forward_scaling = 1 / math.sqrt(self.input_dimension)
+        else:
+            self.forward_scaling = 1
         self.normalise_teachers = config.get(["model", "normalise_teachers"])
 
     def _get_nonlinear_function(self, config: Parameters) -> Callable:
@@ -127,9 +130,9 @@ class Model(nn.Module, ABC):
         elif self.nonlinearity_name == 'sigmoid':
             return torch.sigmoid
         elif self.nonlinearity_name == 'scaled_erf':
-            return lambda x: torch.erf(x / math.sqrt(2))
+            return custom_activations.scaled_erf_activation
         elif self.nonlinearity_name == 'linear':
-            return linear_function
+            return custom_activations.linear_activation
         elif self.nonlinearity_name == 'leaky_relu':
             return F.leaky_relu
         else:
@@ -144,17 +147,13 @@ class Model(nn.Module, ABC):
         """
         self.layers = nn.ModuleList([])
 
-        input_layer = nn.Linear(
-            self.input_dimension, self.hidden_dimensions[0], bias=self.bias
-            )
+        input_layer = nn.Linear(self.input_dimension, self.hidden_dimensions[0], bias=self.bias)
         self._initialise_weights(input_layer)
         self.layers.append(input_layer)
 
         for h in range(len(self.hidden_dimensions[:-1])):
             hidden_layer = nn.Linear(
-                self.hidden_dimensions[h], self.hidden_dimensions[h + 1],
-                bias=self.bias
-                )
+                self.hidden_dimensions[h], self.hidden_dimensions[h + 1], bias=self.bias)
             self._initialise_weights(hidden_layer)
             self.layers.append(hidden_layer)
 
@@ -214,9 +213,7 @@ class Model(nn.Module, ABC):
             y: Output of network
         """
         for layer in self.layers:
-            x = self.nonlinear_function(
-                self.forward_scaling * layer(x)
-                )
+            x = self.nonlinear_function(self.forward_scaling * layer(x))
 
         y = self._output_forward(x)
 
