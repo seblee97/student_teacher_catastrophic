@@ -1,11 +1,12 @@
-from .base_teachers import _BaseTeachers
-from utils import Parameters
-from models.networks.teachers import _Teacher
+import copy
+from typing import Dict
+from typing import List
 
 import torch
-import copy
 
-from typing import Dict, List
+from models.networks.teachers import _Teacher
+from utils import Parameters
+from .base_teachers import _BaseTeachers
 
 
 class OverlappingTeachers(_BaseTeachers):
@@ -28,11 +29,9 @@ class OverlappingTeachers(_BaseTeachers):
         if type(teacher_noise) is int:
             teacher_noises = [teacher_noise for _ in range(self._num_teachers)]
         elif type(teacher_noise) is list:
-            assert len(teacher_noise) == self._num_teachers, \
-                "Provide one noise for each teacher. {} noises given, \
-                    {} teachers specified".format(
-                        len(teacher_noise), self._num_teachers
-                        )
+            assert len(
+                teacher_noise
+            ) == self._num_teachers, f"Provide one noise for each teacher. {len(teacher_noise)} noises given, {self._num_teachers} teachers specified"
             teacher_noises = teacher_noise
 
         overlap_percentages = config.get(["teachers", "overlap_percentages"])
@@ -47,8 +46,7 @@ class OverlappingTeachers(_BaseTeachers):
             original_teacher_output_std = \
                 original_teacher.get_output_statistics()
             original_teacher.set_noise_distribution(
-                mean=0, std=teacher_noises[0] * original_teacher_output_std
-                )
+                mean=0, std=teacher_noises[0] * original_teacher_output_std)
 
         self._teachers.append(original_teacher)
 
@@ -62,15 +60,12 @@ class OverlappingTeachers(_BaseTeachers):
                 assert len(layer_shape) == 2, \
                     "shape of layer tensor is not 2. \
                         Check consitency of layer construction with task."
+
                 for row in range(layer_shape[0]):
                     overlapping_dim = round(
-                        0.01 * overlap_percentages[layer_index]
-                        * layer_shape[1]
-                        )
+                        0.01 * overlap_percentages[layer_index] * layer_shape[1])
                     overlapping_weights = copy.deepcopy(
-                        original_teacher.state_dict()
-                        [layer][row][:overlapping_dim]
-                        )
+                        original_teacher.state_dict()[layer][row][:overlapping_dim])
                     teacher.state_dict()[layer][row][:overlapping_dim] = \
                         overlapping_weights
 
@@ -81,27 +76,17 @@ class OverlappingTeachers(_BaseTeachers):
             if teacher_noises[t + 1] != 0:
                 teacher_output_std = teacher.get_output_statistics()
                 teacher.set_noise_distribution(
-                    mean=0, std=teacher_noises[t + 1] * teacher_output_std
-                    )
+                    mean=0, std=teacher_noises[t + 1] * teacher_output_std)
             self._teachers.append(teacher)
 
-    def _set_teacher_weights(
-        self,
-        teacher: _Teacher,
-        layer: int,
-        row: int,
-        copy_upper_bound: int
-    ) -> _Teacher:
+    def _set_teacher_weights(self, teacher: _Teacher, layer: int, row: int,
+                             copy_upper_bound: int) -> _Teacher:
         raise NotImplementedError
 
     def test_set_forward(self, batch) -> List[torch.Tensor]:
         return [self.forward(t, batch) for t in range(self._num_teachers)]
 
-    def forward(
-        self,
-        teacher_index: int,
-        batch: Dict[str, torch.Tensor]
-    ) -> torch.Tensor:
+    def forward(self, teacher_index: int, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
         x = batch['x']
         output = self._teachers[teacher_index](x)
         return output

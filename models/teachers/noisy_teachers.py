@@ -1,7 +1,7 @@
-from .base_teachers import _BaseTeachers
-from utils import Parameters
-
 import copy
+
+from utils import Parameters
+from .base_teachers import _BaseTeachers
 
 
 class NoisyTeachers(_BaseTeachers):
@@ -22,10 +22,7 @@ class NoisyTeachers(_BaseTeachers):
         teacher_noises = config.get(["task", "teacher_noises"])
 
         assert len(teacher_noises) == self.num_teachers, \
-            "Provide one noise for each teacher. {} noises given, \
-                {} teachers specified".format(
-                    len(teacher_noises), self.num_teachers
-                    )
+            f"Provide one noise for each teacher. {len(teacher_noises)} noises given, {self.num_teachers} teachers specified"
 
         self.teachers = []
         base_teacher = self._init_teacher(config=config, index=0)
@@ -36,8 +33,7 @@ class NoisyTeachers(_BaseTeachers):
             teacher = copy.deepcopy(base_teacher)
             if teacher_noises[t] != 0:
                 teacher.set_noise_distribution(
-                    mean=0, std=teacher_noises[t] * base_teacher_output_std
-                    )
+                    mean=0, std=teacher_noises[t] * base_teacher_output_std)
             self.teachers.append(teacher)
 
     def _signal_task_boundary_to_teacher(self, new_task: int):

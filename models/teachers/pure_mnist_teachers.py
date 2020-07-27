@@ -1,13 +1,13 @@
-from typing import Dict, List
-
-from .base_teachers import _BaseTeachers
-from utils import Parameters
+from typing import Dict
+from typing import List
 
 import torch
 
+from utils import Parameters
+from .base_teachers import _BaseTeachers
+
 
 class PureMNISTTeachers(_BaseTeachers):
-
     """Dummy teachers class for pure mnist teachers
     (just returns back label)
     """
@@ -19,11 +19,7 @@ class PureMNISTTeachers(_BaseTeachers):
         all_task_labels: List[torch.Tensor] = batch['y']
         return all_task_labels
 
-    def forward(
-        self,
-        teacher_index: int,
-        batch: Dict[str, torch.Tensor]
-    ) -> torch.Tensor:
+    def forward(self, teacher_index: int, batch: Dict[str, torch.Tensor]) -> torch.Tensor:
         labels = batch['y']
         return labels
 

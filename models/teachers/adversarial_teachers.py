@@ -1,25 +1,23 @@
-from .base_teachers import _BaseTeachers
-
 import torch.optim as optim
+
+from .base_teachers import _BaseTeachers
 
 
 class AdversarialTeachers(_BaseTeachers):
 
     def __init__(self, config):
-        raise NotImplementedError(
-            "Unsure how to supervise teacher i.e. should it know about \
-            scores from student and be trained to maximise student error?"
-            )
+        raise NotImplementedError("Unsure how to supervise teacher i.e. should it know about \
+            scores from student and be trained to maximise student error?")
         _BaseTeachers.__init__(self, config)
 
         trainable_parameters = [
             filter(lambda param: param.requires_grad, teacher.parameters())
             for teacher in self._teachers
-            ]
+        ]
         self.teacher_optimisers = [
             optim.SGD(teacher_parameters, lr=self.learning_rate)
             for teacher_parameters in trainable_parameters
-            ]
+        ]
 
     def _setup_teachers(self, config):
         # initialise teacher networks, freeze
@@ -27,11 +25,9 @@ class AdversarialTeachers(_BaseTeachers):
         if type(teacher_noise) is int:
             teacher_noises = [teacher_noise for _ in range(self.num_teachers)]
         elif type(teacher_noise) is list:
-            assert len(teacher_noise) == self.num_teachers, \
-                "Provide one noise for each teacher. {} noises given, \
-                    {} teachers specified".format(
-                        len(teacher_noise), self._num_teachers
-                        )
+            assert len(
+                teacher_noise
+            ) == self.num_teachers, f"Provide one noise for each teacher. {len(teacher_noise)} noises given, {self._num_teachers} teachers specified"
             teacher_noises = teacher_noise
 
         self.teachers = []
