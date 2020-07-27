@@ -1,13 +1,15 @@
 from abc import abstractmethod
+from typing import Dict
+from typing import Iterator
+from typing import List
 
-from typing import Dict, List, Iterator
-
-from models.networks.base_network import Model
-from utils import Parameters
-from constants import Constants
-
+import numpy as np
 import torch
 import torch.nn as nn
+
+from constants import Constants
+from models.networks.base_network import Model
+from utils import Parameters
 
 
 class _BaseLearner(Model):
@@ -17,8 +19,9 @@ class _BaseLearner(Model):
         Model.__init__(self, config=config, model_type='student')
 
         self._device = config.get("device")
-        self._scale_output_backward = \
-            config.get(["training", "scale_output_backward"])
+        self._scale_head_lr = \
+            config.get(["training", "scale_head_lr"])
+        self._scale_hidden_lr_backward = config.get(["training", "scale_hidden_lr_backward"])
         self._learning_rate = config.get(["training", "learning_rate"])
         self._input_dimension = config.get(["model", "input_dimension"])
         self._soft_committee = config.get(["model", "soft_committee"])
@@ -42,10 +45,8 @@ class _BaseLearner(Model):
         raise NotImplementedError("Base class method")
 
     @abstractmethod
-    def forward_batch_per_task(
-        self,
-        batch_list: List[Dict[str, torch.Tensor]]
-    ) -> List[torch.Tensor]:
+    def forward_batch_per_task(self,
+                               batch_list: List[Dict[str, torch.Tensor]]) -> List[torch.Tensor]:
         """
         Makes call to student forward, using a different head
         for each batch in list
@@ -58,21 +59,23 @@ class _BaseLearner(Model):
         of student networks
         """
         trainable_parameters: Constants.TRAINABLE_PARAMETERS_TYPE
-        if self._scale_output_backward:
-            # hidden layer parameters
-            trainable_parameters = [
-                {'params': layer.parameters()} for layer in self.layers
-                ]
-            if not self._soft_committee:
-                trainable_parameters += self._get_trainable_head_parameters()
+        # if self._scale_head_lr:
+        # hidden layer parameters
+        if self._scale_hidden_lr_backward:
+            trainable_parameters = [{
+                'params': layer.parameters(),
+                'lr': self._learning_rate / np.sqrt(self._input_dimension)
+            } for layer in self.layers]
         else:
-            trainable_parameters = self.parameters()
+            trainable_parameters = [{'params': layer.parameters()} for layer in self.layers]
+        if not self._soft_committee:
+            trainable_parameters += self._get_trainable_head_parameters()
+        # else:
+        #     trainable_parameters = self.parameters()
         return trainable_parameters
 
     @abstractmethod
-    def _get_trainable_head_parameters(
-        self
-    ) -> List[Dict[str, Iterator[torch.nn.Parameter]]]:
+    def _get_trainable_head_parameters(self) -> List[Dict[str, Iterator[torch.nn.Parameter]]]:
         raise NotImplementedError("Base class method")
 
     def set_to_train(self) -> None:
