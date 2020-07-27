@@ -1,12 +1,13 @@
-from .mnist_data import _MNISTData
-from utils import Parameters
-from constants import Constants
+from typing import Dict
+from typing import Tuple
 
 import torch
 import torchvision
 from torch.utils.data import Dataset
 
-from typing import Dict, Tuple
+from constants import Constants
+from utils import Parameters
+from .mnist_data import _MNISTData
 
 
 class MNISTStreamData(_MNISTData):
@@ -28,6 +29,7 @@ class MNISTStreamData(_MNISTData):
     - get_batch
     - signal_task_boundary_to_data_generator
     """
+
     def __init__(self, config: Parameters):
         """
         This method initialises the class. It loads the
@@ -39,29 +41,19 @@ class MNISTStreamData(_MNISTData):
         self.test_data: Dataset
 
         self.training_data_iterator = self._generate_iterator(
-            dataset=self.train_data, batch_size=self._train_batch_size,
-            shuffle=True
-        )
+            dataset=self.train_data, batch_size=self._train_batch_size, shuffle=True)
 
         self.test_data_iterator = self._generate_iterator(
-            dataset=self.test_data, batch_size=None,
-            shuffle=False
-        )
+            dataset=self.test_data, batch_size=None, shuffle=False)
 
-    def _generate_datasets(
-        self
-    ) -> Tuple[Constants.DATASET_TYPES, Constants.DATASET_TYPES]:
+    def _generate_datasets(self) -> Tuple[Constants.DATASET_TYPES, Constants.DATASET_TYPES]:
         """
         This method loads the MNIST datasets
         """
-        train_data = \
-            torchvision.datasets.MNIST(
-                self._full_data_path, transform=self.transform, train=True
-                )
-        test_data = \
-            torchvision.datasets.MNIST(
-                self._full_data_path, transform=self.transform, train=False
-                )
+        train_data = torchvision.datasets.MNIST(
+            self._full_data_path, transform=self.transform, train=True)
+        test_data = torchvision.datasets.MNIST(
+            self._full_data_path, transform=self.transform, train=False)
 
         return train_data, test_data
 

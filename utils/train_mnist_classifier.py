@@ -1,18 +1,16 @@
-from models.networks.base_network import Model
-from components.data_modules import MNISTDigitsData
-from utils import Parameters
+from collections import deque
+from typing import Dict
 
+import numpy as np
 import torch
 import torch.nn as nn
 
-import numpy as np
-from collections import deque
-
-from typing import Dict
+from components.data_modules import MNISTDigitsData
+from models.networks.base_network import Model
+from utils import Parameters
 
 
 class ClassificationTeacher(Model):
-
     """Classification - threshold output"""
 
     def __init__(self, config: Parameters) -> None:
@@ -23,8 +21,7 @@ class ClassificationTeacher(Model):
 
     def _construct_output_layers(self):
         self.output_layer = nn.Linear(
-            self.hidden_dimensions[-1], self._output_dimension, bias=self.bias
-            )
+            self.hidden_dimensions[-1], self._output_dimension, bias=self.bias)
         self._initialise_weights(self.output_layer)
 
     def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -48,12 +45,8 @@ class MNISTTrainer:
         self.batch_size = config.get(["trained_mnist", "batch_size"])
 
         self.model = ClassificationTeacher(config=config)
-        self.data_module = MNISTDigitsData(
-            config, override_batch_size=self.batch_size
-            )
-        self.data_module.signal_task_boundary_to_data_generator(
-            new_task=task_index
-            )
+        self.data_module = MNISTDigitsData(config, override_batch_size=self.batch_size)
+        self.data_module.signal_task_boundary_to_data_generator(new_task=task_index)
 
         self.convergence_criterion = \
             config.get(["trained_mnist", "convergence_criterion"])
@@ -84,10 +77,7 @@ class MNISTTrainer:
             mean_loss = float(torch.mean(loss))
             running_mean_loss.append(mean_loss)
 
-            print(
-                np.mean(running_mean_loss),
-                [w.grad for w in self.model.parameters()][0].sum()
-                )
+            print(np.mean(running_mean_loss), [w.grad for w in self.model.parameters()][0].sum())
 
     def save_model_weights(self, path: str):
         torch.save(self.model.state_dict(), path)

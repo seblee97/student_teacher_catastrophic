@@ -1,11 +1,11 @@
-from abc import ABC, abstractmethod
-
+from abc import ABC
+from abc import abstractmethod
 from typing import Dict
 
-from utils import Parameters
-from constants import Constants
-
 import torch
+
+from constants import Constants
+from utils import Parameters
 
 
 class _BaseData(ABC):

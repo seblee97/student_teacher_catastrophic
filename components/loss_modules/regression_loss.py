@@ -1,5 +1,5 @@
-from .base_loss import _BaseLoss
 from utils import Parameters
+from .base_loss import _BaseLoss
 
 
 class RegressionLoss(_BaseLoss):

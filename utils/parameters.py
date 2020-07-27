@@ -1,13 +1,18 @@
-from .base_template import _Template, Field
-
-from typing import Any, List, Union, Dict, overload
-
-import yaml
-import os
 import collections
-import six
-import warnings
 import inspect
+import os
+import warnings
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Union
+from typing import overload
+
+import six
+import yaml
+
+from .base_template import Field
+from .base_template import _Template
 
 
 class Parameters(object):
@@ -16,10 +21,12 @@ class Parameters(object):
         self._config = parameters
 
     @overload
-    def get(self, property_name: str): ...
+    def get(self, property_name: str):
+        ...
 
     @overload
-    def get(self, property_name: List[str]): ...
+    def get(self, property_name: List[str]):
+        ...
 
     def get(self, property_name):
         """
@@ -39,16 +46,12 @@ class Parameters(object):
         elif isinstance(property_name, str):
             value = self._config.get(property_name, "Unknown Key")
             if value == "Unknown Key":
-                raise ValueError(
-                    "Config key {} unrecognised".format(property_name)
-                )
+                raise ValueError("Config key {} unrecognised".format(property_name))
             else:
                 return value
         else:
-            raise TypeError(
-                "property_name supplied has wrong type. \
-                    Must be list of strings or string."
-            )
+            raise TypeError("property_name supplied has wrong type. \
+                    Must be list of strings or string.")
 
     def get_property_description(self, property_name: str) -> str:
         """
@@ -75,7 +78,7 @@ class Parameters(object):
         field_value = data[field_name]
         assert isinstance(field_value, allowed_field_types), \
             "Type given for field {} at level {} in config is {}. \
-                Must be one of {}".format(
+                Must be one of {}"                                  .format(
                     field_name, level, type(field_value), allowed_field_types
                     )
 
@@ -84,13 +87,9 @@ class Parameters(object):
             for r, requirement in enumerate(additional_reqs):
                 assert requirement(field_value), \
                     "Additional requirement check {} for field {} \
-                        failed".format(r, field_name)
+                        failed"                               .format(r, field_name)
 
-        print(
-            "Validating field: {} at level {} in config...".format(
-                field_name, level
-                )
-            )
+        print("Validating field: {} at level {} in config...".format(field_name, level))
 
     def check_template(self, template: _Template):
         template_attributes = template.get_fields()
@@ -108,39 +107,28 @@ class Parameters(object):
         optional_fields = template.get_optional_fields()
 
         for template_attribute in template_attributes:
-            if (
-                inspect.isclass(template_attribute)
-                and issubclass(template_attribute, _Template)
-            ):
+            if (inspect.isclass(template_attribute) and issubclass(template_attribute, _Template)):
                 self.check_template(template_attribute)
                 fields_to_check.remove(template_attribute.get_template_name())
             else:
-                self._validate_field(
-                    field=template_attribute, data=data, level=level_name
-                    )
+                self._validate_field(field=template_attribute, data=data, level=level_name)
                 fields_to_check.remove(template_attribute.get_name())
 
         for optional_field in optional_fields:
             if optional_field in fields_to_check:
                 fields_to_check.remove(optional_field)
-                warnings.warn(
-                    "Optional field {} provided but NOT checked".format(
-                        optional_field
-                        )
-                    )
+                warnings.warn("Optional field {} provided but NOT checked".format(optional_field))
 
         assert not fields_to_check, \
             "There are fields at level {} of config that have not \
-                been validated: {}".format(
+                been validated: {}"                                   .format(
                     level_name, ", ".join(fields_to_check)
                     )
 
-    def set_property(
-        self,
-        property_name: Union[str, List[str]],
-        property_value: Any,
-        property_description: str = None
-    ) -> None:
+    def set_property(self,
+                     property_name: Union[str, List[str]],
+                     property_value: Any,
+                     property_description: str = None) -> None:
         """
         Add to the configuration specification
 
@@ -150,26 +138,18 @@ class Parameters(object):
         to configuration
         """
         if property_name in self._config:
-            raise Exception(
-                "This field is already defined in the configuration. \
-                Use ammend_property method to override current entry"
-                )
+            raise Exception("This field is already defined in the configuration. \
+                Use ammend_property method to override current entry")
         else:
             if isinstance(property_name, str):
                 self._config[property_name] = property_value
             else:
-                raise TypeError(
-                    "Property name type {} not assignable".format(
-                        type(property_name)
-                        )
-                )
+                raise TypeError("Property name type {} not assignable".format(type(property_name)))
 
-    def ammend_property(
-        self,
-        property_name: str,
-        property_value: Any,
-        property_description: str = None
-    ) -> None:
+    def ammend_property(self,
+                        property_name: str,
+                        property_value: Any,
+                        property_description: str = None) -> None:
         """
         Add to the configuration specification
 
@@ -180,10 +160,8 @@ class Parameters(object):
         """
         raise NotImplementedError
         if property_name not in self._config:
-            raise Exception(
-                "This field is not defined in the configuration. \
-                    Use set_property method to add this entry"
-            )
+            raise Exception("This field is not defined in the configuration. \
+                    Use set_property method to add this entry")
         else:
             self._config[property_name] = property_value
 
@@ -210,6 +188,7 @@ class Parameters(object):
 
         specific_params could be nested dictionary
         """
+
         def update_dict(original_dictionary, update_dictionary):
             for key, value in six.iteritems(update_dictionary):
                 sub_dict = original_dictionary.get(key, {})

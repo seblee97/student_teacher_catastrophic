@@ -26,17 +26,11 @@ class _BaseLoss(ABC):
         elif loss_name == 'smooth_l1':
             self.loss_function = nn.SmoothL1Loss()
         else:
-            raise NotImplementedError(
-                "{} is not currently supported, \
+            raise NotImplementedError("{} is not currently supported, \
                     please use mse loss or cross_entropy \
-                    for mnist".format(loss_name)
-                )
+                    for mnist".format(loss_name))
 
-    def compute_loss(
-        self,
-        prediction: torch.Tensor,
-        target: torch.Tensor
-    ) -> torch.Tensor:
+    def compute_loss(self, prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """
         Calculates loss of prediction of student vs. target from teacher
         Loss function determined by configuration

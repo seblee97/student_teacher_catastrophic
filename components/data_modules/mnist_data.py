@@ -1,20 +1,23 @@
-from abc import ABC, abstractmethod
-
-from typing import Dict, Iterator, Union, Tuple
-
-from .base_data_module import _BaseData
-from utils import Parameters, custom_torch_transforms, get_pca
-from constants import Constants
-
 import os
+from abc import ABC
+from abc import abstractmethod
+from typing import Dict
+from typing import Iterator
+from typing import Tuple
+from typing import Union
 
 import torch
 import torchvision
 from torch.utils.data import Dataset
 
+from constants import Constants
+from utils import Parameters
+from utils import custom_torch_transforms
+from utils import get_pca
+from .base_data_module import _BaseData
+
 
 class _MNISTData(_BaseData, ABC):
-
     """Class for dealing with data generated from MNIST images"""
 
     def __init__(self, config: Parameters):
@@ -33,26 +36,18 @@ class _MNISTData(_BaseData, ABC):
         self.train_data, self.test_data = self._generate_datasets()
 
     @abstractmethod
-    def _generate_datasets(
-        self
-    ) -> Tuple[Constants.DATASET_TYPES, Constants.DATASET_TYPES]:
+    def _generate_datasets(self) -> Tuple[Constants.DATASET_TYPES, Constants.DATASET_TYPES]:
         raise NotImplementedError("Base class method")
 
-    def _generate_iterator(
-        self,
-        dataset: Dataset,
-        batch_size: Union[int, None],
-        shuffle: bool
-    ) -> Iterator:
+    def _generate_iterator(self, dataset: Dataset, batch_size: Union[int, None],
+                           shuffle: bool) -> Iterator:
 
         if batch_size is None:
             bs = len(dataset)  # for e.g. test data
         else:
             bs = batch_size
 
-        dataloader = torch.utils.data.DataLoader(
-                    dataset, batch_size=bs, shuffle=shuffle
-                )
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=bs, shuffle=shuffle)
 
         iterator = iter(dataloader)
 
@@ -75,10 +70,8 @@ class _MNISTData(_BaseData, ABC):
 
         if self._pca_input > 0:
             # note always using train data to generate pca
-            mnist_data = \
-                torchvision.datasets.MNIST(
-                    self._full_data_path, transform=base_transform, train=True
-                    )
+            mnist_data = torchvision.datasets.MNIST(
+                self._full_data_path, transform=base_transform, train=True)
             raw_data = next(iter(mnist_data))[0].reshape((len(mnist_data), -1))
             pca_output = \
                 get_pca(raw_data, num_principal_components=self._pca_input)
@@ -91,14 +84,10 @@ class _MNISTData(_BaseData, ABC):
 
         if self._standardise:
             # load dataset to compute channel statistics
-            mnist_train_data = \
-                torchvision.datasets.MNIST(
-                    self._full_data_path, transform=base_transform, train=True
-                    )
-            mnist_train_dataloader = \
-                torch.utils.data.DataLoader(
-                    mnist_train_data, batch_size=len(mnist_train_data)
-                    )
+            mnist_train_data = torchvision.datasets.MNIST(
+                self._full_data_path, transform=base_transform, train=True)
+            mnist_train_dataloader = torch.utils.data.DataLoader(
+                mnist_train_data, batch_size=len(mnist_train_data))
 
             # evaluate channel mean and std (note MNIST small enough to
             # load all in memory rather than computing over smaller batches)
@@ -109,8 +98,7 @@ class _MNISTData(_BaseData, ABC):
             data_sigma = torch.std(all_train_data, dim=0)
 
             # add normalisation to transforms
-            normalise_transform = \
-                custom_torch_transforms.Standardize(data_mu, data_sigma)
+            normalise_transform = custom_torch_transforms.Standardize(data_mu, data_sigma)
             transform_list.append(normalise_transform)
 
         # if self._noise is not None:

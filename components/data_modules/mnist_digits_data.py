@@ -1,15 +1,18 @@
-from .mnist_data import _MNISTData
-from utils import Parameters
-from constants import Constants
-
-from typing import Dict, Tuple, List
-
-import torch
-import torchvision
-from torch.utils.data import Subset, ConcatDataset, Dataset
+import copy
+from typing import Dict
+from typing import List
+from typing import Tuple
 
 import numpy as np
-import copy
+import torch
+import torchvision
+from torch.utils.data import ConcatDataset
+from torch.utils.data import Dataset
+from torch.utils.data import Subset
+
+from constants import Constants
+from utils import Parameters
+from .mnist_data import _MNISTData
 
 
 class MNISTDigitsData(_MNISTData):
@@ -24,10 +27,8 @@ class MNISTDigitsData(_MNISTData):
         _MNISTData.__init__(self, config)
 
         if self._num_teachers != len(self._mnist_teacher_classes):
-            raise AssertionError(
-                "Number of teachers specified in base config is not \
-                    compatible with number of MNIST classifiers specified."
-                )
+            raise AssertionError("Number of teachers specified in base config is not \
+                    compatible with number of MNIST classifiers specified.")
 
         if self.override_batch_size is not None:
             self._batch_size = self.override_batch_size
@@ -39,28 +40,20 @@ class MNISTDigitsData(_MNISTData):
         self.test_data: List[Dataset]
 
         self.training_data_iterators = [
-                self._generate_iterator(
-                    dataset=dataset, batch_size=self._batch_size,
-                    shuffle=True
-                )
-                for dataset in self.train_data
-            ]
+            self._generate_iterator(dataset=dataset, batch_size=self._batch_size, shuffle=True)
+            for dataset in self.train_data
+        ]
 
         self.test_data_iterators = [
-                self._generate_iterator(
-                    dataset=dataset, batch_size=None,
-                    shuffle=False
-                )
-                for dataset in self.test_data
-            ]
+            self._generate_iterator(dataset=dataset, batch_size=None, shuffle=False)
+            for dataset in self.test_data
+        ]
 
-    def filter_dataset_by_target(
-        self,
-        unflitered_data: Constants.MNIST_DATASET_TYPE,
-        target_to_keep: int,
-        train: bool,
-        new_label: int = None
-    ) -> Subset:
+    def filter_dataset_by_target(self,
+                                 unflitered_data: Constants.MNIST_DATASET_TYPE,
+                                 target_to_keep: int,
+                                 train: bool,
+                                 new_label: int = None) -> Subset:
         """generate subset of dataset filtered by target"""
         targets = unflitered_data.targets
 
@@ -75,18 +68,12 @@ class MNISTDigitsData(_MNISTData):
         else:
             return Subset(unflitered_data, filtered_dataset_indices)
 
-    def _generate_datasets(
-        self
-    ) -> Tuple[Constants.DATASET_TYPES, Constants.DATASET_TYPES]:
+    def _generate_datasets(self) -> Tuple[Constants.DATASET_TYPES, Constants.DATASET_TYPES]:
 
-        full_train_data = \
-            torchvision.datasets.MNIST(
-                self._full_data_path, transform=self.transform, train=True
-                )
-        full_test_data = \
-            torchvision.datasets.MNIST(
-                self._full_data_path, transform=self.transform, train=False
-                )
+        full_train_data = torchvision.datasets.MNIST(
+            self._full_data_path, transform=self.transform, train=True)
+        full_test_data = torchvision.datasets.MNIST(
+            self._full_data_path, transform=self.transform, train=False)
 
         train_datasets = []
         test_datasets = []
@@ -95,21 +82,17 @@ class MNISTDigitsData(_MNISTData):
 
             # get filtered training sets
             train_target_filtered_datasets = [
-                self.filter_dataset_by_target(
-                    full_train_data, target, train=True, new_label=st
-                    )
+                self.filter_dataset_by_target(full_train_data, target, train=True, new_label=st)
                 for st, target in enumerate(task_classes)
-                ]
+            ]
             train_task_dataset: ConcatDataset = \
                 ConcatDataset(train_target_filtered_datasets)
 
             # get filtered test sets
             test_target_filtered_datasets = [
-                self.filter_dataset_by_target(
-                    full_test_data, target, train=False
-                    )
+                self.filter_dataset_by_target(full_test_data, target, train=False)
                 for target in task_classes
-                ]
+            ]
             test_task_dataset: ConcatDataset = \
                 ConcatDataset(test_target_filtered_datasets)
 
@@ -121,9 +104,8 @@ class MNISTDigitsData(_MNISTData):
     def get_test_data(self) -> Constants.TEST_DATA_TYPES:
 
         full_test_datasets = [
-            next(test_set_iterator)[0]
-            for test_set_iterator in self.test_data_iterators
-            ]
+            next(test_set_iterator)[0] for test_set_iterator in self.test_data_iterators
+        ]
 
         data = torch.cat([test_set[0] for test_set in full_test_datasets])
         labels = [test_set[1] for test_set in full_test_datasets]
@@ -142,13 +124,9 @@ class MNISTDigitsData(_MNISTData):
                 next(self.training_data_iterators[self._current_teacher_index])
         except StopIteration:
             dataset = self.train_data[self._current_teacher_index]
-            self.training_data_iterators[self._current_teacher_index] = \
-                self._generate_iterator(
-                    dataset=dataset, batch_size=self._batch_size,
-                    shuffle=True
-                )
-            batch = \
-                next(self.training_data_iterators[self._current_teacher_index])
+            self.training_data_iterators[self._current_teacher_index] = self._generate_iterator(
+                dataset=dataset, batch_size=self._batch_size, shuffle=True)
+            batch = next(self.training_data_iterators[self._current_teacher_index])
 
         return {'x': batch[0], 'y': batch[1]}
 

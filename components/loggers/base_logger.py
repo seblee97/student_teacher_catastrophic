@@ -1,20 +1,19 @@
-from abc import ABC, abstractmethod
-
-from utils import Parameters
-from models.learners import _BaseLearner
-from models.networks import _Teacher
-
-from typing import List, Union
-
+import copy
 import logging
 import os
 import time
-import copy
-
-from tensorboardX import SummaryWriter
+from abc import ABC
+from abc import abstractmethod
+from typing import List
+from typing import Union
 
 import pandas as pd
 import torch
+from tensorboardX import SummaryWriter
+
+from models.learners import _BaseLearner
+from models.networks import _Teacher
+from utils import Parameters
 
 
 class _BaseLogger(ABC):
@@ -29,9 +28,9 @@ class _BaseLogger(ABC):
 
             # initialise separate tb writers for each teacher
             self._teacher_writers = [
-                SummaryWriter("{}/teacher_{}".format(self._checkpoint_path, t))
+                SummaryWriter(f"{self._checkpoint_path}/teacher_{t}")
                 for t in range(self._num_teachers)
-                ]
+            ]
 
         # initialise dataframe to log metrics
         if self._log_to_df:
@@ -42,10 +41,7 @@ class _BaseLogger(ABC):
         self._logger = logging.getLogger(__name__)
         logging.basicConfig(level=logging.INFO)
 
-        file_handler = \
-            logging.FileHandler(
-                '{}/experiment.log'.format(self._checkpoint_path)
-                )
+        file_handler = logging.FileHandler(f"{self._checkpoint_path}/experiment.log")
 
         # Add handlers to the logger
         self._logger.addHandler(file_handler)
@@ -84,13 +80,8 @@ class _BaseLogger(ABC):
         """add row to logging dataframe"""
         self._logger_df.append(pd.Series(name=row_label))
 
-    def write_scalar_tb(
-        self,
-        tag: str,
-        scalar: float,
-        step: int,
-        teacher_index: int = None
-    ) -> None:
+    def write_scalar_tb(self, tag: str, scalar: float, step: int,
+                        teacher_index: int = None) -> None:
         """
         write (scalar) data to tensorboard.
 
@@ -101,18 +92,11 @@ class _BaseLogger(ABC):
         """
         if self._verbose_tb > 0:
             if teacher_index is not None:
-                self._teacher_writers[teacher_index].add_scalar(
-                    tag, scalar, step
-                    )
+                self._teacher_writers[teacher_index].add_scalar(tag, scalar, step)
             else:
                 self._writer.add_scalar(tag, scalar, step)
 
-    def write_scalar_df(
-        self,
-        tag: str,
-        scalar: float,
-        step: int
-    ) -> None:
+    def write_scalar_df(self, tag: str, scalar: float, step: int) -> None:
         """
         write (scalar) data to dataframe.
 
@@ -120,18 +104,12 @@ class _BaseLogger(ABC):
         :param scalar: data to be written
         :param step: current step count (x axis on tb)
         """
-        assert tag in self._df_columns, \
-            (
-                "Scalar tag {} not in list of recognised columns \
-                for DataFrame provided: {}".format(tag, self._df_columns)
-            )
+        assert (
+            tag in self._df_columns
+        ), f"Scalar tag {tag} not in list of recognised columns for DataFrame provided: {self._df_columns}"
         self._logger_df.at[step, tag] = scalar
 
-    def _log_output_weights(
-        self,
-        step_count: int,
-        student_network: _BaseLearner
-    ) -> None:
+    def _log_output_weights(self, step_count: int, student_network: _BaseLearner) -> None:
         """
         extract and log output weights of student.
 
@@ -144,21 +122,13 @@ class _BaseLogger(ABC):
             flattened_weights = torch.flatten(head)
             for w, weight in enumerate(flattened_weights):
                 if self._verbose_tb > 1:
-                    self._writer.add_scalar(
-                        'student_head_{}_weight_{}'.format(h, w),
-                        float(weight), step_count
-                        )
+                    self._writer.add_scalar('student_head_{}_weight_{}'.format(h, w), float(weight),
+                                            step_count)
                 if self._log_to_df:
-                    self._logger_df.at[
-                        step_count, 'student_head_{}_weight_{}'.format(h, w)
-                        ] = float(weight)
+                    self._logger_df.at[step_count, 'student_head_{}_weight_{}'.
+                                       format(h, w)] = float(weight)
 
-    def _log_weight_diff(
-        self,
-        step_count: int,
-        old_weights,
-        student_network: _BaseLearner
-    ) -> None:
+    def _log_weight_diff(self, step_count: int, old_weights, student_network: _BaseLearner) -> None:
         """
         Compute for each pairwise component of each hidden layer the number
         of weight differences that are pointing in the same direction.
@@ -182,19 +152,11 @@ class _BaseLogger(ABC):
                     j_differences = torch.sign(layer_weight_differences[j])
                     i_j_same_direction = \
                         int(torch.sum(i_differences == j_differences))
-                    self._logger_df.at[
-                        step_count,
-                        'student_layer_{}_weight_diff_direction_{}_{}'.format(
-                            layer_index, i, j
-                            )
-                        ] = i_j_same_direction
+                    self._logger_df.at[step_count, 'student_layer_{}_weight_diff_direction_{}_{}'.
+                                       format(layer_index, i, j)] = i_j_same_direction
 
-    def compute_overlap_matrices(
-        self,
-        step_count: int,
-        student_network: _BaseLearner,
-        teacher_networks: List[_Teacher]
-    ) -> None:
+    def compute_overlap_matrices(self, step_count: int, student_network: _BaseLearner,
+                                 teacher_networks: List[_Teacher]) -> None:
         """
         calculate overlap matrices between student and teacher and across
         student/teacher layers
@@ -205,40 +167,35 @@ class _BaseLogger(ABC):
         """
         for layer in range(len(self._student_hidden)):
             self._compute_layer_overlaps(
-                layer=str(layer), student_network=student_network,
-                teacher_networks=teacher_networks, head=None,
-                step_count=step_count
-                )
+                layer=str(layer),
+                student_network=student_network,
+                teacher_networks=teacher_networks,
+                head=None,
+                step_count=step_count)
 
-        if self._learner_configuration == "meta":   
+        if self._learner_configuration == "meta":
             self._compute_layer_overlaps(
-                layer="output", student_network=student_network,
-                teacher_networks=teacher_networks, head=1,
-                step_count=step_count
-            )
+                layer="output",
+                student_network=student_network,
+                teacher_networks=teacher_networks,
+                head=1,
+                step_count=step_count)
         elif self._learner_configuration == "continual":
             for head_index in range(self._num_teachers):
                 self._compute_layer_overlaps(
-                    layer="output", student_network=student_network,
-                    teacher_networks=teacher_networks, head=head_index,
-                    step_count=step_count
-                    )
+                    layer="output",
+                    student_network=student_network,
+                    teacher_networks=teacher_networks,
+                    head=head_index,
+                    step_count=step_count)
         else:
-            raise ValueError(
-                "Learner configuration {} not recognised".format(
-                    self._learner_configuration
-                    )
-            )
+            raise ValueError("Learner configuration {} not recognised".format(
+                self._learner_configuration))
 
     @abstractmethod
-    def _compute_layer_overlaps(
-        self,
-        layer: str,
-        student_network: _BaseLearner,
-        teacher_networks: List[_Teacher],
-        head: Union[None, int],
-        step_count: int
-    ) -> None:
+    def _compute_layer_overlaps(self, layer: str, student_network: _BaseLearner,
+                                teacher_networks: List[_Teacher], head: Union[None, int],
+                                step_count: int) -> None:
         """
         computes overlap of given layer of student_network and
         teacher networks.
@@ -266,47 +223,36 @@ class _BaseLogger(ABC):
         assert all(self._logger_df.columns == self._df_columns), \
             "Incorrect dataframe columns for merging"
 
-        self._logger_df.to_csv(
-            self._logfile_path, mode='a', header=header, index=False
-            )
+        self._logger_df.to_csv(self._logfile_path, mode='a', header=header, index=False)
         if self._log_to_df:
             self._logger_df = pd.DataFrame(columns=self._df_columns)
-        self._logger.info(
-            "Dataframe checkpointed in {}s".format(round(time.time() - t0, 5))
-            )
+        self._logger.info("Dataframe checkpointed in {}s".format(round(time.time() - t0, 5)))
 
     def _save_df(self, step: int) -> None:
         """save dataframe"""
         self._logger.info("Saving Dataframe...")
         t0 = time.time()
-        self._logger_df.to_csv(
-            "{}_iter_{}.csv".format(self._logfile_path_no_ext, step)
-            )
-        self._logger.info(
-            "Dataframe saved in {}s".format(round(time.time() - t0, 5))
-            )
+        self._logger_df.to_csv("{}_iter_{}.csv".format(self._logfile_path_no_ext, step))
+        self._logger.info("Dataframe saved in {}s".format(round(time.time() - t0, 5)))
         self._logger_df = pd.DataFrame()
 
     def _consolidate_dfs(self) -> None:
         self._logger.info("Consolidating/Merging all dataframes..")
         all_df_paths = [
             os.path.join(self._checkpoint_path, f)
-            for f in os.listdir(self._checkpoint_path) if f.endswith('.csv')
-            ]
+            for f in os.listdir(self._checkpoint_path)
+            if f.endswith('.csv')
+        ]
 
         if any("data_logger.csv" in path for path in all_df_paths):
-            print(
-                "'data_logger.csv' file already in save path "
-                "specified. Consolidation already complete."
-                )
+            print("'data_logger.csv' file already in save path "
+                  "specified. Consolidation already complete.")
             if len(all_df_paths) > 1:
                 print("Note, other csv files are also still in save path.")
             return
 
         ordered_df_paths = sorted(
-            all_df_paths,
-            key=lambda x: float(x.split("iter_")[-1].strip(".csv"))
-            )
+            all_df_paths, key=lambda x: float(x.split("iter_")[-1].strip(".csv")))
 
         self._logger.info("Loading all dataframes..")
         all_dfs = [pd.read_csv(df_path) for df_path in ordered_df_paths]
