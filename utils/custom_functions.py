@@ -1,5 +1,17 @@
-import numpy as np
 import os
+from typing import List
+from typing import Tuple
+from typing import Union
+from typing import overload
+
+import numpy as np
+import torch
+import torchvision
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import normalize
+from torch.utils.data import DataLoader
+
+from utils import custom_torch_transforms
 
 try:
     import matplotlib.pyplot as plt
@@ -7,66 +19,32 @@ try:
 except OSError:
     pass
 
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import normalize
 
-import torch
-import torchvision
-from torch.utils.data import DataLoader
+def get_figure_skeleton(height: Union[int, float], width: Union[int, float], num_columns: int,
+                        num_rows: int) -> Tuple:
 
-from utils import custom_torch_transforms
-
-from typing import Tuple, Union, List, overload
-
-
-def linear_function(x: torch.Tensor) -> torch.Tensor:
-    return x
-
-
-def get_figure_skeleton(
-    height: Union[int, float],
-    width: Union[int, float],
-    num_columns: int,
-    num_rows: int
-) -> Tuple:
-
-    fig = plt.figure(
-        constrained_layout=False,
-        figsize=(
-            num_columns * width,
-            num_rows * height
-            )
-        )
+    fig = plt.figure(constrained_layout=False, figsize=(num_columns * width, num_rows * height))
 
     heights = [height for _ in range(num_rows)]
     widths = [width for _ in range(num_columns)]
 
     spec = gridspec.GridSpec(
-        nrows=num_rows, ncols=num_columns,
-        width_ratios=widths, height_ratios=heights
-        )
+        nrows=num_rows, ncols=num_columns, width_ratios=widths, height_ratios=heights)
 
     return fig, spec
 
 
 @overload
-def smooth_data(
-    data: List[List[float]],
-    window_width: int
-) -> List[List[float]]: ...
+def smooth_data(data: List[List[float]], window_width: int) -> List[List[float]]:
+    ...
 
 
 @overload
-def smooth_data(
-    data: List[float],
-    window_width: int
-) -> List[float]: ...
+def smooth_data(data: List[float], window_width: int) -> List[float]:
+    ...
 
 
-def smooth_data(
-    data,
-    window_width
-):
+def smooth_data(data, window_width):
     """
     Calculuates moving average of list of values
 
@@ -77,6 +55,7 @@ def smooth_data(
     Returns:
         smoothed_values: averaged data
     """
+
     def _smooth(single_dataset: List[float]):
         cumulative_sum = np.cumsum(single_dataset, dtype=float)
         cumulative_sum[window_width:] = \
@@ -107,11 +86,7 @@ def close_sqrt_factors(n: int) -> Tuple[int, int]:
     return (factor_1, factor_2)
 
 
-def visualise_matrix(
-    matrix_data: np.ndarray,
-    fig_title: str = None,
-    normalised: bool = True
-):
+def visualise_matrix(matrix_data: np.ndarray, fig_title: str = None, normalised: bool = True):
     """
     Show heatmap of matrix
 
@@ -142,12 +117,10 @@ def get_pca(data: np.ndarray, num_principal_components: int):
     return pca
 
 
-def load_mnist_data_as_dataloader(
-    data_path: str,
-    batch_size: int,
-    train: bool = True,
-    pca: int = -1
-) -> DataLoader:
+def load_mnist_data_as_dataloader(data_path: str,
+                                  batch_size: int,
+                                  train: bool = True,
+                                  pca: int = -1) -> DataLoader:
     """
     Load mnist image data from specified, convert to grayscaled tensors,
     flatten, return dataloader
@@ -172,9 +145,7 @@ def load_mnist_data_as_dataloader(
 
     if pca > 0:
         # note always using train data to generate pca
-        mnist_data = torchvision.datasets.MNIST(
-            full_data_path, transform=transform, train=True
-            )
+        mnist_data = torchvision.datasets.MNIST(full_data_path, transform=transform, train=True)
         raw_data = mnist_data.train_data.reshape((len(mnist_data), -1))
         pca_output = get_pca(raw_data, num_principal_components=pca)
 
@@ -187,13 +158,9 @@ def load_mnist_data_as_dataloader(
             custom_torch_transforms.ToFloat(),
         ])
 
-    mnist_data = torchvision.datasets.MNIST(
-        full_data_path, transform=transform, train=train
-        )
+    mnist_data = torchvision.datasets.MNIST(full_data_path, transform=transform, train=train)
 
-    dataloader = torch.utils.data.DataLoader(
-        mnist_data, batch_size=batch_size, shuffle=True
-        )
+    dataloader = torch.utils.data.DataLoader(mnist_data, batch_size=batch_size, shuffle=True)
 
     return dataloader
 
@@ -216,20 +183,15 @@ def load_mnist_data(data_path: str, flatten: bool = False, pca: int = -1):
     full_data_path = os.path.join(file_path, data_path)
 
     # transforms to add to data
-    transform = torchvision.transforms.Compose([
-        torchvision.transforms.Grayscale(),
-        torchvision.transforms.ToTensor()
-    ])
+    transform = torchvision.transforms.Compose(
+        [torchvision.transforms.Grayscale(),
+         torchvision.transforms.ToTensor()])
 
-    mnist_train = torchvision.datasets.MNIST(
-        full_data_path, transform=transform, train=True
-        )
+    mnist_train = torchvision.datasets.MNIST(full_data_path, transform=transform, train=True)
     mnist_train_x = mnist_train.train_data
     mnist_train_y = mnist_train.train_labels
 
-    mnist_test = torchvision.datasets.MNIST(
-        full_data_path, transform=transform, train=False
-        )
+    mnist_test = torchvision.datasets.MNIST(full_data_path, transform=transform, train=False)
     mnist_test_x = mnist_test.test_data
     mnist_test_y = mnist_test.test_labels
 
@@ -244,21 +206,13 @@ def tensor_rotate(tensor, degree):
     if degree == 0:
         rotated_tensor = tensor
     elif degree == 90:
-        rotated_tensor = torch.from_numpy(
-            np.rot90(tensor.detach().numpy(), k=1).copy()
-            )
+        rotated_tensor = torch.from_numpy(np.rot90(tensor.detach().numpy(), k=1).copy())
     elif degree == 180:
-        rotated_tensor = torch.from_numpy(
-            np.rot90(tensor.detach().numpy(), k=1).copy()
-            )
+        rotated_tensor = torch.from_numpy(np.rot90(tensor.detach().numpy(), k=1).copy())
     elif degree == 270:
-        rotated_tensor = torch.from_numpy(
-            np.rot90(tensor.detach().numpy(), k=1).copy()
-            )
+        rotated_tensor = torch.from_numpy(np.rot90(tensor.detach().numpy(), k=1).copy())
     elif degree == 360:
-        rotated_tensor = torch.from_numpy(
-            np.rot90(tensor.detach().numpy(), k=1).copy()
-            )
+        rotated_tensor = torch.from_numpy(np.rot90(tensor.detach().numpy(), k=1).copy())
     else:
         raise ValueError("Invalid rotation degree")
     return rotated_tensor
