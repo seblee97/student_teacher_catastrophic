@@ -1,19 +1,14 @@
-from utils import Parameters, _Template
-
 from typing import Dict
+
+from utils import Parameters
+from utils import _Template
 
 
 class StudentTeacherParameters(Parameters):
 
-    def __init__(
-        self,
-        params: Dict,
-        root_config_template: _Template,
-        iid_data_config_template: _Template,
-        mnist_data_config_template: _Template,
-        pure_mnist_config_template: _Template,
-        trained_mnist_config_template: _Template
-    ):
+    def __init__(self, params: Dict, root_config_template: _Template,
+                 iid_data_config_template: _Template, mnist_data_config_template: _Template,
+                 pure_mnist_config_template: _Template, trained_mnist_config_template: _Template):
         Parameters.__init__(self, params)
 
         self.root_config_template = root_config_template
@@ -48,15 +43,15 @@ class StudentTeacherParameters(Parameters):
         self._consistent_input_dimension()
         self._consistent_same_input()
         self._consistent_curriculum()
+        self._consistent_lr_scaling()
 
     def _consistent_loss(self):
         # loss function
         loss_type = self.get(["task", "loss_type"])
         loss_function = self.get(["training", "loss_function"])
-        assert (
-            loss_type == "regression" and loss_function in ["mse"] or
-            loss_type == "classification" and loss_function in ["bce"]
-        ), "loss function {} is not compatible with loss \
+        assert (loss_type == "regression" and loss_function in ["mse"] or
+                loss_type == "classification" and
+                loss_function in ["bce"]), "loss function {} is not compatible with loss \
             type {}".format(loss_function, loss_type)
 
     def _consistent_num_teachers(self):
@@ -65,34 +60,26 @@ class StudentTeacherParameters(Parameters):
         num_teachers = self.get(["task", "num_teachers"])
         teacher_nonlinearities = self.get(["model", "teacher_nonlinearities"])
         teacher_noises = self.get(["teachers", "teacher_noise"])
-        assert len(teacher_nonlinearities) == num_teachers, \
-            "number of teacher nonlinearities provided ({}) does not match \
-                num_teachers specification ({})".format(
-                    len(teacher_nonlinearities), num_teachers
-                    )
-        assert len(teacher_noises) == num_teachers, \
-            "number of teacher noises provided ({}) does not match \
-                num_teachers specification ({})".format(
-                    len(teacher_noises), num_teachers
-                    )
+        assert len(
+            teacher_nonlinearities
+        ) == num_teachers, f"number of teacher nonlinearities provided ({len(teacher_nonlinearities)}) does not match num_teachers specification ({num_teachers})"
+        assert len(
+            teacher_noises
+        ) == num_teachers, f"number of teacher noises provided ({len(teacher_noises)}) does not match num_teachers specification ({num_teachers})"
 
         curriculum_type = self.get(["curriculum", "type"])
         if curriculum_type == "custom":
             custom_curriculum = self.get(["curriculum", "custom"])
-            assert len(custom_curriculum) == num_teachers, \
-                (
-                    "Custom curriculum specified is not compatible with"
-                    " number of teachers."
-                )
+            assert len(
+                custom_curriculum
+            ) == num_teachers, "Custom curriculum specified is not compatible with number of teachers."
 
     def _consistent_layers(self):
         teacher_overlaps = self.get(["teachers", "overlap_percentages"])
         teacher_layers = self.get(["model", "teacher_hidden_layers"])
-        assert len(teacher_overlaps) == len(teacher_layers) + 1, \
-            "number of teacher overlaps provided ({}) does not match \
-                layers specified for teachers ({})".format(
-                    len(teacher_overlaps), teacher_layers
-                    )
+        assert len(teacher_overlaps) == len(
+            teacher_layers
+        ) + 1, f"number of teacher overlaps provided ({len(teacher_overlaps)}) does not match layers specified for teachers ({teacher_layers})"
 
     def _consistent_input_dimension(self):
         # mnist input dimension
@@ -116,16 +103,10 @@ class StudentTeacherParameters(Parameters):
         same_input_distribution = self.get(["data", "same_input_distribution"])
         teacher_configuration = self.get(["task", "teacher_configuration"])
         input_source = self.get(["data", "input_source"])
-        if (
-            teacher_configuration == "pure_mnist"
-            and input_source == "even_greater"
-        ):
+        if (teacher_configuration == "pure_mnist" and input_source == "even_greater"):
             assert same_input_distribution, \
                 "For even_greater, same_input_distribution should be True"
-        elif (
-            teacher_configuration == "pure_mnist"
-            and input_source == "mnist_digits"
-        ):
+        elif (teacher_configuration == "pure_mnist" and input_source == "mnist_digits"):
             assert not same_input_distribution, \
                 "For mnist_digits, same input_distribution should be False"
         elif teacher_configuration == "trained_mnist":
@@ -140,3 +121,10 @@ class StudentTeacherParameters(Parameters):
             assert isinstance(loss_thresholds, list)
         elif stopping_condition == "single_threshold":
             assert isinstance(loss_thresholds, float)
+
+    def _consistent_lr_scaling(self):
+        scale_hidden_lr_forward = self.get(["training", "scale_hidden_lr_forward"])
+        scale_hidden_lr_backward = self.get(["training", "scale_hidden_lr_backward"])
+        assert not (
+            scale_hidden_lr_forward and scale_hidden_lr_backward
+        ), "Hidden layer learning rate should only be scaled on forward or backward pass, not both."
