@@ -1,23 +1,20 @@
-from utils import Parameters
-
 import os
-import pandas as pd
-import numpy as np
-import yaml
+from typing import Dict
+from typing import List
+from typing import Tuple
 
-from typing import List, Dict, Tuple
+import numpy as np
+import pandas as pd
+import yaml
 
 from post_processing.df_plotter import DataFramePlotter
 from post_processing.weight_plotter import WeightPlotter
+from utils import Parameters
 
 
 class StudentTeacherPostProcessor:
 
-    def __init__(
-        self,
-        save_path: str,
-        extra_args: Dict
-    ):
+    def __init__(self, save_path: str, extra_args: Dict):
         self._repeats = extra_args["repeats"]
         self._save_path = save_path
 
@@ -60,11 +57,7 @@ class StudentTeacherPostProcessor:
 
         return config_parameters
 
-    def _update_config(
-        self,
-        config: Parameters,
-        extra_args: Dict
-    ) -> Parameters:
+    def _update_config(self, config: Parameters, extra_args: Dict) -> Parameters:
 
         config.set_property("repeats", self._repeats)
         config.set_property("save_path", self._save_path)
@@ -111,42 +104,31 @@ class StudentTeacherPostProcessor:
         self.df_plotter.make_summary_plot()
 
         if self._save_weights_at_switch:
-            self.weight_plotter.make_per_layer_weight_plot(
-                plot_type="weight_pdf"
-                )
-            self.weight_plotter.make_per_layer_weight_plot(
-                plot_type="weight_diffs"
-                )
-            self.weight_plotter.make_per_layer_weight_plot(
-                plot_type="weight_diff_pdf"
-                )
+            self.weight_plotter.make_per_layer_weight_plot(plot_type="weight_pdf")
+            self.weight_plotter.make_per_layer_weight_plot(plot_type="weight_diffs")
+            self.weight_plotter.make_per_layer_weight_plot(plot_type="weight_diff_pdf")
 
     def _consolidate_dfs(self):
         if not self._repeats:
             print("Consolidating/Merging all dataframes..")
             all_df_paths = [
                 os.path.join(self._save_path, f)
-                for f in os.listdir(self._save_path) if f.endswith('.csv')
-                ]
+                for f in os.listdir(self._save_path)
+                if f.endswith('.csv')
+            ]
 
             if any("data_logger.csv" in path for path in all_df_paths):
-                print(
-                    "'data_logger.csv' file already in save path "
-                    "specified. Consolidation already complete."
-                    )
+                print("'data_logger.csv' file already in save path "
+                      "specified. Consolidation already complete.")
                 if len(all_df_paths) > 1:
                     print("Note, other csv files are also still in save path.")
 
             else:
                 ordered_df_paths = sorted(
-                    all_df_paths,
-                    key=lambda x: float(x.split("iter_")[-1].strip(".csv"))
-                    )
+                    all_df_paths, key=lambda x: float(x.split("iter_")[-1].strip(".csv")))
 
                 print("Loading all dataframes..")
-                all_dfs = [
-                    pd.read_csv(df_path) for df_path in ordered_df_paths
-                    ]
+                all_dfs = [pd.read_csv(df_path) for df_path in ordered_df_paths]
                 print("Dataframes loaded. Merging..")
                 merged_df = pd.concat(all_dfs)
 
@@ -166,52 +148,35 @@ class StudentTeacherPostProcessor:
                     os.remove(df)
                 print("Consolidation complete.")
 
-    def _average_datasets(
-        self,
-        data: List[List[List[float]]]
-    ) -> Tuple[List[List[float]]]:
-        assert all(len(rep) == len(data[0]) for rep in data), \
-            (
-                "Varying number of data attributes are provided for"
-                " different repeats"
-            )
+    def _average_datasets(self, data: List[List[List[float]]]) -> Tuple[List[List[float]]]:
+        assert all(
+            len(rep) == len(data[0])
+            for rep in data), "Varying number of data attributes are provided for different repeats"
 
         averaged_data = []
         data_deviations = []
 
         for attribute_index in range(len(data[0])):
-            attribute_repeats = [
-                data[r][attribute_index] for r in range(len(data))
-            ]
-            maximum_data_length = max([
-                len(dataset) for dataset in attribute_repeats
-                ])
+            attribute_repeats = [data[r][attribute_index] for r in range(len(data))]
+            maximum_data_length = max([len(dataset) for dataset in attribute_repeats])
             processed_sub_data = [
-                np.pad(
-                    dataset,
-                    (0, maximum_data_length - len(dataset)),
-                    'constant'
-                    )
+                np.pad(dataset, (0, maximum_data_length - len(dataset)), 'constant')
                 for dataset in attribute_repeats
-                ]
+            ]
 
             nonzero_count = np.count_nonzero(processed_sub_data, axis=0)
-            nonzero_masks = [
-                (data != 0).astype(int) for data in processed_sub_data
-                ]
+            nonzero_masks = [(data != 0).astype(int) for data in processed_sub_data]
             attribute_sum = np.sum(processed_sub_data, axis=0)
 
             attribute_averaged_data = attribute_sum / nonzero_count
 
             attribute_differences = [
-                mask * (attribute_averaged_data - data) ** 2
+                mask * (attribute_averaged_data - data)**2
                 for mask, data in zip(nonzero_masks, processed_sub_data)
-                ]
+            ]
 
-            attribute_data_deviations \
-                = np.sqrt(
-                    np.sum(attribute_differences, axis=0)
-                    ) / nonzero_count
+            attribute_data_deviations = np.sqrt(np.sum(attribute_differences,
+                                                       axis=0)) / nonzero_count
 
             averaged_data.append(attribute_averaged_data)
             data_deviations.append(attribute_data_deviations)

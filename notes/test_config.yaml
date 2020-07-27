@@ -22,7 +22,7 @@ training:
   weight_decay:                     0.01                      
   loss_function:                    mse                       # mse, bce
   input_source:                     mnist                     # iid_gaussian, mnist (see README)
-  scale_output_backward:            True                      # whether to add 1/N factor in lr of output layer  
+  scale_head_lr:            True                      # whether to add 1/N factor in lr of output layer  
   
 testing:
   test_frequency:                   1                         # how often during training to perform generalisation error test loop

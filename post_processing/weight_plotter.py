@@ -1,16 +1,13 @@
-from utils import Parameters, get_figure_skeleton, close_sqrt_factors
-from constants import Constants
-
 import os
-import torch
-import numpy as np
-
-try:
-    import matplotlib.pyplot as plt
-except OSError:
-    pass
-
 from typing import List
+
+import numpy as np
+import torch
+
+from constants import Constants
+from utils import Parameters
+from utils import close_sqrt_factors
+from utils import get_figure_skeleton
 
 
 class WeightPlotter:
@@ -36,18 +33,13 @@ class WeightPlotter:
         saved_weight_files = [f for f in os.listdir(weights_path) if "switch" in f]
 
         sorted_saved_weight_files = sorted(
-            saved_weight_files,
-            key=lambda x: int(x.split("switch_")[1].split("_step")[0])
-            )
+            saved_weight_files, key=lambda x: int(x.split("switch_")[1].split("_step")[0]))
 
         full_sorted_saved_weight_files = [
-            os.path.join(weights_path, f)
-            for f in sorted_saved_weight_files
-            ]
+            os.path.join(weights_path, f) for f in sorted_saved_weight_files
+        ]
 
-        loaded_weights = [
-            torch.load(weights) for weights in full_sorted_saved_weight_files
-            ]
+        loaded_weights = [torch.load(weights) for weights in full_sorted_saved_weight_files]
 
         return loaded_weights
 
@@ -94,7 +86,7 @@ class WeightPlotter:
             layer_weights = [
                 weights['layers.{}.weight'.format(layer_index)].numpy()
                 for weights in self.loaded_weights
-                ]
+            ]
 
             num_plots = _extract_num_plots(layer_weights)
 
@@ -107,9 +99,7 @@ class WeightPlotter:
             num_columns = graph_layout[1]
 
             fig, spec = get_figure_skeleton(
-                height=self.height, width=self.width, num_columns=num_columns,
-                num_rows=num_rows
-                )
+                height=self.height, width=self.width, num_columns=num_columns, num_rows=num_rows)
 
             for row in range(num_rows):
                 for col in range(num_columns):
@@ -117,46 +107,30 @@ class WeightPlotter:
                     if graph_index < num_plots:
 
                         plot_fn(
-                            fig=fig, spec=spec, row=row, col=col,
+                            fig=fig,
+                            spec=spec,
+                            row=row,
+                            col=col,
                             layer_weights=layer_weights,
-                            graph_index=graph_index
-                            )
+                            graph_index=graph_index)
 
             fig.suptitle("Layer {} {}".format(layer_index, plot_title))
 
             print("Saving weight plots: {}...".format(plot_type))
 
             fig.savefig(
-                "{}/layer_{}_{}.pdf".format(
-                    self._figure_save_path, layer_index,
-                    plot_type
-                    ),
-                dpi=50
-                )
+                "{}/layer_{}_{}.pdf".format(self._figure_save_path, layer_index, plot_type), dpi=50)
 
-    def _weight_pdf_plot(
-        self,
-        fig,
-        spec,
-        row: int,
-        col: int,
-        layer_weights: np.ndarray,
-        graph_index: int
-    ) -> None:
+    def _weight_pdf_plot(self, fig, spec, row: int, col: int, layer_weights: np.ndarray,
+                         graph_index: int) -> None:
 
         iteration_layer_weights = layer_weights[graph_index]
 
         fig_sub = fig.add_subplot(spec[row, col])
-        fig_sub.hist(
-            np.concatenate(iteration_layer_weights),
-            bins=30, alpha=1, label="All weights"
-        )
+        fig_sub.hist(np.concatenate(iteration_layer_weights), bins=30, alpha=1, label="All weights")
 
         for c, component in enumerate(iteration_layer_weights):
-            fig_sub.hist(
-                component, bins=30, alpha=1,
-                label="Component {}".format(c)
-                )
+            fig_sub.hist(component, bins=30, alpha=1, label="Component {}".format(c))
 
         fig_sub.set_xlabel("Weight magnitude")
         fig_sub.set_ylabel("Count")
@@ -164,15 +138,8 @@ class WeightPlotter:
         fig_sub.legend()
         fig_sub.set_title("@ switch {}".format(graph_index))
 
-    def _weight_diff_plot(
-        self,
-        fig,
-        spec,
-        row: int,
-        col: int,
-        layer_weights: np.ndarray,
-        graph_index: int
-    ) -> None:
+    def _weight_diff_plot(self, fig, spec, row: int, col: int, layer_weights: np.ndarray,
+                          graph_index: int) -> None:
 
         weight_differences = \
             layer_weights[graph_index + 1] - layer_weights[graph_index]
@@ -180,12 +147,7 @@ class WeightPlotter:
         fig_sub = fig.add_subplot(spec[row, col])
 
         for c, component in enumerate(weight_differences):
-            fig_sub.bar(
-                range(len(component)),
-                component,
-                alpha=0.5,
-                label="Component {}".format(c)
-                )
+            fig_sub.bar(range(len(component)), component, alpha=0.5, label="Component {}".format(c))
 
         fig_sub.set_ylabel("Weight change")
         fig_sub.set_xlabel("Weight index")
@@ -193,31 +155,18 @@ class WeightPlotter:
         fig_sub.legend()
         fig_sub.set_title("@ switch {}".format(graph_index + 1))
 
-    def _weight_diff_pdf_plot(
-        self,
-        fig,
-        spec,
-        row: int,
-        col: int,
-        layer_weights: np.ndarray,
-        graph_index: int
-    ) -> None:
+    def _weight_diff_pdf_plot(self, fig, spec, row: int, col: int, layer_weights: np.ndarray,
+                              graph_index: int) -> None:
 
         weight_differences = \
             layer_weights[graph_index + 1] - layer_weights[graph_index]
 
         fig_sub = fig.add_subplot(spec[row, col])
 
-        fig_sub.hist(
-            np.concatenate(weight_differences),
-            bins=30, alpha=1, label="All weights"
-        )
+        fig_sub.hist(np.concatenate(weight_differences), bins=30, alpha=1, label="All weights")
 
         for c, component in enumerate(weight_differences):
-            fig_sub.hist(
-                component, bins=30, alpha=1,
-                label="Component {}".format(c)
-                )
+            fig_sub.hist(component, bins=30, alpha=1, label="Component {}".format(c))
 
         fig_sub.set_ylabel("Count")
         fig_sub.set_xlabel("Weight change")
