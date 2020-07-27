@@ -1,8 +1,9 @@
+from abc import ABC
+from abc import abstractmethod
+from typing import List
+from typing import Tuple
+
 import numpy as np
-
-from abc import ABC, abstractmethod
-
-from typing import List, Tuple
 
 
 class Overlap(ABC):
@@ -32,9 +33,10 @@ class Overlap(ABC):
         self._timestep += 1
         self._overlap_values += value_change
 
-    @property 
+    @property
     def shape(self):
         return self._overlap_values.shape
+
 
 class SelfOverlap(Overlap):
 
@@ -44,6 +46,7 @@ class SelfOverlap(Overlap):
     def __getitem__(self, indices: List[Tuple[str, int]]):
         # symmetric
         return self._overlap_values[indices[0][1]][indices[1][1]]
+
 
 class CrossOverlap(Overlap):
 
