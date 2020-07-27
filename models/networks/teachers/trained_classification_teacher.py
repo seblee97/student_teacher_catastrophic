@@ -1,11 +1,10 @@
-from .base_teacher import _Teacher
-from utils import Parameters
-
 import torch
+
+from utils import Parameters
+from .base_teacher import _Teacher
 
 
 class TrainedClassificationTeacher(_Teacher):
-
     """Classification - threshold output, using pre-trained network"""
 
     def __init__(self, config: Parameters, index: int) -> None:
@@ -26,9 +25,7 @@ class TrainedClassificationTeacher(_Teacher):
         if self.nonlinearity_name == 'relu':
             labels = (torch.sigmoid(y) > 0.5).long()
         else:
-            raise NotImplementedError(
-                "Teacher thresholding for {} nonlinearity not \
-                    yet implemented".format(self.nonlinearity_name)
-            )
+            raise NotImplementedError("Teacher thresholding for {} nonlinearity not \
+                    yet implemented".format(self.nonlinearity_name))
 
         return labels.reshape(len(labels),)

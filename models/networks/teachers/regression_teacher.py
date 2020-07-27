@@ -1,7 +1,7 @@
-from .base_teacher import _Teacher
-from utils import Parameters
-
 import torch
+
+from utils import Parameters
+from .base_teacher import _Teacher
 
 
 class RegressionTeacher(_Teacher):
