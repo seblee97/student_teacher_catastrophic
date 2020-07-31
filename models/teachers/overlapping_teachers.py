@@ -2,10 +2,12 @@ import copy
 from typing import Dict
 from typing import List
 
+import numpy as np
 import torch
 
 from models.networks.teachers import _Teacher
 from utils import Parameters
+from utils import custom_functions
 from .base_teachers import _BaseTeachers
 
 
@@ -34,9 +36,55 @@ class OverlappingTeachers(_BaseTeachers):
             ) == self._num_teachers, f"Provide one noise for each teacher. {len(teacher_noise)} noises given, {self._num_teachers} teachers specified"
             teacher_noises = teacher_noise
 
-        overlap_percentages = config.get(["teachers", "overlap_percentages"])
+        if config.get(["teachers", "overlap_type"]) == "rotation":
+            self._teachers = self._initialise_rotated_teachers(
+                config=config, teacher_noises=teacher_noises)
+        elif config.get(["teachers", "overlap_type"]) == "copy":
+            self._teachers = self._initialise_copy_teachers(
+                config=config, teacher_noises=teacher_noises)
 
-        self._teachers = []
+    def _initialise_rotated_teachers(self, config: Parameters, teacher_noises: List) -> List:
+        assert self._num_teachers == 2, \
+            f"Rotated overlapping teachers only implemented for 2 teachers, {self._num_teachers} requested."
+
+        hidden_dimensions = config.get(["model", "teacher_hidden_layers"])
+        input_dimension = config.get(["model", "input_dimension"])
+        overlap_rotations = config.get(["teachers", "overlap_rotations"])
+
+        teachers = [self._init_teacher(config=config, index=i) for i in range(self._num_teachers)]
+
+        # exclude hidden -> output
+        layer_dims = [input_dimension] + hidden_dimensions
+
+        for i, (overlap, layer_dim_i, layer_dim_j) in enumerate(
+                zip(overlap_rotations, layer_dims[:-1], layer_dims[1:])):
+            teacher_1_layer = []
+            teacher_2_layer = []
+            for _ in range(layer_dim_j):
+                w1, w2 = custom_functions.generate_rotated_vectors(layer_dim_i, overlap,
+                                                                   np.sqrt(layer_dim_i))
+                teacher_1_layer.append(w1)
+                teacher_2_layer.append(w2)
+
+            with torch.no_grad():
+                teachers[0].layers[i].weight.data = torch.Tensor(np.vstack(teacher_1_layer))
+                teachers[1].layers[i].weight.data = torch.Tensor(np.vstack(teacher_2_layer))
+
+        for t, teacher in enumerate(teachers):
+            # freeze weights of every teacher
+            teacher.freeze_weights()
+
+            # set noise
+            if teacher_noises[t] != 0:
+                teacher_output_std = teacher.get_output_statistics()
+                teacher.set_noise_distribution(mean=0, std=teacher_noises[t] * teacher_output_std)
+
+        return teachers
+
+    def _initialise_copy_teachers(self, config: Parameters, teacher_noises: List) -> List:
+
+        overlap_percentages = config.get(["teachers", "overlap_percentages"])
+        teachers = []
 
         original_teacher = self._init_teacher(config=config, index=0)
         original_teacher.freeze_weights()
@@ -48,7 +96,7 @@ class OverlappingTeachers(_BaseTeachers):
             original_teacher.set_noise_distribution(
                 mean=0, std=teacher_noises[0] * original_teacher_output_std)
 
-        self._teachers.append(original_teacher)
+        teachers.append(original_teacher)
 
         # setup remaining teachers
         for t in range(self._num_teachers - 1):
@@ -77,7 +125,9 @@ class OverlappingTeachers(_BaseTeachers):
                 teacher_output_std = teacher.get_output_statistics()
                 teacher.set_noise_distribution(
                     mean=0, std=teacher_noises[t + 1] * teacher_output_std)
-            self._teachers.append(teacher)
+            teachers.append(teacher)
+
+        return teachers
 
     def _set_teacher_weights(self, teacher: _Teacher, layer: int, row: int,
                              copy_upper_bound: int) -> _Teacher:
