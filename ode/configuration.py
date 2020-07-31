@@ -22,6 +22,8 @@ class StudentTwoTeacherConfiguration:
         self._S = SelfOverlap(S, final=True)
         self._V = SelfOverlap(V, final=True)
 
+        print(f"Teacher-Teacher overlap: {self._V.values}")
+
         self._h1 = h1.astype(float)
         self._h2 = h2.astype(float)
 
