@@ -12,7 +12,7 @@ from experiments.config_templates import PureMNISTTemplate
 from experiments.config_templates import TrainedMNISTTemplate
 from experiments.student_teacher_parameters import StudentTeacherParameters
 from experiments.student_teacher_runner import StudentTeacherRunner
-from post_processing import StudentTeacherPostProcessor
+from post_processing import StudentTeacherPostProcessor, OverlayPlotter
 from utils import Argparser
 
 MAIN_FILE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -133,6 +133,17 @@ def run(args):
             post_processor = StudentTeacherPostProcessor(
                 save_path=checkpoint_path, extra_args=post_process_args)
             post_processor.post_process()
+
+    if (student_teacher_parameters.get("analytic_simulation") and
+            student_teacher_parameters.get("network_simulation")):
+        ode_csv_path = os.path.join(
+            student_teacher_parameters.get("checkpoint_path"), "ode_logs.csv")
+        sim_csv_path = os.path.join(
+            student_teacher_parameters.get("checkpoint_path"), "data_logger.csv")
+        overlay_plot_save_path = os.path.join(
+            student_teacher_parameters.get("checkpoint_path"), "overlay_log.pdf")
+        overlay_plotter = OverlayPlotter(ode_csv_path=ode_csv_path, sim_csv_path=sim_csv_path)
+        overlay_plotter.make_plot(save_path=overlay_plot_save_path)
 
 
 if __name__ == "__main__":
