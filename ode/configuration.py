@@ -30,32 +30,6 @@ class StudentTwoTeacherConfiguration:
         self._th1 = th1
         self._th2 = th2
 
-        self._student_indices = ["i", "j", "k", "l"]
-        self._teacher1_indices = ["m", "n", "o"]
-        self._teacher2_indices = ["p", "q", "r"]
-
-        student_student_index_duos = self.generate_index_combos(self._student_indices,
-                                                                self._student_indices)
-        student_teacher1_index_duos = self.generate_index_combos(self._student_indices,
-                                                                 self._teacher1_indices)
-        student_teacher2_index_duos = self.generate_index_combos(self._student_indices,
-                                                                 self._teacher2_indices)
-        teacher1_teacher2_index_duos = self.generate_index_combos(self._teacher1_indices,
-                                                                  self._teacher2_indices)
-        teacher1_teacher1_index_duos = self.generate_index_combos(self._teacher1_indices,
-                                                                  self._teacher1_indices)
-        teacher2_teacher2_index_duos = self.generate_index_combos(self._teacher2_indices,
-                                                                  self._teacher2_indices)
-
-        self._index_duo_overlap_map = {
-            **{duo: self.Q for duo in student_student_index_duos},
-            **{duo: self.R for duo in student_teacher1_index_duos},
-            **{duo: self.U for duo in student_teacher2_index_duos},
-            **{duo: self.V for duo in teacher1_teacher2_index_duos},
-            **{duo: self.T for duo in teacher1_teacher1_index_duos},
-            **{duo: self.S for duo in teacher2_teacher2_index_duos},
-        }
-
         self._Q_log = {"".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(Q)}
         self._T_log = {"".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(T)}
         self._R_log = {"".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(R)}
@@ -66,22 +40,13 @@ class StudentTwoTeacherConfiguration:
         self._h1_log = {str(i): [] for i in range(len(h1))}
         self._h2_log = {str(i): [] for i in range(len(h2))}
 
-    @staticmethod
-    def generate_index_combos(index_set_1: List[str], index_set_2: List[str]) -> List[str]:
-        index_duos = list(
-            set([
-                "".join(st) for st in itertools.chain(
-                    itertools.product(index_set_1, index_set_2),
-                    itertools.product(index_set_2, index_set_1))
-            ]))
-        return index_duos
+        self.step_C()
 
-    def generate_covariance_matrix(self, indices: List[Tuple[str, int]]) -> CovarianceMatrix:
+    def generate_covariance_matrix(self, indices: List[int]) -> CovarianceMatrix:
         covariance = np.zeros((len(indices), len(indices)))
         for i, index_i in enumerate(indices):
             for j, index_j in enumerate(indices):
-                index_duo = "".join([index_i[0], index_j[0]])
-                covariance[i][j] = self._index_duo_overlap_map[index_duo][index_i, index_j]
+                covariance[i][j] = self.C[index_i, index_j]
 
         return CovarianceMatrix(covariance, indices=indices)
 
@@ -92,6 +57,14 @@ class StudentTwoTeacherConfiguration:
     def _log_head(self, values: np.ndarray, log: Dict[str, List]):
         for i, value in enumerate(values):
             log[str(i)].append(value)
+
+    @property
+    def C(self) -> np.ndarray:
+        return self._C
+
+    def step_C(self):
+        self._C = np.vstack((np.hstack((self._Q.values, self._R.values)),
+                             np.hstack((self._R.values.T, self._T.values))))
 
     @property
     def Q(self) -> SelfOverlap:
