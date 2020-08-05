@@ -95,13 +95,9 @@ class StudentTeacherODE:
     def dq_dt(self) -> np.ndarray:
         if self._active_teacher == 0:
             teacher_head = self._configuration.th1
-            teacher_index = "m"
-            teacher_index_2 = "n"
             student_head = self._configuration.h1
         else:
             teacher_head = self._configuration.th2
-            teacher_index = "p"
-            teacher_index_2 = "q"
             student_head = self._configuration.h2
         derivative = np.zeros(self._configuration.Q.shape).astype(float)
         for (i, k), _ in np.ndenumerate(derivative):
@@ -153,11 +149,9 @@ class StudentTeacherODE:
     def du_dt(self) -> np.ndarray:
         if self._active_teacher == 0:
             teacher_head = self._configuration.th1
-            teacher_index = "m"
             student_head = self._configuration.h1
         else:
             teacher_head = self._configuration.th2
-            teacher_index = "q"
             student_head = self._configuration.h2
         derivative = np.zeros(self._configuration.U.shape).astype(float)
         for (i, p), _ in np.ndenumerate(derivative):
