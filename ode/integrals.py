@@ -51,7 +51,7 @@ class Integrals:
         if abs(nom / den) > 1:
             import pdb
             pdb.set_trace()
-        return np.arcsin(nom / den) / np.pi
+        return 2 * np.arcsin(nom / den) / np.pi
 
     @staticmethod
     def relu_i2(covariance: CovarianceMatrix):
