@@ -136,6 +136,8 @@ class StudentTeacherRunner:
         if self._noise is not None:
             self._noise_distribution = tdist.Normal(0, self._noise)
 
+        self.ode_timestep_scaling = config.get(["training", "ode_timestep_scaling"])
+
     def _save_network_initial_weights(self):
         # save initial student weights
         learner_save_path = os.path.join(self._weight_save_path, "switch_0_step_0_saved_weights.pt")
@@ -294,6 +296,9 @@ class StudentTeacherRunner:
         th1 = self.teachers._teachers[0].state_dict()["output_layer.weight"].numpy().T
         th2 = self.teachers._teachers[1].state_dict()["output_layer.weight"].numpy().T
 
+        import pdb
+        pdb.set_trace()
+
         ode_configuration = \
             configuration.StudentTwoTeacherConfiguration(
                 Q=Q,
@@ -308,22 +313,28 @@ class StudentTeacherRunner:
                 th2=th2
             )
 
-        curriculum = self._get_ode_curriculum()
+        dt = self.ode_timestep_scaling
+        scaled_timesteps = int(self.total_training_steps / self.input_dimension)
+
+        curriculum = self._get_ode_curriculum(
+            total_steps=scaled_timesteps, period=self.curriculum_period)
 
         ode = dynamics.StudentTeacherODE(
             overlap_configuration=ode_configuration,
             nonlinearity=self.nonlinearity,
-            w_learning_rate=self.learning_rate / np.sqrt(self.input_dimension),
-            h_learning_rate=self.learning_rate / self.input_dimension,
+            w_learning_rate=self.learning_rate,
+            h_learning_rate=self.learning_rate,
+            dt=dt,
             curriculum=curriculum,
             soft_committee=self.soft_committee)
 
-        ode.step(self.total_training_steps)
+        ode.step(scaled_timesteps)
 
-        ode.make_plot(save_path=self.experiment_path)
+        ode.save_to_csv(save_path=self.experiment_path)
+        ode.make_plot(save_path=self.experiment_path, total_time=self.total_training_steps)
 
-    def _get_ode_curriculum(self) -> List[int]:
-        return list(np.arange(0, self.total_training_steps, self.curriculum_period))[1:]
+    def _get_ode_curriculum(self, total_steps: int, period: int) -> List[int]:
+        return list(np.arange(0, total_steps, period))[1:]
 
     def train(self) -> None:
         """Training loop
