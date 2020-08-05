@@ -21,6 +21,7 @@ training:
   scale_head_lr:                    True                      # whether to add 1/N factor in lr of output layer  
   scale_hidden_lr_forward:          True                      # whether to add 1/\sqrt{N} factor in forward of hidden layer(s)
   scale_hidden_lr_backward:         False                      # whether to add 1/\sqrt{N} factor in lr of hidden layer(s)
+  ode_timestep_scaling:             0.01
 
 data:
   input_source:                     iid_gaussian              # iid_gaussian, mnist_stream, mnist_digits, even_greater (see README)
@@ -69,7 +70,9 @@ curriculum:
   custom:                           [0, 1]                    # curriculum defined manually. Each entry defines next teacher index
 
 teachers:
-  overlap_percentages:              [0, 0]                    # percentage of weights to copy between teachers per layer. 
+  overlap_type:                     rotation
+  overlap_rotations:                [0.7854, 0]                 # 0, 2pi = aligned, pi = anti-aligned, pi/2 orthogonal, pi/4 = semi-aligned etc.
+  overlap_percentages:              [0, 0]                    # percentage of weights to copy between teachers per layer.
   teacher_noise:                    [0, 0]
 
 drift_teachers:
