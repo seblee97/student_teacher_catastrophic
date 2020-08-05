@@ -5,13 +5,15 @@ from typing import Union
 
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 class Plotter:
 
-    def __init__(self, logs: List[Dict]):
+    def __init__(self, logs: List[Dict], scale: Union[int, float]):
         self._logs = logs
         self._log_keys = list(self._logs.keys())
+        self._scale = scale
 
     @staticmethod
     def get_figure_skeleton(height: Union[int, float], width: Union[int, float], num_columns: int,
@@ -35,7 +37,7 @@ class Plotter:
 
         for data_index, data in logs.items():
 
-            fig_sub.plot(range(len(data)), data, label=f"{log_key}_{data_index}")
+            fig_sub.plot(self._scale * np.arange(len(data)), data, label=f"{log_key}_{data_index}")
 
         # labelling
         fig_sub.set_xlabel("Step")
@@ -67,7 +69,7 @@ class Plotter:
 
                 if graph_index < num_graphs:
 
-                    print("Plotting graph {}/{}".format(graph_index + 1, 10))
+                    print("Plotting graph {}/{}".format(graph_index + 1, num_graphs))
 
                     self._plot_scalar(row=row, col=col, graph_index=graph_index)
 
