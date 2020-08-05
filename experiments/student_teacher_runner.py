@@ -296,9 +296,6 @@ class StudentTeacherRunner:
         th1 = self.teachers._teachers[0].state_dict()["output_layer.weight"].numpy().T
         th2 = self.teachers._teachers[1].state_dict()["output_layer.weight"].numpy().T
 
-        import pdb
-        pdb.set_trace()
-
         ode_configuration = \
             configuration.StudentTwoTeacherConfiguration(
                 Q=Q,
