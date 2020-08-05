@@ -26,10 +26,12 @@ class TrainingTemplate(_Template):
 
     SCALE_HIDDEN_LR_BACKWARD = Field(name="scale_hidden_lr_backward", types=[bool], reqs=None)
 
+    ODE_TIMESTEP_SCALING = Field(name="ode_timestep_scaling", types=[int, float], reqs=None)
+
     @classmethod
     def get_fields(cls) -> List:
         return [
             cls.TOTAL_TRAINING_STEPS, cls.TRAIN_BATCH_SIZE, cls.LEARNING_RATE, cls.WEIGHT_DECAY,
             cls.LOSS_FUNCTION, cls.SCALE_HEAD_LR, cls.SCALE_HIDDEN_LR_FORWARD,
-            cls.SCALE_HIDDEN_LR_BACKWARD
+            cls.SCALE_HIDDEN_LR_BACKWARD, cls.ODE_TIMESTEP_SCALING
         ]
