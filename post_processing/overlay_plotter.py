@@ -78,31 +78,41 @@ class OverlayPlotter:
     def _organise_logs(self, ode_df: pd.DataFrame, sim_df: pd.DataFrame) -> Dict:
         # ode data log
         q_logs_ode = {
-            f"{key.split('_')[1]} ODE": ode_df[key] for key in ode_df.columns if key.startswith("Q")
+            f"{key.split('_')[1]} ODE": ode_df[key]
+            for key in ode_df.columns
+            if key.startswith("Q") and "diff" not in key
         }
         u_logs_ode = {
-            f"{key.split('_')[1]} ODE": ode_df[key] for key in ode_df.columns if key.startswith("U")
+            f"{key.split('_')[1]} ODE": ode_df[key]
+            for key in ode_df.columns
+            if key.startswith("U") and "diff" not in key
         }
         r_logs_ode = {
-            f"{key.split('_')[1]} ODE": ode_df[key] for key in ode_df.columns if key.startswith("R")
+            f"{key.split('_')[1]} ODE": ode_df[key]
+            for key in ode_df.columns
+            if key.startswith("R") and "diff" not in key
         }
         h1_logs_ode = {
             f"{key.split('_')[1]} ODE": ode_df[key]
             for key in ode_df.columns
-            if key.startswith("h1")
+            if key.startswith("h1") and "diff" not in key
         }
         h2_logs_ode = {
             f"{key.split('_')[1]} ODE": ode_df[key]
             for key in ode_df.columns
-            if key.startswith("h2")
+            if key.startswith("h2") and "diff" not in key
         }
         linear_error_logs_ode = {
-            f"{i} ODE": ode_df[key] for i, key in enumerate(
-                [filter_k for filter_k in ode_df.columns if filter_k.startswith("error_linear")])
+            f"{i} ODE": ode_df[key] for i, key in enumerate([
+                filter_k for filter_k in ode_df.columns
+                if filter_k.startswith("error_linear") and "diff" not in filter_k
+            ])
         }
         log_error_logs_ode = {
-            f"{i} ODE": ode_df[key] for i, key in enumerate(
-                [filter_k for filter_k in ode_df.columns if filter_k.startswith("error_log")])
+            f"{i} ODE": ode_df[key] for i, key in enumerate([
+                filter_k for filter_k in ode_df.columns
+                if filter_k.startswith("error_log") and "diff" not in filter_k
+            ])
         }
 
         # simulation data log
