@@ -35,7 +35,7 @@ class ContinualLearner(_BaseLearner):
                 output_layer.weight.data.fill_(1)
             else:
                 if self.initialise_student_outputs:
-                    output_layer = self._initialise_weights(output_layer)
+                    self._initialise_weights(output_layer)
                 else:
                     torch.nn.init.zeros_(output_layer.weight)
                     if self.bias:
