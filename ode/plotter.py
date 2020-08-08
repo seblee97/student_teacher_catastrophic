@@ -3,8 +3,11 @@ from typing import List
 from typing import Tuple
 from typing import Union
 
-import matplotlib.gridspec as gridspec
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.gridspec as gridspec
+    import matplotlib.pyplot as plt
+except:
+    pass
 import numpy as np
 
 
