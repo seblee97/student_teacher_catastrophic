@@ -63,11 +63,13 @@ class _BaseLearner(Model):
         # hidden layer parameters
         if self._scale_hidden_lr_backward:
             trainable_parameters = [{
-                'params': layer.parameters(),
+                'params': filter(lambda p: p.requires_grad, layer.parameters()),
                 'lr': self._learning_rate / np.sqrt(self._input_dimension)
             } for layer in self.layers]
         else:
-            trainable_parameters = [{'params': layer.parameters()} for layer in self.layers]
+            trainable_parameters = [{
+                'params': filter(lambda p: p.requires_grad, layer.parameters())
+            } for layer in self.layers]
         if not self._soft_committee:
             trainable_parameters += self._get_trainable_head_parameters()
         # else:
