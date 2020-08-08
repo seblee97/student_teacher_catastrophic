@@ -45,10 +45,17 @@ class StudentTeacherODE:
             self._i3_fn = Integrals.sigmoid_i3
             self._i4_fn = Integrals.sigmoid_i4
 
+        self._setup_log_data_structures()
+
+    def _setup_log_data_structures(self) -> None:
+
         self._time = 0
-        self._timestep = 0
+        self._step_count = 0
         self._error_1_log = []
         self._error_2_log = []
+
+        self._task_switch_error_1_log = {}
+        self._task_switch_error_2_log = {}
 
         self._K = self._configuration.R.shape[0]
         self._M = self._configuration.R.shape[1]
@@ -58,8 +65,8 @@ class StudentTeacherODE:
         return self._configuration
 
     @property
-    def timestep(self):
-        return self._timestep
+    def step_count(self):
+        return self._step_count
 
     @property
     def error_1_log(self):
@@ -67,7 +74,7 @@ class StudentTeacherODE:
 
     @property
     def error_2_log(self):
-        return self._error_1_log
+        return self._error_2_log
 
     @property
     def dr_dt(self) -> np.ndarray:
@@ -100,48 +107,58 @@ class StudentTeacherODE:
             teacher_head = self._configuration.th2
             student_head = self._configuration.h2
         derivative = np.zeros(self._configuration.Q.shape).astype(float)
-        for (i, k), _ in np.ndenumerate(derivative):
-            ik_derivative = 0
+        i_range, k_range = derivative.shape
+        for i in range(i_range):
+            for k in range(i, k_range):
+                # for (i, k), _ in np.ndenumerate(derivative):
+                ik_derivative = 0
 
-            sum_1 = 0
-            for m, head_unit in enumerate(teacher_head):
-                cov = self._configuration.generate_covariance_matrix([i, k, self._K + m])
-                sum_1 += head_unit * self._i3_fn(cov)
-            for j, head_unit in enumerate(student_head):
-                cov = self._configuration.generate_covariance_matrix([i, k, j])
-                sum_1 -= head_unit * self._i3_fn(cov)
+                sum_1 = 0
+                for m, head_unit in enumerate(teacher_head):
+                    cov = self._configuration.generate_covariance_matrix([i, k, self._K + m])
+                    sum_1 += head_unit * student_head[i] * self._i3_fn(cov)
+                    cov = self._configuration.generate_covariance_matrix([k, i, self._K + m])
+                    sum_1 += head_unit * student_head[k] * self._i3_fn(cov)
+                for j, head_unit in enumerate(student_head):
+                    cov = self._configuration.generate_covariance_matrix([i, k, j])
+                    sum_1 -= head_unit * student_head[i] * self._i3_fn(cov)
+                    cov = self._configuration.generate_covariance_matrix([k, i, j])
+                    sum_1 -= head_unit * student_head[k] * self._i3_fn(cov)
 
-            ik_derivative += self._dt * self._w_learning_rate * student_head[i] * sum_1
+                ik_derivative += self._dt * self._w_learning_rate * sum_1
 
-            sum_2 = 0
-            for m, head_unit in enumerate(teacher_head):
-                cov = self._configuration.generate_covariance_matrix([k, i, m])
-                sum_2 += head_unit * self._i3_fn(cov)
-            for j, head_unit in enumerate(student_head):
-                cov = self._configuration.generate_covariance_matrix([k, i, j])
-                sum_2 -= head_unit * self._i3_fn(cov)
+                # sum_2 = 0
+                # for m, head_unit in enumerate(teacher_head):
+                #     cov = self._configuration.generate_covariance_matrix([k, i, m])
+                #     sum_2 += head_unit * self._i3_fn(cov)
+                # for j, head_unit in enumerate(student_head):
+                #     cov = self._configuration.generate_covariance_matrix([k, i, j])
+                #     sum_2 -= head_unit * self._i3_fn(cov)
 
-            ik_derivative += self._dt * self._w_learning_rate * student_head[k] * sum_2
+                # ik_derivative += self._dt * self._w_learning_rate * student_head[k] * sum_2
 
-            sum_3 = 0
-            for j, head_unit_j in enumerate(student_head):
-                for l, head_unit_l in enumerate(student_head):
-                    cov = self._configuration.generate_covariance_matrix([i, k, j, l])
-                    sum_3 += head_unit_j * head_unit_l * self._i4_fn(cov)
-            for m, head_unit_m in enumerate(teacher_head):
-                for n, head_unit_n in enumerate(teacher_head):
-                    cov = self._configuration.generate_covariance_matrix(
-                        [i, k, self._K + m, self._K + n])
-                    sum_3 += head_unit_m * head_unit_n * self._i4_fn(cov)
-            for m, head_unit_m in enumerate(teacher_head):
+                sum_3 = 0
                 for j, head_unit_j in enumerate(student_head):
-                    cov = self._configuration.generate_covariance_matrix([i, k, j, self._K + m])
-                    sum_3 -= 2 * head_unit_m * head_unit_j * self._i4_fn(cov)
+                    for l, head_unit_l in enumerate(student_head):
+                        cov = self._configuration.generate_covariance_matrix([i, k, j, l])
+                        sum_3 += head_unit_j * head_unit_l * self._i4_fn(cov)
+                for m, head_unit_m in enumerate(teacher_head):
+                    for n, head_unit_n in enumerate(teacher_head):
+                        cov = self._configuration.generate_covariance_matrix(
+                            [i, k, self._K + m, self._K + n])
+                        sum_3 += head_unit_m * head_unit_n * self._i4_fn(cov)
+                for m, head_unit_m in enumerate(teacher_head):
+                    for j, head_unit_j in enumerate(student_head):
+                        cov = self._configuration.generate_covariance_matrix([i, k, j, self._K + m])
+                        sum_3 -= 2 * head_unit_m * head_unit_j * self._i4_fn(cov)
 
-            ik_derivative += self._dt * self._w_learning_rate**2 * student_head[i] * student_head[
-                k] * sum_3
+                ik_derivative += self._dt * self._w_learning_rate**2 * student_head[
+                    i] * student_head[k] * sum_3
 
-            derivative[i][k] = ik_derivative
+                derivative[i][k] = ik_derivative
+
+        i_lower = np.tril_indices(len(derivative), -1)
+        derivative[i_lower] = derivative.T[i_lower]
 
         return derivative
 
@@ -259,7 +276,7 @@ class StudentTeacherODE:
 
     def _step(self):
         self._time += self._dt
-        # self._timestep += 1
+        self._step_count += 1
 
         self._configuration.step_C()
 
@@ -287,6 +304,8 @@ class StudentTeacherODE:
             self._next_switch_step = next(self._curriculum)
         except StopIteration:
             self._next_switch_step = np.inf
+        self._task_switch_error_1_log[self._step_count] = self.error_1
+        self._task_switch_error_2_log[self._step_count] = self.error_2
 
     def step(self, time: int):
         while self._time < time:
@@ -298,14 +317,34 @@ class StudentTeacherODE:
                 print(f"Step {self._time} of ODE dynamics")
             self._step()
 
+    @staticmethod
+    def _get_data_diff(data: Union[List, np.ndarray]) -> np.ndarray:
+        return np.insert(np.array(data[1:]) - np.array(data[:-1]), 0, 0)
+
     def save_to_csv(self, save_path: str):
 
         unwrapped_dict = {
             **{f"Q_{i}": i_log for i, i_log in self._configuration.Q_log.items()},
+            **{
+                f"Q_{i}_diff": self._get_data_diff(i_log) for i, i_log in self._configuration.Q_log.items(
+                )
+            },
             **{f"R_{i}": i_log for i, i_log in self._configuration.R_log.items()},
+            **{
+                f"R_{i}_diff": self._get_data_diff(i_log) for i, i_log in self._configuration.R_log.items(
+                )
+            },
             **{f"U_{i}": i_log for i, i_log in self._configuration.U_log.items()},
             **{
+                f"U_{i}_diff": self._get_data_diff(i_log) for i, i_log in self._configuration.U_log.items(
+                )
+            },
+            **{
                 f"h1_{i}": np.array(i_log).squeeze() for i, i_log in self._configuration.h1_log.items(
+                )
+            },
+            **{
+                f"h1_{i}_diff": self._get_data_diff(i_log) for i, i_log in self._configuration.h1_log.items(
                 )
             },
             **{
@@ -313,20 +352,36 @@ class StudentTeacherODE:
                 )
             },
             **{
-                f"error_linear_1": np.concatenate(self._error_1_log)
+                f"h2_{i}_diff": self._get_data_diff(i_log) for i, i_log in self._configuration.h2_log.items(
+                )
             },
             **{
-                f"error_linear_2": np.concatenate(self._error_2_log)
+                f"error_linear_1": self._error_1_log
             },
             **{
-                f"error_log_1": np.log10(self._error_1_log).squeeze()
+                f"error_linear_1_diff":
+                np.insert(np.array(self._error_1_log[1:]) - np.array(self._error_1_log[:-1]), 0, 0)
             },
             **{
-                f"error_log_2": np.log10(self._error_2_log).squeeze()
+                f"error_linear_2": self._error_2_log
+            },
+            **{
+                f"error_linear_2_diff":
+                np.insert(np.array(self._error_2_log[1:]) - np.array(self._error_2_log[:-1]), 0, 0)
+            },
+            **{
+                f"error_log_1": np.log10(self._error_1_log)
+            },
+            **{
+                f"error_log_2": np.log10(self._error_2_log)
             }
         }
 
         df = pd.DataFrame(unwrapped_dict)
+
+        df['task_switch_error_1_log'] = pd.Series(self._task_switch_error_1_log)
+        df['task_switch_error_2_log'] = pd.Series(self._task_switch_error_2_log)
+
         df.to_csv(os.path.join(save_path, "ode_logs.csv"), index=False)
 
     def make_plot(self, save_path: Optional[str], total_time: int):
