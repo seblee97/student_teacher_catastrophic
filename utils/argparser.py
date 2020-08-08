@@ -157,6 +157,13 @@ class Argparser:
                 between teachers. Must be in format '[30, 20, etc.]'",
             default=None)
         parser.add_argument(
+            '-overlap_rotations',
+            '--tro',
+            type=str,
+            help=
+            "per layer overlaps between teachers in terms of angle rotations. Must be in format '[0, 3.14, etc.]'"
+        )
+        parser.add_argument(
             '-teacher_noises',
             '--tn',
             type=str,
@@ -250,6 +257,9 @@ class Argparser:
         if args.to:
             overlaps = [int(op) for op in "".join(args.to).strip('[]').split(',')]
             params["teachers"]["overlap_percentages"] = overlaps
+        if args.tro:
+            overlap_rotations = [float(op) for op in "".join(args.tro).strip('[]').split(',')]
+            params["teachers"]["overlap_rotations"] = overlap_rotations
         if args.tn:
             noises = [float(op) for op in "".join(args.tn).strip('[]').split(',')]
             params["teachers"]["teacher_noise"] = noises
