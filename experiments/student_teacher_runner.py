@@ -290,11 +290,11 @@ class StudentTeacherRunner:
         V = configuration.RandomStudentTwoTeacherConfiguration.weight_overlap_matrix(
             teacher_1_weight_vector, teacher_2_weight_vector, N=self.input_dimension)
 
-        h1 = self.learner.state_dict()["heads.0.weight"].numpy().T
-        h2 = self.learner.state_dict()["heads.1.weight"].numpy().T
+        h1 = self.learner.state_dict()["heads.0.weight"].numpy().flatten()
+        h2 = self.learner.state_dict()["heads.1.weight"].numpy().flatten()
 
-        th1 = self.teachers._teachers[0].state_dict()["output_layer.weight"].numpy().T
-        th2 = self.teachers._teachers[1].state_dict()["output_layer.weight"].numpy().T
+        th1 = self.teachers._teachers[0].state_dict()["output_layer.weight"].numpy().flatten()
+        th2 = self.teachers._teachers[1].state_dict()["output_layer.weight"].numpy().flatten()
 
         ode_configuration = \
             configuration.StudentTwoTeacherConfiguration(
@@ -312,9 +312,9 @@ class StudentTeacherRunner:
 
         dt = self.ode_timestep_scaling
         scaled_timesteps = int(self.total_training_steps / self.input_dimension)
+        scaled_period = int(self.curriculum_period / self.input_dimension)
 
-        curriculum = self._get_ode_curriculum(
-            total_steps=scaled_timesteps, period=self.curriculum_period)
+        curriculum = self._get_ode_curriculum(total_steps=scaled_timesteps, period=scaled_period)
 
         ode = dynamics.StudentTeacherODE(
             overlap_configuration=ode_configuration,
