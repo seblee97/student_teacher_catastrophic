@@ -46,7 +46,7 @@ class StudentTwoTeacherConfiguration:
         covariance = np.zeros((len(indices), len(indices)))
         for i, index_i in enumerate(indices):
             for j, index_j in enumerate(indices):
-                covariance[i][j] = self.C[index_i, index_j]
+                covariance[i][j] = self.C[index_i][index_j]
 
         return CovarianceMatrix(covariance, indices=indices)
 
@@ -72,7 +72,7 @@ class StudentTwoTeacherConfiguration:
 
     def step_Q(self, delta_Q: np.ndarray) -> None:
         self._Q.step(delta_Q)
-        self._log_overlap(values=self._Q.values, log=self._Q_log)
+        self._log_overlap(values=self.Q.values, log=self._Q_log)
 
     @property
     def Q_log(self):
@@ -84,7 +84,7 @@ class StudentTwoTeacherConfiguration:
 
     def step_R(self, delta_R: np.ndarray) -> None:
         self._R.step(delta_R)
-        self._log_overlap(values=self._R.values, log=self._R_log)
+        self._log_overlap(values=self.R.values, log=self._R_log)
 
     @property
     def R_log(self):
@@ -96,7 +96,7 @@ class StudentTwoTeacherConfiguration:
 
     def step_U(self, delta_U: np.ndarray) -> None:
         self._U.step(delta_U)
-        self._log_overlap(values=self._U.values, log=self._U_log)
+        self._log_overlap(values=self.U.values, log=self._U_log)
 
     @property
     def U_log(self):
@@ -108,7 +108,7 @@ class StudentTwoTeacherConfiguration:
 
     def step_T(self, delta_T: np.ndarray) -> None:
         self._T.step(delta_T)
-        self._log_overlap(values=self._T.values, log=self._T_log)
+        self._log_overlap(values=self.T.values, log=self._T_log)
 
     @property
     def T_log(self):
@@ -120,7 +120,7 @@ class StudentTwoTeacherConfiguration:
 
     def step_S(self, delta_S: np.ndarray) -> None:
         self._S.step(delta_S)
-        self._log_overlap(values=self._S.values, log=self._S_log)
+        self._log_overlap(values=self.S.values, log=self._S_log)
 
     @property
     def S_log(self):
@@ -132,7 +132,7 @@ class StudentTwoTeacherConfiguration:
 
     def step_V(self, delta_V: np.ndarray) -> None:
         self._V.step(delta_V)
-        self._log_overlap(values=self._V.values, log=self._V_log)
+        self._log_overlap(values=self.V.values, log=self._V_log)
 
     @property
     def V_log(self):
