@@ -51,9 +51,8 @@ class _Teacher(Model, ABC):
             self.output_layer.weight.data.fill_(head_weight)
         else:
             self._initialise_weights(self.output_layer)
-        if self.soft_committee:
-            for param in self.output_layer.parameters():
-                param.requires_grad = False
+        for param in self.output_layer.parameters():
+            param.requires_grad = False
 
     @abstractmethod
     def _output_forward(self, x: torch.Tensor) -> torch.Tensor:
