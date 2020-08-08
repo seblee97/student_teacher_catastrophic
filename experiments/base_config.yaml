@@ -55,7 +55,7 @@ model:
   teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
   student_initialisation_std:       0.001                     # std of normal initialisation for student network
   unit_norm_teacher_head:           True                      # choose head weight from 1, -1 or initialise using normal
-  initialise_student_outputs:       False                     # whether or not to initialise hidden -> output weights of student
+  initialise_student_outputs:       True                     # whether or not to initialise hidden -> output weights of student
   soft_committee:                   False                     # whether or not to fix output layer of student to 1 (scm)
   teacher_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (teacher)
   student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
