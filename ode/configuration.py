@@ -22,13 +22,16 @@ class StudentTwoTeacherConfiguration:
         self._S = SelfOverlap(S, final=True)
         self._V = SelfOverlap(V, final=True)
 
-        print(f"Teacher-Teacher overlap: {self._V.values}")
-
         self._h1 = h1.astype(float)
         self._h2 = h2.astype(float)
 
         self._th1 = th1
         self._th2 = th2
+
+        print(f"Teacher-Teacher overlap: {self._V.values}")
+        print(f"Student-Teacher 2 overlap: {self._U.values}")
+        print(f"Teacher head 1: {self._th1}")
+        print(f"Teacher head 2: {self._th2}")
 
         self._Q_log = {"".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(Q)}
         self._T_log = {"".join([str(i), str(j)]): [] for (i, j), _ in np.ndenumerate(T)}
