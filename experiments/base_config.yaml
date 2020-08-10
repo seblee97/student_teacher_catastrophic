@@ -2,7 +2,7 @@ experiment_name:
 use_gpu:                            True                      
 seed:                               5
 
-network_simulation: True
+network_simulation: False
 analytic_simulation: True
 
 task:
