@@ -57,8 +57,8 @@ class StudentTeacherODE:
         self._task_switch_error_1_log = {}
         self._task_switch_error_2_log = {}
 
-        self._K = self._configuration.R.shape[0]
-        self._M = self._configuration.R.shape[1]
+        self._teacher_1_offset = self._configuration.R.shape[0]
+        self._teacher_2_offset = self._configuration.R.shape[1] + self._configuration.R.shape[0]
 
     @property
     def configuration(self) -> StudentTwoTeacherConfiguration:
@@ -81,20 +81,49 @@ class StudentTeacherODE:
         if self._active_teacher == 0:
             teacher_head = self._configuration.th1
             student_head = self._configuration.h1
+            offset = self._teacher_1_offset
         else:
             teacher_head = self._configuration.th2
             student_head = self._configuration.h2
+            offset = self._teacher_2_offset
         derivative = np.zeros(self._configuration.R.shape).astype(float)
         for (i, n), _ in np.ndenumerate(derivative):
             in_derivative = 0
             for m, head_unit in enumerate(teacher_head):
-                cov = self._configuration.generate_covariance_matrix([i, self._K + n, self._K + m])
+                cov = self._configuration.generate_covariance_matrix(
+                    [i, self._teacher_1_offset + n, offset + m])
                 in_derivative += head_unit * self._i3_fn(cov)
             for j, head_unit in enumerate(student_head):
-                cov = self._configuration.generate_covariance_matrix([i, self._K + n, j])
+                cov = self._configuration.generate_covariance_matrix(
+                    [i, self._teacher_1_offset + n, j])
                 in_derivative -= head_unit * self._i3_fn(cov)
 
             derivative[i][n] = self._dt * self._w_learning_rate * student_head[i] * in_derivative
+
+        return derivative
+
+    @property
+    def du_dt(self) -> np.ndarray:
+        if self._active_teacher == 0:
+            teacher_head = self._configuration.th1
+            student_head = self._configuration.h1
+            offset = self._teacher_1_offset
+        else:
+            teacher_head = self._configuration.th2
+            student_head = self._configuration.h2
+            offset = self._teacher_2_offset
+        derivative = np.zeros(self._configuration.U.shape).astype(float)
+        for (i, p), _ in np.ndenumerate(derivative):
+            ip_derivative = 0
+            for m, head_unit in enumerate(teacher_head):
+                cov = self._configuration.generate_covariance_matrix(
+                    [i, self._teacher_2_offset + p, offset + m])
+                ip_derivative += head_unit * self._i3_fn(cov)
+            for k, head_unit in enumerate(student_head):
+                cov = self._configuration.generate_covariance_matrix([i, self._teacher_2_offset, k])
+                ip_derivative -= head_unit * self._i3_fn(cov)
+
+            derivative[i][p] = self._dt * self._w_learning_rate * student_head[i] * ip_derivative
 
         return derivative
 
@@ -103,9 +132,11 @@ class StudentTeacherODE:
         if self._active_teacher == 0:
             teacher_head = self._configuration.th1
             student_head = self._configuration.h1
+            offset = self._teacher_1_offset
         else:
             teacher_head = self._configuration.th2
             student_head = self._configuration.h2
+            offset = self._teacher_2_offset
         derivative = np.zeros(self._configuration.Q.shape).astype(float)
         i_range, k_range = derivative.shape
         for i in range(i_range):
@@ -115,9 +146,9 @@ class StudentTeacherODE:
 
                 sum_1 = 0
                 for m, head_unit in enumerate(teacher_head):
-                    cov = self._configuration.generate_covariance_matrix([i, k, self._K + m])
+                    cov = self._configuration.generate_covariance_matrix([i, k, offset + m])
                     sum_1 += head_unit * student_head[i] * self._i3_fn(cov)
-                    cov = self._configuration.generate_covariance_matrix([k, i, self._K + m])
+                    cov = self._configuration.generate_covariance_matrix([k, i, offset + m])
                     sum_1 += head_unit * student_head[k] * self._i3_fn(cov)
                 for j, head_unit in enumerate(student_head):
                     cov = self._configuration.generate_covariance_matrix([i, k, j])
@@ -145,11 +176,11 @@ class StudentTeacherODE:
                 for m, head_unit_m in enumerate(teacher_head):
                     for n, head_unit_n in enumerate(teacher_head):
                         cov = self._configuration.generate_covariance_matrix(
-                            [i, k, self._K + m, self._K + n])
+                            [i, k, offset + m, offset + n])
                         sum_3 += head_unit_m * head_unit_n * self._i4_fn(cov)
                 for m, head_unit_m in enumerate(teacher_head):
                     for j, head_unit_j in enumerate(student_head):
-                        cov = self._configuration.generate_covariance_matrix([i, k, j, self._K + m])
+                        cov = self._configuration.generate_covariance_matrix([i, k, j, offset + m])
                         sum_3 -= 2 * head_unit_m * head_unit_j * self._i4_fn(cov)
 
                 ik_derivative += self._dt * self._w_learning_rate**2 * student_head[
@@ -163,35 +194,14 @@ class StudentTeacherODE:
         return derivative
 
     @property
-    def du_dt(self) -> np.ndarray:
-        if self._active_teacher == 0:
-            teacher_head = self._configuration.th1
-            student_head = self._configuration.h1
-        else:
-            teacher_head = self._configuration.th2
-            student_head = self._configuration.h2
-        derivative = np.zeros(self._configuration.U.shape).astype(float)
-        for (i, p), _ in np.ndenumerate(derivative):
-            ip_derivative = 0
-            for m, head_unit in enumerate(teacher_head):
-                cov = self._configuration.generate_covariance_matrix([i, self._K + p, self._K + m])
-                ip_derivative += head_unit * self._i3_fn(cov)
-            for k, head_unit in enumerate(student_head):
-                cov = self._configuration.generate_covariance_matrix([i, self._K + p, k])
-                ip_derivative -= head_unit * self._i3_fn(cov)
-
-            derivative[i][p] = self._dt * self._w_learning_rate * student_head[i] * ip_derivative
-
-        return derivative
-
-    @property
     def dh1_dt(self):
         derivative = np.zeros(self._configuration.h1.shape).astype(float)
         if not self._soft_committee and self._active_teacher == 0:
             for i in range(len(derivative)):
                 i_derivative = 0
                 for m, head_unit in enumerate(self._configuration.th1):
-                    cov = self._configuration.generate_covariance_matrix([i, self._K + m])
+                    cov = self._configuration.generate_covariance_matrix(
+                        [i, self._teacher_1_offset + m])
                     i_derivative += head_unit * self._i2_fn(cov)
                 for k, head_unit in enumerate(self._configuration.h1):
                     cov = self._configuration.generate_covariance_matrix([i, k])
@@ -208,7 +218,8 @@ class StudentTeacherODE:
             for i in range(len(derivative)):
                 i_derivative = 0
                 for p, head_unit in enumerate(self._configuration.th2):
-                    cov = self._configuration.generate_covariance_matrix([i, self._K + p])
+                    cov = self._configuration.generate_covariance_matrix(
+                        [i, self._teacher_2_offset + p])
                     i_derivative += head_unit * self._i2_fn(cov)
                 for k, head_unit in enumerate(self._configuration.h2):
                     cov = self._configuration.generate_covariance_matrix([i, k])
@@ -235,11 +246,13 @@ class StudentTeacherODE:
                 error += 0.5 * head_unit_i * head_unit_j * self._i2_fn(cov)
         for n, teacher_head_unit_n in enumerate(self._configuration.th1):
             for m, teacher_head_unit_m in enumerate(self._configuration.th1):
-                cov = self._configuration.generate_covariance_matrix([self._K + n, self._K + m])
+                cov = self._configuration.generate_covariance_matrix(
+                    [self._teacher_1_offset + n, self._teacher_1_offset + m])
                 error += 0.5 * teacher_head_unit_n * teacher_head_unit_m * self._i2_fn(cov)
         for i, head_unit_i in enumerate(self._configuration.h1):
             for n, teacher_head_unit_n in enumerate(self._configuration.th1):
-                cov = self._configuration.generate_covariance_matrix([i, self._K + n])
+                cov = self._configuration.generate_covariance_matrix(
+                    [i, self._teacher_1_offset + n])
                 error -= head_unit_i * teacher_head_unit_n * self._i2_fn(cov)
         if error < 0:
             warnings.warn(
@@ -266,11 +279,13 @@ class StudentTeacherODE:
                 error += 0.5 * head_unit_i * head_unit_j * self._i2_fn(cov)
         for p, teacher_head_unit_p in enumerate(self._configuration.th2):
             for q, teacher_head_unit_q in enumerate(self._configuration.th2):
-                cov = self._configuration.generate_covariance_matrix([self._K + p, self._K + q])
+                cov = self._configuration.generate_covariance_matrix(
+                    [self._teacher_2_offset + p, self._teacher_2_offset + q])
                 error += 0.5 * teacher_head_unit_p * teacher_head_unit_q * self._i2_fn(cov)
         for i, head_unit_i in enumerate(self._configuration.h2):
             for p, teacher_head_unit_p in enumerate(self._configuration.th2):
-                cov = self._configuration.generate_covariance_matrix([i, self._K + p])
+                cov = self._configuration.generate_covariance_matrix(
+                    [i, self._teacher_2_offset + p])
                 error -= head_unit_i * teacher_head_unit_p * self._i2_fn(cov)
         return error
 
