@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import os
 
 try:
     import matplotlib.pyplot as plt
@@ -15,8 +16,11 @@ class OverlayPlotter:
         self._ode_df, self._sim_df = self._load_logs(ode_csv_path, sim_csv_path)
         self._collated_dict = self._organise_logs(self._ode_df, self._sim_df)
 
-        import pdb
-        pdb.set_trace()
+        # save collated dict with organised logs to csv
+        path_head = os.path.split(ode_csv_path)[0]
+        for key, dictionary in self._collated_dict.items():
+            df_path = os.path.join(path_head, f"organised_logs_{key}.csv")
+            pd.DataFrame(dictionary).to_csv(df_path)
 
         self._num_steps = len(self._sim_df)
 
@@ -135,8 +139,6 @@ class OverlayPlotter:
             for key in sim_df.columns
             if key.startswith("layer_0_student_teacher_overlaps/0/values")
         }
-        import pdb
-        pdb.set_trace()
         h1_logs_sim = {
             f"{key.split('_')[-1]} Sim": sim_df[key].dropna()
             for key in sim_df.columns
@@ -190,13 +192,13 @@ class OverlayPlotter:
                 }
             },
             **{
-                "Error (Linear)": {
+                "Error_Linear": {
                     **linear_error_logs_ode,
                     **linear_error_logs_sim
                 }
             },
             **{
-                "Error (Log)": {
+                "Error_Log": {
                     **log_error_logs_ode,
                     **log_error_logs_sim
                 }
