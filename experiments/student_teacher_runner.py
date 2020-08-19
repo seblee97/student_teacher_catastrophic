@@ -311,10 +311,11 @@ class StudentTeacherRunner:
             )
 
         dt = self.ode_timestep_scaling
-        scaled_timesteps = int(self.total_training_steps / self.input_dimension)
-        scaled_period = int(self.curriculum_period / self.input_dimension)
 
-        curriculum = self._get_ode_curriculum(total_steps=scaled_timesteps, period=scaled_period)
+        curriculum = self._get_ode_curriculum(
+            total_steps=self.total_training_steps,
+            period=self.curriculum_period,
+            scaling=self.input_dimension)
 
         ode = dynamics.StudentTeacherODE(
             overlap_configuration=ode_configuration,
@@ -325,13 +326,13 @@ class StudentTeacherRunner:
             curriculum=curriculum,
             soft_committee=self.soft_committee)
 
-        ode.step(scaled_timesteps)
+        ode.step(self.total_training_steps / self.input_dimension)
 
         ode.save_to_csv(save_path=self.experiment_path)
         ode.make_plot(save_path=self.experiment_path, total_time=self.total_training_steps)
 
-    def _get_ode_curriculum(self, total_steps: int, period: int) -> List[int]:
-        return list(np.arange(0, total_steps, period))[1:]
+    def _get_ode_curriculum(self, total_steps: int, period: int, scaling: int = 1) -> List[int]:
+        return np.arange(0, total_steps, period)[1:] / scaling
 
     def train(self) -> None:
         """Training loop

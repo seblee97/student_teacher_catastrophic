@@ -45,7 +45,8 @@ class StudentTwoTeacherConfiguration:
 
         self.step_C()
 
-    def generate_covariance_matrix(self, indices: List[int]) -> CovarianceMatrix:
+    def generate_covariance_matrix(self, indices: List[int],
+                                   teacher_index: int = 0) -> CovarianceMatrix:
         covariance = np.zeros((len(indices), len(indices)))
         for i, index_i in enumerate(indices):
             for j, index_j in enumerate(indices):
@@ -66,8 +67,9 @@ class StudentTwoTeacherConfiguration:
         return self._C
 
     def step_C(self):
-        self._C = np.vstack((np.hstack((self._Q.values, self._R.values)),
-                             np.hstack((self._R.values.T, self._T.values))))
+        self._C = np.vstack((np.hstack((self._Q.values, self._R.values, self._U.values)),
+                             np.hstack((self._R.values.T, self._T.values, self._V.values)),
+                             np.hstack((self._U.values.T, self._V.values, self._S.values))))
 
     @property
     def Q(self) -> SelfOverlap:
