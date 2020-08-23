@@ -36,12 +36,87 @@ class OverlappingTeachers(_BaseTeachers):
             ) == self._num_teachers, f"Provide one noise for each teacher. {len(teacher_noise)} noises given, {self._num_teachers} teachers specified"
             teacher_noises = teacher_noise
 
-        if config.get(["teachers", "overlap_type"]) == "rotation":
-            self._teachers = self._initialise_rotated_teachers(
-                config=config, teacher_noises=teacher_noises)
-        elif config.get(["teachers", "overlap_type"]) == "copy":
-            self._teachers = self._initialise_copy_teachers(
-                config=config, teacher_noises=teacher_noises)
+        original_teacher = self._init_teacher(config=config, index=0)
+        original_teacher.freeze_weights()
+
+        hidden_dimensions = config.get(["model", "teacher_hidden_layers"])
+        input_dimension = config.get(["model", "input_dimension"])
+        output_dimension = config.get(["model", "output_dimension"])
+
+        overlap_types = config.get(["teachers", "overlap_type"])
+        overlap_rotations = config.get(["teachers", "overlap_rotations"])
+        overlap_copies = config.get(["teachers", "overlap_percentages"])
+
+        unit_norm_teacher_head = config.get(["model", "unit_norm_teacher_head"])
+
+        self._teachers = [
+            self._init_teacher(config=config, index=i) for i in range(self._num_teachers)
+        ]
+
+        # include hidden -> output
+        layer_dims = [input_dimension] + hidden_dimensions + [output_dimension]
+
+        for i, (overlap_rotation, overlap_copy, layer_key, layer_dim_i, layer_dim_j) in enumerate(
+                zip(overlap_rotations, overlap_copies,
+                    original_teacher.state_dict().keys(), layer_dims[:-1], layer_dims[1:])):
+
+            teacher_1_layer = []
+            teacher_2_layer = []
+
+            if overlap_types[i] == "rotation":
+                assert self._num_teachers == 2, \
+                    f"Rotated overlapping teachers only implemented for 2 teachers, {self._num_teachers} requested."
+                for _ in range(layer_dim_j):
+                    w1, w2 = custom_functions.generate_rotated_vectors(
+                        layer_dim_i, overlap_rotation, np.sqrt(layer_dim_i))
+                    teacher_1_layer.append(w1)
+                    teacher_2_layer.append(w2)
+
+                print(overlap_rotation)
+
+                with torch.no_grad():
+                    teacher_1_layer_tensor = torch.Tensor(np.vstack(teacher_1_layer))
+                    teacher_2_layer_tensor = torch.Tensor(np.vstack(teacher_2_layer))
+                    if i == len(layer_dims) - 2:
+                        # hidden to output.
+                        if unit_norm_teacher_head:
+                            teacher_1_layer_tensor = teacher_1_layer_tensor / torch.norm(
+                                teacher_1_layer_tensor)
+                            teacher_2_layer_tensor = teacher_2_layer_tensor / torch.norm(
+                                teacher_2_layer_tensor)
+
+                    self._teachers[0].layers[i].weight.data = teacher_1_layer_tensor
+                    self._teachers[1].layers[i].weight.data = teacher_2_layer_tensor
+
+            elif overlap_types[i] == "copy":
+                for t in range(self._num_teachers):
+                    layer_shape = self._teachers[t].state_dict()[layer_key].shape
+                    assert len(layer_shape) == 2, \
+                        "shape of layer tensor is not 2. \
+                        Check consitency of layer construction with task."
+
+                    for row in range(layer_shape[0]):
+                        overlapping_dim = round(0.01 * overlap_copy * layer_shape[1])
+                        overlapping_weights = copy.deepcopy(
+                            original_teacher.state_dict()[layer_key][row][:overlapping_dim])
+                        self._teachers[t].state_dict()[layer_key][row][:overlapping_dim] = \
+                            overlapping_weights
+
+        for t, teacher in enumerate(self._teachers):
+            # freeze weights of every teacher
+            teacher.freeze_weights()
+
+            # set noise
+            if teacher_noises[t] != 0:
+                teacher_output_std = teacher.get_output_statistics()
+                teacher.set_noise_distribution(mean=0, std=teacher_noises[t] * teacher_output_std)
+
+        # if config.get(["teachers", "overlap_type"]) == "rotation":
+        #     self._teachers = self._initialise_rotated_teachers(
+        #         config=config, teacher_noises=teacher_noises)
+        # elif config.get(["teachers", "overlap_type"]) == "copy":
+        #     self._teachers = self._initialise_copy_teachers(
+        #         config=config, teacher_noises=teacher_noises)
 
     def _initialise_rotated_teachers(self, config: Parameters, teacher_noises: List) -> List:
         assert self._num_teachers == 2, \
