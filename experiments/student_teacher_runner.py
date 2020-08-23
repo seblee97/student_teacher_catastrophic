@@ -137,6 +137,8 @@ class StudentTeacherRunner:
             self._noise_distribution = tdist.Normal(0, self._noise)
 
         self.ode_timestep_scaling = config.get(["training", "ode_timestep_scaling"])
+        self.train_first_layer = config.get(["training", "train_first_layer"])
+        self.train_head_layer = config.get(["training", "train_head_layer"])
 
     def _save_network_initial_weights(self):
         # save initial student weights
@@ -324,7 +326,9 @@ class StudentTeacherRunner:
             h_learning_rate=self.learning_rate,
             dt=dt,
             curriculum=curriculum,
-            soft_committee=self.soft_committee)
+            soft_committee=self.soft_committee,
+            train_first_layer=self.train_first_layer,
+            train_head_layer=self.train_head_layer)
 
         ode.step(self.total_training_steps / self.input_dimension)
 
