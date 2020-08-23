@@ -72,8 +72,6 @@ class OverlappingTeachers(_BaseTeachers):
                     teacher_1_layer.append(w1)
                     teacher_2_layer.append(w2)
 
-                print(overlap_rotation)
-
                 with torch.no_grad():
                     teacher_1_layer_tensor = torch.Tensor(np.vstack(teacher_1_layer))
                     teacher_2_layer_tensor = torch.Tensor(np.vstack(teacher_2_layer))
@@ -85,8 +83,11 @@ class OverlappingTeachers(_BaseTeachers):
                             teacher_2_layer_tensor = teacher_2_layer_tensor / torch.norm(
                                 teacher_2_layer_tensor)
 
-                    self._teachers[0].layers[i].weight.data = teacher_1_layer_tensor
-                    self._teachers[1].layers[i].weight.data = teacher_2_layer_tensor
+                        self._teachers[0].output_layer.weight.data = teacher_1_layer_tensor
+                        self._teachers[1].output_layer.weight.data = teacher_2_layer_tensor
+                    else:
+                        self._teachers[0].layers[i].weight.data = teacher_1_layer_tensor
+                        self._teachers[1].layers[i].weight.data = teacher_2_layer_tensor
 
             elif overlap_types[i] == "copy":
                 for t in range(self._num_teachers):
