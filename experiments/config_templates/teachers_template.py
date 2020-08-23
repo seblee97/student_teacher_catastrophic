@@ -31,7 +31,9 @@ class TeachersTemplate(_Template):
         reqs=[lambda x: all(isinstance(y, (float, int)) and y >= 0 for y in x)])
 
     OVERLAP_TYPE = Field(
-        name="overlap_type", types=[str], reqs=[lambda x: x in ["rotation", "copy"]])
+        name="overlap_type",
+        types=[list],
+        reqs=[lambda x: all([y in ["rotation", "copy"] for y in x])])
 
     @classmethod
     def get_fields(cls) -> List:
