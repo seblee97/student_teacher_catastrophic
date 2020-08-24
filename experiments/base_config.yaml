@@ -13,15 +13,17 @@ task:
   loss_type:                        regression                # classification or regression
 
 training:
-  total_training_steps:             100000
+  total_training_steps:             500000
   train_batch_size:                 1                         
-  learning_rate:                    0.5                         
+  learning_rate:                    0.1                         
   weight_decay:                     0                      
   loss_function:                    mse                       # mse, bce
   scale_head_lr:                    True                      # whether to add 1/N factor in lr of output layer  
   scale_hidden_lr_forward:          True                      # whether to add 1/\sqrt{N} factor in forward of hidden layer(s)
   scale_hidden_lr_backward:         False                      # whether to add 1/\sqrt{N} factor in lr of hidden layer(s)
   ode_timestep_scaling:             0.01
+  train_first_layer:                True
+  train_head_layer:                 True
 
 data:
   input_source:                     iid_gaussian              # iid_gaussian, mnist_stream, mnist_digits, even_greater (see README)
@@ -45,9 +47,9 @@ testing:
   test_all_teachers:                True                      # whether to compute generalisation losses for all teachers or just one currently teaching
 
 model:
-  input_dimension:                  784                       
-  student_hidden_layers:            [2]                       
-  teacher_hidden_layers:            [1]                       
+  input_dimension:                  1000                       
+  student_hidden_layers:            [30]                       
+  teacher_hidden_layers:            [15]                       
   output_dimension:                 1                         
   student_nonlinearity:             scaled_erf                      
   teacher_nonlinearities:           [scaled_erf, scaled_erf]              # per teacher
@@ -65,14 +67,14 @@ curriculum:
   type:                             custom                    # curriculum type (custom - declarative or standard - imperative)
   selection_type:                   cyclical                  # how to determine next task (random or cyclical)
   stopping_condition:               fixed_period              # condition on which to switch task (fixed_period or threshold)
-  fixed_period:                     5000                      # period for changing tasks 
+  fixed_period:                     250000                      # period for changing tasks 
   loss_threshold:                   [0.0001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001, 0.000000001, 0.0000000001]                    # loss threshold under which teacher is changed
   custom:                           [0, 1]                    # curriculum defined manually. Each entry defines next teacher index
 
 teachers:
-  overlap_type:                     rotation
-  overlap_rotations:                [0.7854, 0]                 # 0, 2pi = aligned, pi = anti-aligned, pi/2 orthogonal, pi/4 = semi-aligned etc.
-  overlap_percentages:              [0, 0]                    # percentage of weights to copy between teachers per layer.
+  overlap_type:                     [copy, rotation]
+  overlap_rotations:                [3.14159, 0]                 # 0, 2pi = aligned, pi = anti-aligned, pi/2 orthogonal, pi/4 = semi-aligned etc.
+  overlap_percentages:              [100, 0]                    # percentage of weights to copy between teachers per layer.
   teacher_noise:                    [0, 0]
 
 drift_teachers:

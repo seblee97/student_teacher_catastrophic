@@ -16,7 +16,8 @@ class StudentTeacherODE:
 
     def __init__(self, overlap_configuration: StudentTwoTeacherConfiguration, nonlinearity: str,
                  w_learning_rate: float, h_learning_rate: float, dt: Union[float, int],
-                 curriculum: List[int], soft_committee: bool):
+                 curriculum: List[int], soft_committee: bool, train_first_layer: bool,
+                 train_head_layer: bool):
 
         self._configuration = overlap_configuration
         self._nonlinearity = nonlinearity
@@ -24,6 +25,8 @@ class StudentTeacherODE:
         self._h_learning_rate = h_learning_rate
         self._dt = dt
         self._soft_committee = soft_committee
+        self._train_first_layer = train_first_layer
+        self._train_head_layer = train_head_layer
 
         if curriculum is not None:
             self._curriculum = iter(curriculum)
@@ -301,11 +304,20 @@ class StudentTeacherODE:
         self._error_1_log.append(error_1)
         self._error_2_log.append(error_2)
 
-        q_delta = self.dq_dt
-        r_delta = self.dr_dt
-        u_delta = self.du_dt
-        h1_delta = self.dh1_dt
-        h2_delta = self.dh2_dt
+        if self._train_first_layer:
+            q_delta = self.dq_dt
+            r_delta = self.dr_dt
+            u_delta = self.du_dt
+        else:
+            q_delta = np.zeros(self._configuration.Q.shape).astype(float)
+            r_delta = np.zeros(self._configuration.R.shape).astype(float)
+            u_delta = np.zeros(self._configuration.U.shape).astype(float)
+        if self._train_head_layer:
+            h1_delta = self.dh1_dt
+            h2_delta = self.dh2_dt
+        else:
+            h1_delta = np.zeros(self._configuration.h1.shape).astype(float)
+            h2_delta = np.zeros(self._configuration.h2.shape).astype(float)
 
         self._configuration.step_Q(q_delta)
         self._configuration.step_R(r_delta)

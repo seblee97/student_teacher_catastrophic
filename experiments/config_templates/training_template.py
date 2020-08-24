@@ -28,10 +28,14 @@ class TrainingTemplate(_Template):
 
     ODE_TIMESTEP_SCALING = Field(name="ode_timestep_scaling", types=[int, float], reqs=None)
 
+    TRAIN_FIRST_LAYER = Field(name="train_first_layer", types=[bool], reqs=None)
+    TRAIN_HEAD_LAYER = Field(name="train_head_layer", types=[bool], reqs=None)
+
     @classmethod
     def get_fields(cls) -> List:
         return [
             cls.TOTAL_TRAINING_STEPS, cls.TRAIN_BATCH_SIZE, cls.LEARNING_RATE, cls.WEIGHT_DECAY,
             cls.LOSS_FUNCTION, cls.SCALE_HEAD_LR, cls.SCALE_HIDDEN_LR_FORWARD,
-            cls.SCALE_HIDDEN_LR_BACKWARD, cls.ODE_TIMESTEP_SCALING
+            cls.SCALE_HIDDEN_LR_BACKWARD, cls.ODE_TIMESTEP_SCALING, cls.TRAIN_FIRST_LAYER,
+            cls.TRAIN_HEAD_LAYER
         ]
