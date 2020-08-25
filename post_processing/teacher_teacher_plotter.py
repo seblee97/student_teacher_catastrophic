@@ -8,23 +8,29 @@ from typing import Dict, List, Optional, Tuple, Union
 
 class TeacherTeacherPlotter:
 
-    def __init__(self, folder: str, overlaps: np.ndarray):
-        self._dfs = self._get_dfs(folder)
-        self._indices = sorted(self._dfs.keys())
+    ODE_DF_NAME = "ode_logs.csv"
+    SIM_DF_NAME = "data_logger.csv"
+
+    def __init__(self, folder: str, overlaps: np.ndarray, ode: bool, sim: bool):
+        if ode:
+            self._ode_dfs = self._get_dfs(folder, self.ODE_DF_NAME)
+        if sim:
+            self._sim_dfs = self._get_dfs(folder, self.SIM_DF_NAME)
         self._overlaps = overlaps
 
     @staticmethod
-    def _get_dfs(folder: str) -> Dict[str, pd.DataFrame]:
+    def _get_dfs(folder: str, df_name: str) -> Dict[str, pd.DataFrame]:
         dfs = {}
         indices = os.listdir(folder)
         for index in indices:
             try:
-                dfs[int(index)] = pd.read_csv(f"{folder}/{index}/ode_logs.csv")
+                dfs[int(index)] = pd.read_csv(f"{folder}/{index}/{df_name}")
             except FileNotFoundError:
-                print(f"index {index} now found")
+                print(f"df with name {df_name} not found at index {index}")
         return dfs
 
     def plot_vs_step(self,
+                     data_origin: str,
                      attributes: List[str],
                      labels: List[str],
                      color_maps: List,
@@ -39,12 +45,26 @@ class TeacherTeacherPlotter:
                      save_name: Optional[str] = None,
                      xlims: Optional[Tuple] = None,
                      ylims: Optional[Tuple] = None):
+
+        if data_origin == "ode":
+            try:
+                dfs = self._ode_dfs
+            except AttributeError:
+                raise ValueError("No ode dfs, cannot make plots with data origin ode")
+        elif data_origin == "sim":
+            try:
+                dfs = self._sim_dfs
+            except AttributeError:
+                raise ValueError("No sim dfs, cannot make plots with data origin sim")
+        else:
+            raise ValueError("data origin {data_origin} invalid. Use 'ode' or 'sim'")
+
         fig = plt.figure(figsize=figsize)
         for attribute, label, color_map in zip(attributes, labels, color_maps):
-            for i, index in enumerate(self._indices):
-                self._dfs[index][attribute].plot(
-                    label=f"V: {round(self._overlaps[index], 4)}; {label}",
-                    color=color_map(i / len(self._indices)),
+            for i in range(len(dfs)):
+                dfs[i][attribute].plot(
+                    label=f"V: {round(self._overlaps[i], 4)}; {label}",
+                    color=color_map(i / len(self._overlaps)),
                     alpha=alpha,
                     linewidth=linewidth)
         if show_axis_labels:
@@ -73,6 +93,7 @@ class TeacherTeacherPlotter:
             fig.savefig(save_name, dpi=100, bbox_inches='tight', pad_inches=0)
 
     def plot_vs_overlap(self,
+                        data_origin: str,
                         attribute: str,
                         steps: Union[List[int], int],
                         color: str,
@@ -85,12 +106,28 @@ class TeacherTeacherPlotter:
                         xlims: Tuple = (0, 1),
                         ylims: Optional[Tuple] = None,
                         save_name: Optional[str] = None):
+
+        if data_origin == "ode":
+            try:
+                dfs = self._ode_dfs
+            except AttributeError:
+                raise ValueError("No ode dfs, cannot make plots with data origin ode")
+        elif data_origin == "sim":
+            try:
+                dfs = self._sim_dfs
+            except AttributeError:
+                raise ValueError("No sim dfs, cannot make plots with data origin sim")
+        else:
+            raise ValueError("data origin {data_origin} invalid. Use 'ode' or 'sim'")
+
         if isinstance(steps, int):
-            attribute_values_at_step = [self._dfs[i][attribute][steps] for i in self._indices]
+            attribute_values_at_step = [
+                dfs[i][attribute][steps] for i in range(len(self._overlaps))
+            ]
         elif isinstance(steps, list):
             attribute_values_at_step = [
-                self._dfs[i][attribute][steps[0]] - self._dfs[i][attribute][steps[1]]
-                for i in self._indices
+                dfs[i][attribute][steps[0]] - dfs[i][attribute][steps[1]]
+                for i in range(len(self._overlaps))
             ]
         fig = plt.figure()
         plt.plot(
