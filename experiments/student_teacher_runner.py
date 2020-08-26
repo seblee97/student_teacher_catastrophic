@@ -266,10 +266,8 @@ class StudentTeacherRunner:
         """
         self.logger.log("Starting ODE run...")
 
-        student_weight_vector_1 = self.learner.state_dict()["layers.0.weight"].numpy()[0]
-        student_weight_vector_2 = self.learner.state_dict()["layers.0.weight"].numpy()[1]
-
-        student_weight_vectors = [student_weight_vector_1, student_weight_vector_2]
+        student_weights = self.learner.state_dict()["layers.0.weight"].numpy()
+        student_weight_vectors = [weights for weights in student_weights]
 
         teacher_1_weight_vector = self.teachers._teachers[0].state_dict()["layers.0.weight"].numpy()
         teacher_2_weight_vector = self.teachers._teachers[1].state_dict()["layers.0.weight"].numpy()
