@@ -5,6 +5,7 @@ from abc import abstractmethod
 import torch
 import torch.distributions as tdist
 import torch.nn as nn
+import numpy as np
 
 from models.networks.base_network import Model
 from utils import Parameters
@@ -48,7 +49,7 @@ class _Teacher(Model, ABC):
             self.hidden_dimensions[-1], self.output_dimension, bias=self.bias)
         if self.unit_norm_teacher_head:
             head_weight = random.choice([1, -1])
-            self.output_layer.weight.data.fill_(head_weight)
+            self.output_layer.weight.data.fill_(head_weight / np.sqrt(self.hidden_dimensions[-1]))
         else:
             self._initialise_weights(self.output_layer)
         for param in self.output_layer.parameters():
