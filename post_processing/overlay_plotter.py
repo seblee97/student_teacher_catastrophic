@@ -46,7 +46,8 @@ class OverlayPlotter:
         fig_sub = self.fig.add_subplot(self.spec[row, col])
 
         unique_data_tags = np.unique([log.split(" ")[0] for log in logs.keys()])
-        colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        color_map = cm.get_cmap("plasma")
+        colors = [color_map(i / len(unique_data_tags)) for i in range(len(unique_data_tags))]
 
         color_dict = {unique_tag: color for unique_tag, color in zip(unique_data_tags, colors)}
 
