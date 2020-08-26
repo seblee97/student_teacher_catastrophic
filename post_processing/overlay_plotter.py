@@ -5,6 +5,7 @@ import os
 try:
     import matplotlib.pyplot as plt
     import matplotlib.gridspec as gridspec
+    from matplotlib import cm
 except:
     pass
 from typing import Tuple, Union, Dict
