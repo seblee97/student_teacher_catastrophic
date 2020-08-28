@@ -2,8 +2,8 @@ experiment_name:
 use_gpu:                            True                      
 seed:                               5
 
-network_simulation: False
-analytic_simulation: True
+network_simulation: True
+analytic_simulation: False
 
 task:
   label_task_boundaries:            True                      
@@ -13,9 +13,9 @@ task:
   loss_type:                        regression                # classification or regression
 
 training:
-  total_training_steps:             500000
+  total_training_steps:             1500000
   train_batch_size:                 1                         
-  learning_rate:                    0.1                         
+  learning_rate:                    0.1                        
   weight_decay:                     0                      
   loss_function:                    mse                       # mse, bce
   scale_head_lr:                    True                      # whether to add 1/N factor in lr of output layer  
@@ -34,11 +34,12 @@ data:
 logging:
   verbose:                          True                      
   verbose_tb:                       0                         # 0 - no tb logging, 1 - minimal tb logging, 2 - full tb logging                     
-  checkpoint_frequency:             5000                      
+  checkpoint_frequency:             100                      
   log_to_df:                        True
   merge_at_checkpoint:              True
   save_weights_at_switch:           True
   save_initial_weights:             True
+  log_overlaps:                     False
   
 testing:
   test_batch_size:                  50000                     # generalisation error
@@ -48,8 +49,8 @@ testing:
 
 model:
   input_dimension:                  1000                       
-  student_hidden_layers:            [30]                       
-  teacher_hidden_layers:            [15]                       
+  student_hidden_layers:            [40]                       
+  teacher_hidden_layers:            [20]
   output_dimension:                 1                         
   student_nonlinearity:             scaled_erf                      
   teacher_nonlinearities:           [scaled_erf, scaled_erf]              # per teacher
@@ -57,7 +58,7 @@ model:
   teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
   student_initialisation_std:       0.001                     # std of normal initialisation for student network
   unit_norm_teacher_head:           True                      # choose head weight from 1, -1 or initialise using normal
-  initialise_student_outputs:       True                     # whether or not to initialise hidden -> output weights of student
+  initialise_student_outputs:       True                      # whether or not to initialise hidden -> output weights of student
   soft_committee:                   False                     # whether or not to fix output layer of student to 1 (scm)
   teacher_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (teacher)
   student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
@@ -67,13 +68,13 @@ curriculum:
   type:                             custom                    # curriculum type (custom - declarative or standard - imperative)
   selection_type:                   cyclical                  # how to determine next task (random or cyclical)
   stopping_condition:               fixed_period              # condition on which to switch task (fixed_period or threshold)
-  fixed_period:                     250000                      # period for changing tasks 
+  fixed_period:                     500000                      # period for changing tasks 
   loss_threshold:                   [0.0001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001, 0.000000001, 0.0000000001]                    # loss threshold under which teacher is changed
   custom:                           [0, 1]                    # curriculum defined manually. Each entry defines next teacher index
 
 teachers:
   overlap_type:                     [copy, rotation]
-  overlap_rotations:                [3.14159, 0]                 # 0, 2pi = aligned, pi = anti-aligned, pi/2 orthogonal, pi/4 = semi-aligned etc.
+  overlap_rotations:                [3.14159, 1]                 # 0, 2pi = aligned, pi = anti-aligned, pi/2 orthogonal, pi/4 = semi-aligned etc.
   overlap_percentages:              [100, 0]                    # percentage of weights to copy between teachers per layer.
   teacher_noise:                    [0, 0]
 
