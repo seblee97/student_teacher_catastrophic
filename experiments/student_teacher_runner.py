@@ -96,6 +96,7 @@ class StudentTeacherRunner:
         self._weight_save_path = \
             os.path.join(self.experiment_path, "learner_weights")
         os.makedirs(self._weight_save_path, exist_ok=False)
+        self._log_overlaps = config.get(["logging", "log_overlaps"])
 
         self.total_training_steps = \
             config.get(["training", "total_training_steps"])
@@ -326,12 +327,13 @@ class StudentTeacherRunner:
             curriculum=curriculum,
             soft_committee=self.soft_committee,
             train_first_layer=self.train_first_layer,
-            train_head_layer=self.train_head_layer)
+            train_head_layer=self.train_head_layer,
+            save_path=self.experiment_path)
 
         ode.step(self.total_training_steps / self.input_dimension)
 
-        ode.save_to_csv(save_path=self.experiment_path)
-        ode.make_plot(save_path=self.experiment_path, total_time=self.total_training_steps)
+        ode.save_to_csv()
+        ode.make_plot(total_time=self.total_training_steps)
 
     def _get_ode_curriculum(self, total_steps: int, period: int, scaling: int = 1) -> List[int]:
         return np.arange(0, total_steps, period)[1:] / scaling
@@ -427,22 +429,23 @@ class StudentTeacherRunner:
                     # explicitly set model back to training mode
                     self.learner.set_to_train()
 
-                # overlap matrices
-                if (total_step_count % self.overlap_frequency == 0 and self.teacher_is_network):
-                    self.logger.compute_overlap_matrices(
-                        student_network=self.learner,
-                        teacher_networks=self.teachers.get_teacher_networks(),
-                        step_count=total_step_count)
+                if self._log_overlaps:
+                    # overlap matrices
+                    if (total_step_count % self.overlap_frequency == 0 and self.teacher_is_network):
+                        self.logger.compute_overlap_matrices(
+                            student_network=self.learner,
+                            teacher_networks=self.teachers.get_teacher_networks(),
+                            step_count=total_step_count)
 
-                # weight changes
-                self.logger._log_weight_diff(
-                    step_count=total_step_count,
-                    old_weights=pre_step_learner_weights,
-                    student_network=self.learner)
+                    # weight changes
+                    self.logger._log_weight_diff(
+                        step_count=total_step_count,
+                        old_weights=pre_step_learner_weights,
+                        student_network=self.learner)
 
-                # output layer weights
-                self.logger._log_output_weights(
-                    step_count=total_step_count, student_network=self.learner)
+                    # output layer weights
+                    self.logger._log_output_weights(
+                        step_count=total_step_count, student_network=self.learner)
 
                 # alert learner/teacher(s) of step e.g. to drift teacher
                 self.learner.signal_step_boundary_to_learner(
