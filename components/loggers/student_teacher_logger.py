@@ -29,19 +29,21 @@ class StudentTeacherLogger(_BaseLogger):
         ]
 
         columns.extend(self._get_training_metric_columns())
-        columns.extend(self._get_student_head_weight_columns())
-        columns.extend(self._get_student_teacher_hidden_overlap_columns())
-        columns.extend(self._get_student_teacher_hidden_overlap_diff_columns())
-        columns.extend(self._get_student_teacher_head_overlap_columns())
-        columns.extend(self._get_student_hidden_self_overlap_columns())
-        columns.extend(self._get_student_hidden_grad_overlap_columns())
-        columns.extend(self._get_teacher_hidden_self_overlap_columns())
-        columns.extend(self._get_student_head_self_overlap_columns())
-        columns.extend(self._get_student_head_grad_overlap_columns())
-        columns.extend(self._get_teacher_head_self_overlap_columns())
-        columns.extend(self._get_teacher_teacher_hidden_overlap_columns())
-        columns.extend(self._get_teacher_teacher_head_overlap_columns())
-        columns.extend(self._get_student_difference_direction_columns())
+
+        if self._log_overlaps:
+            columns.extend(self._get_student_head_weight_columns())
+            columns.extend(self._get_student_teacher_hidden_overlap_columns())
+            columns.extend(self._get_student_teacher_hidden_overlap_diff_columns())
+            columns.extend(self._get_student_teacher_head_overlap_columns())
+            columns.extend(self._get_student_hidden_self_overlap_columns())
+            columns.extend(self._get_student_hidden_grad_overlap_columns())
+            columns.extend(self._get_teacher_hidden_self_overlap_columns())
+            columns.extend(self._get_student_head_self_overlap_columns())
+            columns.extend(self._get_student_head_grad_overlap_columns())
+            columns.extend(self._get_teacher_head_self_overlap_columns())
+            columns.extend(self._get_teacher_teacher_hidden_overlap_columns())
+            columns.extend(self._get_teacher_teacher_head_overlap_columns())
+            columns.extend(self._get_student_difference_direction_columns())
 
         return columns
 
