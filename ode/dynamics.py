@@ -144,7 +144,6 @@ class StudentTeacherODE:
         i_range, k_range = derivative.shape
         for i in range(i_range):
             for k in range(i, k_range):
-                # for (i, k), _ in np.ndenumerate(derivative):
                 ik_derivative = 0
 
                 sum_1 = 0
@@ -160,16 +159,6 @@ class StudentTeacherODE:
                     sum_1 -= head_unit * student_head[k] * self._i3_fn(cov)
 
                 ik_derivative += self._dt * self._w_learning_rate * sum_1
-
-                # sum_2 = 0
-                # for m, head_unit in enumerate(teacher_head):
-                #     cov = self._configuration.generate_covariance_matrix([k, i, m])
-                #     sum_2 += head_unit * self._i3_fn(cov)
-                # for j, head_unit in enumerate(student_head):
-                #     cov = self._configuration.generate_covariance_matrix([k, i, j])
-                #     sum_2 -= head_unit * self._i3_fn(cov)
-
-                # ik_derivative += self._dt * self._w_learning_rate * student_head[k] * sum_2
 
                 sum_3 = 0
                 for j, head_unit_j in enumerate(student_head):
