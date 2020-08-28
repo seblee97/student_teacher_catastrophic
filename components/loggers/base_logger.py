@@ -67,6 +67,7 @@ class _BaseLogger(ABC):
         self._num_teachers: int = config.get(["task", "num_teachers"])
         self._input_dimension: int = config.get(["model", "input_dimension"])
         self._output_dimension: int = config.get(["model", "output_dimension"])
+        self._log_overlaps: bool = config.get(["logging", "log_overlaps"])
 
     @abstractmethod
     def _get_df_columns(self) -> List[str]:
