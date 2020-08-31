@@ -40,6 +40,7 @@ logging:
   save_weights_at_switch:           True
   save_initial_weights:             True
   log_overlaps:                     False
+  save_weight_period:               50000
   
 testing:
   test_batch_size:                  50000                     # generalisation error
