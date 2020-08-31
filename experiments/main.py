@@ -4,6 +4,10 @@ import os
 import time
 
 import yaml
+import turibolt as bolt
+
+import sys
+print("PATH", sys.path)
 
 from experiments.config_templates import ConfigTemplate
 from experiments.config_templates import IIDDataTemplate
@@ -66,11 +70,16 @@ def run(args):
     else:
         results_folder_base = 'results/'
 
+    if args.bolt:
+        save_root = bolt.ARTIFACT_DIR
+    else:
+        save_root = MAIN_FILE_PATH
+
     if experiment_name:
-        checkpoint_path = '{}/{}/{}/{}/'.format(MAIN_FILE_PATH, results_folder_base, exp_timestamp,
+        checkpoint_path = '{}/{}/{}/{}/'.format(save_root, results_folder_base, exp_timestamp,
                                                 experiment_name)
     else:
-        checkpoint_path = '{}/{}/{}/'.format(MAIN_FILE_PATH, results_folder_base, exp_timestamp)
+        checkpoint_path = '{}/{}/{}/'.format(save_root, results_folder_base, exp_timestamp)
 
     student_teacher_parameters.set_property("checkpoint_path", checkpoint_path)
     student_teacher_parameters.set_property("experiment_timestamp", exp_timestamp)
