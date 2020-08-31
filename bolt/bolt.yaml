@@ -1,4 +1,4 @@
-name: "Cata"
+name: "Cata Long Scaled"
 description: "Bolt Cata"
 
 permissions:
@@ -6,11 +6,13 @@ permissions:
   viewers: 'sebastian_lee2'
 
 command: 'source /mnt/miniconda/etc/profile.d/conda.sh && conda activate PY3 &&
-export PYTHONPATH="${PYTHONPATH}:$PWD" && python experiments/main.py'
+export PYTHONPATH="${PYTHONPATH}:$PWD" && python bolt/bolt_jobs.py'
 setup_command: 'bash bolt/cata_bolt_setup.sh'
 
+is_parent: True
+
 resources:
-  num_cpus: 4
+  num_cpus: 16
   num_gpus: 0
   cluster: apc_usmsc39
 
