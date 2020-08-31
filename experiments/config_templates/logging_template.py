@@ -25,10 +25,12 @@ class LoggingTemplate(_Template):
 
     LOG_OVERLAPS = Field(name="log_overlaps", types=[bool], reqs=None)
 
+    SAVE_WEIGHT_PERIOD = Field(name="save_weight_period", types=[int], reqs=None)
+
     @classmethod
     def get_fields(cls) -> List:
         return [
             cls.VERBOSE, cls.VERBOSE_TB, cls.CHECKPOINT_FREQUENCY, cls.LOG_TO_DF,
             cls.MERGE_AT_CHECKPOINT, cls.SAVE_WEIGHTS_AT_SWITCH, cls.SAVE_INITIAL_WEIGHTS,
-            cls.LOG_OVERLAPS
+            cls.LOG_OVERLAPS, cls.SAVE_WEIGHT_PERIOD
         ]
