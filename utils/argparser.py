@@ -14,6 +14,7 @@ class Argparser:
             default='base_config.yaml')
         parser.add_argument(
             '-gpu_id', type=int, help='id of gpu to use if more than 1 available', default=0)
+        parser.add_argument("--bolt", action="store_true", help="whether run is executed in bolt.")
         parser.add_argument(
             '-log_ext',
             action='store_false',
