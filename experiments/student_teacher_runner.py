@@ -97,6 +97,7 @@ class StudentTeacherRunner:
             os.path.join(self.experiment_path, "learner_weights")
         os.makedirs(self._weight_save_path, exist_ok=False)
         self._log_overlaps = config.get(["logging", "log_overlaps"])
+        self.save_weight_period = config.get(["logging", "save_weight_period"])
 
         self.total_training_steps = \
             config.get(["training", "total_training_steps"])
@@ -463,6 +464,13 @@ class StudentTeacherRunner:
                 if (self.logfile_path and total_step_count % self.checkpoint_frequency == 0 and
                         self.log_to_df):
                     self.logger.checkpoint_df(step=total_step_count)
+
+                # save weights
+                if total_step_count % self.save_weight_period == 0:
+                    save_path = os.path.join(self._weight_save_path,
+                                             f"step_{total_step_count}_saved_weights.pt")
+                    self.logger.log(f"Saving weights at step {total_step_count}.")
+                    self.learner.save_weights(save_path)
 
                 to_switch = self._switch_task(
                     step=task_step_count, generalisation_error=latest_task_generalisation_error)
