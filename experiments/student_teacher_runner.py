@@ -399,9 +399,10 @@ class StudentTeacherRunner:
                 # (avoids accidentally accessing label)
                 student_output = self.learner.forward(batch_input_student)
 
-                assert teacher_output.shape == student_output.shape, \
-                    "Shape of student and teacher outputs are different. \
-                        To ensure correctness please fix"
+                if self.loss_type == "regression":
+                    assert teacher_output.shape == student_output.shape, \
+                        "Shape of student and teacher outputs are different. \
+                            To ensure correctness please fix"
 
                 if self.verbose and task_step_count % 1000 == 0:
                     self.logger.log("Training step {}".format(task_step_count))
