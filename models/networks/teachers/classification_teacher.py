@@ -31,4 +31,4 @@ class ClassificationTeacher(_Teacher):
             raise NotImplementedError("Teacher thresholding for {} nonlinearity not yet \
                 implemented".format(self.nonlinearity_name))
 
-        return labels.long().reshape(len(labels),)
+        return labels.float().reshape(len(labels),)
