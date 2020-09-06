@@ -55,6 +55,8 @@ class StudentTeacherLogger(_BaseLogger):
             columns.append("teacher_{}_generalisation_error/log".format(t))
             columns.append("teacher_{}_error_change/log".format(t))
             columns.append("teacher_{}_error_change/linear".format(t))
+            if self._loss_type == "classification":
+                columns.append("teacher_{}_classification_accuracy".format(t))
         return columns
 
     def _get_student_head_weight_columns(self) -> List[str]:
