@@ -94,7 +94,7 @@ class StudentTeacherParameters(Parameters):
 
         # trained_mnist_task
         if self.get(["task", "teacher_configuration"]) == "trained_mnist":
-            assert self.get(["training", "input_source"]) == "mnist", \
+            assert self.get(["data", "input_source"]) == "mnist_stream", \
                 "Task chosen is trained MNIST but input specified \
                     are not MNIST"
 
