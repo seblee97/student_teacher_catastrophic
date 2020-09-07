@@ -25,7 +25,7 @@ class TrainedMNISTTeachers(_BaseTeachers):
         Load weights from specified path
         """
         # get noise configs if applicable
-        teacher_noise = config.get(["task", "teacher_noise"])
+        teacher_noise = config.get(["teachers", "teacher_noise"])
         if type(teacher_noise) is int:
             teacher_noises = [teacher_noise for _ in range(self._num_teachers)]
         elif type(teacher_noise) is list:
@@ -39,8 +39,6 @@ class TrainedMNISTTeachers(_BaseTeachers):
             config.get(["model", "teacher_hidden_layers"]),
             config.get(["model", "teacher_nonlinearities"]),
             config.get(["model", "teacher_bias_parameters"]),
-            config.get(["training", "teachers"]),
-            config.get(["training", "rotations"]),
             config.get(["trained_mnist", "output_dimension"])
         ]
 
@@ -48,7 +46,7 @@ class TrainedMNISTTeachers(_BaseTeachers):
         # of this type exist
         config_hash = hashlib.md5(str(teacher_specification_components).encode('utf-8')).hexdigest()
 
-        data_path = config.get(["save_weight_path"])
+        data_path = config.get(["trained_mnist", "save_weight_path"])
         os.makedirs(data_path, exist_ok=True)
         saved_weights_path = os.path.join(data_path, config_hash)
         if not os.path.exists(saved_weights_path):
