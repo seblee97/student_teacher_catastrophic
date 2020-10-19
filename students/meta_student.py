@@ -1,5 +1,6 @@
 from students import base_student
 
+import torch
 import torch.nn as nn
 
 
@@ -20,3 +21,8 @@ class MetaStudent(base_student.BaseStudent):
             for param in output_layer.parameters():
                 param.requires_grad = False
         self._heads.append(output_layer)
+
+    def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
+        """Pass tensor through head of student (only one for meta-learning)."""
+        y = self.heads[0](x)
+        return y
