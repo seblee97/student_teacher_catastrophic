@@ -22,7 +22,13 @@ class ConfigTemplate:
             config_field.Field(
                 name=constants.Constants.TEACHER_CONFIGURATION,
                 types=[str],
-                requirements=[lambda x: x in [constants.Constants.OVERLAPPING]],
+                requirements=[
+                    lambda x: x
+                    in [
+                        constants.Constants.FEATURE_ROTATION,
+                        constants.Constants.READOUT_ROTATION,
+                    ]
+                ],
             ),
             config_field.Field(
                 name=constants.Constants.NUM_TEACHERS,
@@ -167,27 +173,12 @@ class ConfigTemplate:
         level=[constants.Constants.TESTING],
     )
 
-    _model_template = config_template.Template(
+    _student_template = config_template.Template(
         fields=[
-            config_field.Field(
-                name=constants.Constants.INPUT_DIMENSION,
-                types=[int],
-                requirements=[lambda x: x > 0],
-            ),
             config_field.Field(
                 name=constants.Constants.STUDENT_HIDDEN_LAYERS,
                 types=[list],
                 requirements=[lambda x: all(isinstance(y, int) and y > 0 for y in x)],
-            ),
-            config_field.Field(
-                name=constants.Constants.TEACHER_HIDDEN_LAYERS,
-                types=[list],
-                requirements=[lambda x: all(isinstance(y, int) and y > 0 for y in x)],
-            ),
-            config_field.Field(
-                name=constants.Constants.OUTPUT_DIMENSION,
-                types=[int],
-                requirements=[lambda x: x > 0],
             ),
             config_field.Field(
                 name=constants.Constants.STUDENT_NONLINEARITY,
@@ -196,6 +187,82 @@ class ConfigTemplate:
                     lambda x: x
                     in [constants.Constants.SCALED_ERF, constants.Constants.RELU]
                 ],
+            ),
+            config_field.Field(
+                name=constants.Constants.STUDENT_INITIALISATION_STD,
+                types=[float, int],
+                requirements=[lambda x: x > 0],
+            ),
+            config_field.Field(
+                name=constants.Constants.INITIALISE_STUDENT_OUTPUTS,
+                types=[bool],
+            ),
+            config_field.Field(
+                name=constants.Constants.SOFT_COMMITTEE,
+                types=[bool],
+            ),
+            config_field.Field(
+                name=constants.Constants.STUDENT_BIAS_PARAMETERS,
+                types=[bool],
+            ),
+            config_field.Field(
+                name=constants.Constants.SYMMETRIC_STUDENT_INITIALISATION,
+                types=[bool],
+            ),
+        ],
+        level=[constants.Constants.MODEL, constants.Constants.STUDENT],
+    )
+
+    _feature_rotation_template = config_template.Template(
+        fields=[
+            config_field.Field(
+                name=constants.Constants.ROTATION_MAGNITUDE,
+                key=constants.Constants.FEATURE_ROTATION_MAGNITUDE,
+                types=[float, int],
+            )
+        ],
+        level=[
+            constants.Constants.MODEL,
+            constants.Constants.TEACHERS,
+            constants.Constants.FEATURE_ROTATION,
+        ],
+        dependent_variables=[constants.Constants.TEACHER_CONFIGURATION],
+        dependent_variables_required_values=[[constants.Constants.FEATURE_ROTATION]],
+    )
+
+    _readout_rotation_template = config_template.Template(
+        fields=[
+            config_field.Field(
+                name=constants.Constants.ROTATION_MAGNITUDE,
+                key=constants.Constants.READOUT_ROTATION_MAGNITUDE,
+                types=[float, int],
+            ),
+            config_field.Field(
+                name=constants.Constants.FEATURE_COPY_PERCENTAGE,
+                types=[int, float],
+                requirements=[lambda x: x >= 0 and x <= 100],
+            ),
+        ],
+        level=[
+            constants.Constants.MODEL,
+            constants.Constants.TEACHERS,
+            constants.Constants.READOUT_ROTATION,
+        ],
+        dependent_variables=[constants.Constants.TEACHER_CONFIGURATION],
+        dependent_variables_required_values=[[constants.Constants.READOUT_ROTATION]],
+    )
+
+    _teachers_template = config_template.Template(
+        fields=[
+            config_field.Field(
+                name=constants.Constants.TEACHER_NOISES,
+                types=[list],
+                requirements=[lambda x: all(y >= 0 for y in x)],
+            ),
+            config_field.Field(
+                name=constants.Constants.TEACHER_HIDDEN_LAYERS,
+                types=[list],
+                requirements=[lambda x: all(isinstance(y, int) and y > 0 for y in x)],
             ),
             config_field.Field(
                 name=constants.Constants.TEACHER_NONLINEARITIES,
@@ -217,35 +284,32 @@ class ConfigTemplate:
                 requirements=[lambda x: x > 0],
             ),
             config_field.Field(
-                name=constants.Constants.STUDENT_INITIALISATION_STD,
-                types=[float, int],
-                requirements=[lambda x: x > 0],
-            ),
-            config_field.Field(
                 name=constants.Constants.UNIT_NORM_TEACHER_HEAD,
-                types=[bool],
-            ),
-            config_field.Field(
-                name=constants.Constants.INITIALISE_STUDENT_OUTPUTS,
-                types=[bool],
-            ),
-            config_field.Field(
-                name=constants.Constants.SOFT_COMMITTEE,
                 types=[bool],
             ),
             config_field.Field(
                 name=constants.Constants.TEACHER_BIAS_PARAMETERS,
                 types=[bool],
             ),
+        ],
+        nested_templates=[_feature_rotation_template, _readout_rotation_template],
+        level=[constants.Constants.MODEL, constants.Constants.TEACHERS],
+    )
+
+    _model_template = config_template.Template(
+        fields=[
             config_field.Field(
-                name=constants.Constants.STUDENT_BIAS_PARAMETERS,
-                types=[bool],
+                name=constants.Constants.INPUT_DIMENSION,
+                types=[int],
+                requirements=[lambda x: x > 0],
             ),
             config_field.Field(
-                name=constants.Constants.SYMMETRIC_STUDENT_INITIALISATION,
-                types=[bool],
+                name=constants.Constants.OUTPUT_DIMENSION,
+                types=[int],
+                requirements=[lambda x: x > 0],
             ),
         ],
+        nested_templates=[_teachers_template, _student_template],
         level=[constants.Constants.MODEL],
     )
 
@@ -276,55 +340,6 @@ class ConfigTemplate:
             ),
         ],
         level=[constants.Constants.CURRICULUM],
-    )
-
-    _teachers_template = config_template.Template(
-        fields=[
-            config_field.Field(
-                name=constants.Constants.OVERLAP_TYPE,
-                types=[list],
-                requirements=[
-                    lambda x: all(
-                        y in [constants.Constants.COPY, constants.Constants.ROTATION]
-                        for y in x
-                    )
-                ],
-            ),
-            config_field.Field(
-                name=constants.Constants.OVERLAP_ROTATIONS,
-                types=[list],
-                requirements=[
-                    lambda x: all(
-                        (
-                            isinstance(y, float)
-                            or isinstance(y, int)
-                            or y == constants.Constants.NOT_APPLICABLE
-                        )
-                        for y in x
-                    )
-                ],
-            ),
-            config_field.Field(
-                name=constants.Constants.OVERLAP_PERCENTAGES,
-                types=[list],
-                requirements=[
-                    lambda x: all(
-                        (
-                            (isinstance(y, float) and y >= 0 and y <= 100)
-                            or (isinstance(y, int) and y >= 0 and y <= 100)
-                            or (y == constants.Constants.NOT_APPLICABLE)
-                        )
-                        for y in x
-                    )
-                ],
-            ),
-            config_field.Field(
-                name=constants.Constants.TEACHER_NOISES,
-                types=[list],
-                requirements=[lambda x: all(y >= 0 for y in x)],
-            ),
-        ],
-        level=[constants.Constants.TEACHERS],
     )
 
     base_config_template = config_template.Template(
@@ -359,6 +374,5 @@ class ConfigTemplate:
             _testing_template,
             _model_template,
             _curriculum_template,
-            _teachers_template,
         ],
     )
