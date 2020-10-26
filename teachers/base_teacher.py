@@ -40,6 +40,10 @@ class BaseTeacher(base_network.BaseNetwork, abc.ABC):
             initialisation_std=initialisation_std,
         )
 
+    @property
+    def head(self) -> nn.Linear:
+        return self._head
+
     # def get_output_statistics(self, repeats=5000):
     #     with torch.no_grad():
     #         random_input = torch.randn(repeats, self.input_dimension)
