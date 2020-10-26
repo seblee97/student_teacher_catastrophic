@@ -30,4 +30,6 @@ class ContinualStudent(base_student.BaseStudent):
     def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
         """Pass tensor through relevant head of student (depending on current teacher)."""
         y = self.heads[self._current_teacher](x)
+        if self._classification_output:
+            return self._threshold(y)
         return y
