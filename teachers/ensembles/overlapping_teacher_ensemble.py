@@ -6,13 +6,36 @@ import numpy as np
 import torch
 
 from utils import custom_functions
-from students import base_teachers
+from teachers.ensembles import base_teacher_ensemble
 
 
-class OverlappingTeachers(base_teachers.BaseTeachers):
+class OverlappingTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
+    def __init__(
+        self,
+        input_dimension: int,
+        hidden_dimensions: List[int],
+        output_dimension: int,
+        bias: bool,
+        loss_type: str,
+        nonlinearity: str,
+        unit_norm_teacher_head: bool,
+        num_teachers: int,
+        initialisation_std: float,
+    ):
+        super().__init__(
+            input_dimension=input_dimension,
+            hidden_dimensions=hidden_dimensions,
+            output_dimension=output_dimension,
+            bias=bias,
+            loss_type=loss_type,
+            nonlinearity=nonlinearity,
+            unit_norm_teacher_head=unit_norm_teacher_head,
+            num_teachers=num_teachers,
+            initialisation_std=initialisation_std,
+        )
+
     def _setup_teachers(self) -> None:
-        """
-        Instantiate all teachers.
+        """Instantiate overlapping teachers.
 
         Start with 'original' teacher.
         Then instantiate set of teachers by copying specified number
@@ -20,6 +43,12 @@ class OverlappingTeachers(base_teachers.BaseTeachers):
         Weight duplicates can be in input to hidden,
         hidden to output or both.
         """
+
+        import pdb
+
+        pdb.set_trace()
+
+        original_teacher = self._init_teacher()
         # get noise configs if applicable
         teacher_noise = config.get(["teachers", "teacher_noise"])
         if type(teacher_noise) is int:
@@ -30,7 +59,6 @@ class OverlappingTeachers(base_teachers.BaseTeachers):
             ), f"Provide one noise for each teacher. {len(teacher_noise)} noises given, {self._num_teachers} teachers specified"
             teacher_noises = teacher_noise
 
-        original_teacher = self._init_teacher(config=config, index=0)
         original_teacher.freeze_weights()
 
         hidden_dimensions = config.get(["model", "teacher_hidden_layers"])
