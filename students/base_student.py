@@ -10,8 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 import constants
-from utils import custom_activations
-from students import base_network
+from utils import base_network
 
 
 class BaseStudent(base_network.BaseNetwork, abc.ABC):
@@ -32,6 +31,7 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         symmetric_initialisation: bool = False,
         initialisation_std: Optional[float] = None,
     ) -> None:
+        self._initialise_outputs = initialise_outputs
         self._soft_committee = soft_committee
         self._scale_hidden_lr = scale_hidden_lr
         self._scale_head_lr = scale_head_lr
@@ -45,10 +45,19 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
             bias=bias,
             loss_type=loss_type,
             nonlinearity=nonlinearity,
-            initialise_outputs=initialise_outputs,
             symmetric_initialisation=symmetric_initialisation,
             initialisation_std=initialisation_std,
         )
+
+    @abc.abstractmethod
+    def _construct_output_layers(self):
+        """Instantiate the output layer."""
+        pass
+
+    @abc.abstractmethod
+    def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
+        """Pass tensor through relevant head of student."""
+        pass
 
     def get_trainable_parameters(self):  # TODO: return type
         """To instantiate optimiser, returns relevant (trainable) parameters
@@ -68,13 +77,15 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
                 for layer in self._layers
             ]
         if not self._soft_committee:
-            trainable_parameters += self._get_trainable_head_parameters()
+            trainable_head_parameters = [
+                {
+                    "params": head.parameters(),
+                    "lr": self._learning_rate / self._input_dimension,
+                }
+                for head in self._heads
+            ]
+            trainable_parameters += trainable_head_parameters
         return trainable_parameters
-
-    # @abc.abstractmethod
-    # def _construct_output_layers(self):
-    #     """Instantiate the output layer."""
-    #     pass
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """This method performs the forward pass. This implements the
@@ -96,10 +107,6 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
 
         return y
 
-    def _threshold(self, y: torch.Tensor) -> torch.Tensor:
-        """Apply sigmoid threshold."""
-        return torch.sigmoid(y)
-
     def forward_all(self, x: torch.Tensor) -> List[torch.Tensor]:
         """Makes call to student forward, using all heads (used for evaluation)"""
         for layer in self._layers:
@@ -109,10 +116,15 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
             return [self._threshold(y) for y in task_outputs]
         return task_outputs
 
-    @abc.abstractmethod
-    def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
-        """Pass tensor through relevant head of student."""
-        pass
+    def _threshold(self, y: torch.Tensor) -> torch.Tensor:
+        """Apply sigmoid threshold."""
+        return torch.sigmoid(y)
+
+        # @abc.abstractmethod
+
+    # def _construct_output_layers(self):
+    #     """Instantiate the output layer."""
+    #     pass
 
     # @abstractmethod
     # def forward_batch_per_task(
