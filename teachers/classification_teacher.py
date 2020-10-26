@@ -18,7 +18,7 @@ class ClassificationTeacher(base_teacher.BaseTeacher):
         output_dimension: int,
         bias: bool,
         nonlinearity: str,
-        symmetric_initialisation: bool,
+        unit_norm_teacher_head: bool,
         initialisation_std: float,
     ):
         super().__init__(
@@ -28,7 +28,7 @@ class ClassificationTeacher(base_teacher.BaseTeacher):
             bias=bias,
             loss_type=constants.Constants.CLASSIFICATION,
             nonlinearity=nonlinearity,
-            symmetric_initialisation=symmetric_initialisation,
+            unit_norm_teacher_head=unit_norm_teacher_head,
             initialisation_std=initialisation_std,
         )
         self._threshold_fn = self._setup_threshold()
