@@ -2,13 +2,13 @@ experiment_name:
 use_gpu:                            True                      
 seed:                               5
 
-network_simulation: False
+network_simulation: True
 ode_simulation: True
 
 task:
   label_task_boundaries:            True                      
   learner_configuration:            continual                 # meta or continual - specifies whether student has separate heads for each teacher (continual) or not (meta)
-  teacher_configuration:            overlapping               # noisy, independent, overlapping, drifting, trained_mnist (see README)
+  teacher_configuration:            readout_rotation               # feature_rotation, readout_rotation,, noisy, independent, overlapping, drifting, trained_mnist (see README)
   num_teachers:                     2                         
   loss_type:                        regression                # classification or regression
 
@@ -41,29 +41,34 @@ testing:
   overlap_frequency:                100                       # how often during training to compute / visualise overlap matrices
 
 model:
-  input_dimension:                  1000                       
-  student_hidden_layers:            [30]                       
-  teacher_hidden_layers:            [15]                       
-  output_dimension:                 1                         
-  student_nonlinearity:             scaled_erf                      
-  teacher_nonlinearities:           [scaled_erf, scaled_erf]              # per teacher
-  normalise_teachers:               True
-  teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
-  student_initialisation_std:       0.001                     # std of normal initialisation for student network
-  unit_norm_teacher_head:           True                      # choose head weight from 1, -1 or initialise using normal
-  initialise_student_outputs:       True                     # whether or not to initialise hidden -> output weights of student
-  soft_committee:                   False                     # whether or not to fix output layer of student to 1 (scm)
-  teacher_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (teacher)
-  student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
-  symmetric_student_initialisation: False                     # identically initialised student hidden units
+  input_dimension:                  1000                 
+  output_dimension:                 1
+
+  student:
+    student_hidden_layers:            [4]                       
+    student_nonlinearity:             scaled_erf                      
+    student_initialisation_std:       0.001                     # std of normal initialisation for student network
+    initialise_student_outputs:       True                     # whether or not to initialise hidden -> output weights of student
+    soft_committee:                   False                     # whether or not to fix output layer of student to 1 (scm)
+    student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
+    symmetric_student_initialisation: False                     # identically initialised student hidden units
+
+  teachers:
+    teacher_hidden_layers:            [8]                                                
+    teacher_nonlinearities:           [scaled_erf, scaled_erf]              # per teacher
+    normalise_teachers:               True
+    teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
+    unit_norm_teacher_head:           True                      # choose head weight from 1, -1 or initialise using normal
+    teacher_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (teacher)
+    teacher_noises:                   [0, 0]
+    feature_rotation:
+      rotation_magnitude:             1.5708
+    readout_rotation:
+      rotation_magnitude:             3.14159
+      feature_copy_percentage:        20
+    
 
 curriculum:
   stopping_condition:               fixed_period              # condition on which to switch task (fixed_period or threshold)
   fixed_period:                     250000                      # period for changing tasks 
-  loss_thresholds:                   [0.0001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001, 0.000000001, 0.0000000001]                    # loss threshold under which teacher is changed
-
-teachers:
-  overlap_type:                     [copy, rotation]
-  overlap_rotations:                [3.14159, 0]                 # 0, 2pi = aligned, pi = anti-aligned, pi/2 orthogonal, pi/4 = semi-aligned etc.
-  overlap_percentages:              [100, 0]                    # percentage of weights to copy between teachers per layer.
-  teacher_noises:                    [0, 0]
+  loss_thresholds:                  [0.0001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001, 0.000000001, 0.0000000001]                    # loss threshold under which teacher is changed
