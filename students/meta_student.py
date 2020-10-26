@@ -24,5 +24,7 @@ class MetaStudent(base_student.BaseStudent):
 
     def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
         """Pass tensor through head of student (only one for meta-learning)."""
-        y = self.heads[0](x)
+        y = self._heads[0](x)
+        if self._classification_output:
+            return self._threshold(y)
         return y
