@@ -1,15 +1,16 @@
-import itertools
-
 import torch
 
 import constants
+from curricula import base_curriculum
+from curricula import periodic_curriculum
+from curricula import threshold_curriculum
 from run import student_teacher_config
 from students import base_student
-from students import base_teachers
 from students import continual_student
 from students import meta_student
-from students import overlapping_teachers
-from utils import custom_functions
+from teachers.ensembles import base_teacher_ensemble
+from teachers.ensembles import overlapping_teacher_ensemble
+from utils import decorators
 
 
 class NetworkRunner:
@@ -39,9 +40,13 @@ class NetworkRunner:
         self._curriculum = self._setup_curriculum(config=config)
 
     def get_network_configuration(self):
+        """Get macroscopic configuration of networks in terms of order parameters.
+
+        Used for both logging purposes and as input to ODE runner.
+        """
         pass
 
-    @custom_functions.timer
+    @decorators.timer
     def _setup_student(
         self, config: student_teacher_config.StudentTeacherConfiguration
     ) -> base_student.BaseStudent:
@@ -72,62 +77,62 @@ class NetworkRunner:
             initialisation_std=config.student_initialisation_std,
         )
 
-    @custom_functions.timer
+    @decorators.timer
     def _setup_teachers(
         self, config: student_teacher_config.StudentTeacherConfiguration
-    ) -> base_teachers.BaseTeachers:
+    ) -> base_teacher_ensemble.BaseTeacherEnsemble:
         """Initialise teacher object containing teacher networks."""
         if config.teacher_configuration == constants.Constants.OVERLAPPING:
-            teachers_class = overlapping_teachers.OverlappingTeachers
+            teachers_class = overlapping_teacher_ensemble.OverlappingTeacherEnsemble
         else:
             raise ValueError(
                 f"Teacher configuration '{config.teacher_configuration}' not recognised."
             )
-        return teachers_class
+        return teachers_class(
+            input_dimension=config.input_dimension,
+            hidden_dimensions=config.teacher_hidden_layers,
+            output_dimension=config.output_dimension,
+            bias=config.teacher_bias_parameters,
+            num_teachers=config.num_teachers,
+            loss_type=config.loss_type,
+            nonlinearity=config.student_nonlinearity,
+            unit_norm_teacher_head=config.unit_norm_teacher_head,
+            initialisation_std=config.teacher_initialisation_std,
+        )
 
-    @custom_functions.timer
+    @decorators.timer
     def _setup_logger(self, config: student_teacher_config.StudentTeacherConfiguration):
         pass
 
-    @custom_functions.timer
+    @decorators.timer
     def _setup_data(self, config: student_teacher_config.StudentTeacherConfiguration):
         pass
 
-    @custom_functions.timer
+    @decorators.timer
     def _setup_loss(self, config: student_teacher_config.StudentTeacherConfiguration):
         pass
 
-    def _setup_curriculm(
+    @decorators.timer
+    def _setup_curriculum(
         self, config: student_teacher_config.StudentTeacherConfiguration
-    ):
+    ) -> base_curriculum.BaseCurriculum:
         """Initialise curriculum object (when to switch teacher,
-        how to decide subsequent teacher etc.)"""
-        pass
+        how to decide subsequent teacher etc.)
 
-    def _set_curriculum(
-        self, config: student_teacher_config.StudentTeacherConfiguration
-    ):
-        """Establish and setup curriculum (when to switch teacher,
-        how to decide subsequent teacher etc.) according to configuration."""
-
-        # order of teachers
-        self._curriculum = itertools.cycle(list(range(config.num_teachers)))
-
+        Raises:
+            ValueError: if stopping condition is not recognised.
+        """
         if config.stopping_condition == constants.Constants.FIXED_PERIOD:
-            self._curriculum_period = config.fixed_period
-        elif config.stopping_condition == constants.Constants.THRESHOLD:
-            loss_threshold_sequence = config.loss_thresholds
-            # make n copies of threshold sequence
-            # e.g. [thresh1, thresh2] -> [thresh1, thresh1, thresh2, thresh2]
-            self._curriculum_loss_threshold = iter(
-                [
-                    threshold
-                    for threshold in loss_threshold_sequence
-                    for _ in range(config.num_teachers)
-                ]
+            curriculum = periodic_curriculum.PeriodicCurriculum(config=config)
+        elif config.stopping_condition == constants.Constants.LOSS_THRESHOLDS:
+            curriculum = threshold_curriculum.ThresholdCurriculum(config=config)
+        else:
+            raise ValueError(
+                f"Stopping condition {config.stopping_condition} not recognised."
             )
-            self._current_loss_threshold = next(self._curriculum_loss_threshold)
+        return curriculum
 
+    @decorators.timer
     def _setup_optimiser(
         self, config: student_teacher_config.StudentTeacherConfiguration
     ) -> torch.optim.SGD:
