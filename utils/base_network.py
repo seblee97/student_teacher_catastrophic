@@ -38,6 +38,10 @@ class BaseNetwork(nn.Module, abc.ABC):
         self._nonlinear_function = self._get_nonlinear_function()
         self._construct_layers()
 
+    @property
+    def layers(self) -> nn.ModuleList:
+        return self._layers
+
     def _get_nonlinear_function(self) -> Callable:
         """Makes the nonlinearity function specified by the config.
 
