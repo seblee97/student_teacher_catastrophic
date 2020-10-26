@@ -39,7 +39,7 @@ class BaseTeacherEnsemble(abc.ABC):
         self._setup_teachers()
 
     @abc.abstractmethod
-    def _setup_teachers(self, ARGS) -> None:
+    def _setup_teachers(self) -> None:
         """instantiate teacher network(s)"""
         pass
 
