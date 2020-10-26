@@ -12,8 +12,7 @@ class CoreRunner:
     ) -> None:
         """Class for orchestrating student teacher framework run.
 
-        Specific ODE simulation and/or network simulation runners are initialised
-        by this runner depending on configuration provided.
+        Initialise specific ODE simulation and network simulation runners.
 
         Args:
             config: configuration object specifying experiment setup.
@@ -32,6 +31,7 @@ class CoreRunner:
         )
         self._ode_simulation_runner = ode_runner.ODERunner(config=self._config)
 
+    def run(self):
         if self._config.network_simulation:
             self._perform_network_simulations()
         if self._config.ode_simulation:
@@ -43,4 +43,4 @@ class CoreRunner:
 
     def _perform_network_simulations(self):
         """Initialise and start training of network simulation runner."""
-        pass
+        self._network_simulation_runner.train()
