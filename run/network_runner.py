@@ -1,6 +1,6 @@
 import torch
 
-import constants
+from constants import Constants
 from curricula import base_curriculum
 from curricula import periodic_curriculum
 from curricula import threshold_curriculum
@@ -9,7 +9,8 @@ from students import base_student
 from students import continual_student
 from students import meta_student
 from teachers.ensembles import base_teacher_ensemble
-from teachers.ensembles import overlapping_teacher_ensemble
+from teachers.ensembles import feature_rotation_ensemble
+from teachers.ensembles import readout_rotation_ensemble
 from utils import decorators
 
 
@@ -51,9 +52,9 @@ class NetworkRunner:
         self, config: student_teacher_config.StudentTeacherConfiguration
     ) -> base_student.BaseStudent:
         """Initialise object containing student network."""
-        if config.learner_configuration == constants.Constants.CONTINUAL:
+        if config.learner_configuration == Constants.CONTINUAL:
             student_class = continual_student.ContinualStudent
-        elif config.learner_configuration == constants.Constants.META:
+        elif config.learner_configuration == Constants.META:
             student_class = meta_student.MetaStudent
         else:
             raise ValueError(
@@ -82,23 +83,33 @@ class NetworkRunner:
         self, config: student_teacher_config.StudentTeacherConfiguration
     ) -> base_teacher_ensemble.BaseTeacherEnsemble:
         """Initialise teacher object containing teacher networks."""
-        if config.teacher_configuration == constants.Constants.OVERLAPPING:
-            teachers_class = overlapping_teacher_ensemble.OverlappingTeacherEnsemble
+        base_arguments = {
+            Constants.INPUT_DIMENSION: config.input_dimension,
+            Constants.HIDDEN_DIMENSIONS: config.teacher_hidden_layers,
+            Constants.OUTPUT_DIMENSION: config.output_dimension,
+            Constants.BIAS: config.teacher_bias_parameters,
+            Constants.NUM_TEACHERS: config.num_teachers,
+            Constants.LOSS_TYPE: config.loss_type,
+            Constants.NONLINEARITY: config.student_nonlinearity,
+            Constants.UNIT_NORM_TEACHER_HEAD: config.unit_norm_teacher_head,
+            Constants.INITIALISATION_STD: config.teacher_initialisation_std,
+        }
+        if config.teacher_configuration == Constants.FEATURE_ROTATION:
+            teachers_class = feature_rotation_ensemble.FeatureRotationTeacherEnsemble
+            additional_arguments = {
+                Constants.ROTATION_MAGNITUDE: config.feature_rotation_magnitude
+            }
+        elif config.teacher_configuration == Constants.READOUT_ROTATION:
+            teachers_class = readout_rotation_ensemble.ReadoutRotationTeacherEnsemble
+            additional_arguments = {
+                Constants.ROTATION_MAGNITUDE: config.readout_rotation_magnitude,
+                Constants.FEATURE_COPY_PERCENTAGE: config.feature_copy_percentage,
+            }
         else:
             raise ValueError(
                 f"Teacher configuration '{config.teacher_configuration}' not recognised."
             )
-        return teachers_class(
-            input_dimension=config.input_dimension,
-            hidden_dimensions=config.teacher_hidden_layers,
-            output_dimension=config.output_dimension,
-            bias=config.teacher_bias_parameters,
-            num_teachers=config.num_teachers,
-            loss_type=config.loss_type,
-            nonlinearity=config.student_nonlinearity,
-            unit_norm_teacher_head=config.unit_norm_teacher_head,
-            initialisation_std=config.teacher_initialisation_std,
-        )
+        return teachers_class(**base_arguments, **additional_arguments)
 
     @decorators.timer
     def _setup_logger(self, config: student_teacher_config.StudentTeacherConfiguration):
@@ -122,9 +133,9 @@ class NetworkRunner:
         Raises:
             ValueError: if stopping condition is not recognised.
         """
-        if config.stopping_condition == constants.Constants.FIXED_PERIOD:
+        if config.stopping_condition == Constants.FIXED_PERIOD:
             curriculum = periodic_curriculum.PeriodicCurriculum(config=config)
-        elif config.stopping_condition == constants.Constants.LOSS_THRESHOLDS:
+        elif config.stopping_condition == Constants.LOSS_THRESHOLDS:
             curriculum = threshold_curriculum.ThresholdCurriculum(config=config)
         else:
             raise ValueError(
