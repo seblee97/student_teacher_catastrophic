@@ -81,7 +81,7 @@ def set_experiment_metadata(
 
 def run(config: student_teacher_config.StudentTeacherConfiguration):
     runner = core_runner.CoreRunner(config=config)
-    print("done")
+    runner.run()
 
 
 if __name__ == "__main__":
