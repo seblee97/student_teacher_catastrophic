@@ -1,5 +1,7 @@
 import itertools
 
+import torch
+
 import constants
 from run import student_teacher_config
 from students import base_student
@@ -27,15 +29,14 @@ class NetworkRunner:
             config: configuration object containing parameters to specify run.
         """
         # initialise student, teachers, logger_module,
-        # data_module and loss_module
+        # data_module, loss_module, torch optimiser, and curriculum object
         self._student = self._setup_student(config=config)
         self._teachers = self._setup_teachers(config=config)
         self._logger = self._setup_logger(config=config)
         self._data_module = self._setup_data(config=config)
         self._loss_module = self._setup_loss(config=config)
-
-        self._set_curriculum(config=config)
-        self._setup_optimiser()
+        self._optimiser = self._setup_optimiser(config=config)
+        self._curriculum = self._setup_curriculum(config=config)
 
     def get_network_configuration(self):
         pass
@@ -44,6 +45,7 @@ class NetworkRunner:
     def _setup_student(
         self, config: student_teacher_config.StudentTeacherConfiguration
     ) -> base_student.BaseStudent:
+        """Initialise object containing student network."""
         if config.learner_configuration == constants.Constants.CONTINUAL:
             student_class = continual_student.ContinualStudent
         elif config.learner_configuration == constants.Constants.META:
@@ -74,6 +76,7 @@ class NetworkRunner:
     def _setup_teachers(
         self, config: student_teacher_config.StudentTeacherConfiguration
     ) -> base_teachers.BaseTeachers:
+        """Initialise teacher object containing teacher networks."""
         if config.teacher_configuration == constants.Constants.OVERLAPPING:
             teachers_class = overlapping_teachers.OverlappingTeachers
         else:
@@ -92,6 +95,13 @@ class NetworkRunner:
 
     @custom_functions.timer
     def _setup_loss(self, config: student_teacher_config.StudentTeacherConfiguration):
+        pass
+
+    def _setup_curriculm(
+        self, config: student_teacher_config.StudentTeacherConfiguration
+    ):
+        """Initialise curriculum object (when to switch teacher,
+        how to decide subsequent teacher etc.)"""
         pass
 
     def _set_curriculum(
@@ -118,8 +128,12 @@ class NetworkRunner:
             )
             self._current_loss_threshold = next(self._curriculum_loss_threshold)
 
-    def _setup_optimiser(self):
-        raise NotImplementedError
+    def _setup_optimiser(
+        self, config: student_teacher_config.StudentTeacherConfiguration
+    ) -> torch.optim.SGD:
+        """Initialise optimiser with trainable parameters of student."""
+        trainable_parameters = self._student.get_trainable_parameters()
+        return torch.optim.SGD(trainable_parameters, lr=config.learning_rate)
 
     def train(self):
         print("TRAINING")
