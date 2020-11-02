@@ -8,6 +8,8 @@ from ode import configuration
 from ode import dynamics
 from run import student_teacher_config
 
+from utils import network_configuration
+
 
 class ODERunner:
     """Runner for ode simulations."""
@@ -15,21 +17,22 @@ class ODERunner:
     def __init__(
         self,
         config: student_teacher_config.StudentTeacherConfiguration,
-        network_configuration: Dict[str, Any],
+        network_configuration: network_configuration.NetworkConfiguration,
     ) -> None:
         self._config = config
+        self._network_configuration = network_configuration
 
     def run(self):
         if self._config.implementation == constants.Constants.CPP:
             self._run_cpp_ode()
         elif self._config.implementation == constants.Constants.PYTHON:
             self._run_python_ode(
-                network_configuration=network_configuration,
+                network_configuration=self._network_configuration,
                 timestep=self._config.timestep,
             )
         else:
             raise ValueError(
-                f"Implementation type {config.implementation} not recognised."
+                f"Implementation type {self._config.implementation} not recognised."
             )
 
     def _run_cpp_ode(self):
@@ -37,16 +40,16 @@ class ODERunner:
 
     def _run_python_ode(self, network_configuration: Dict[str, Any], timestep: float):
         ode_configuration = configuration.StudentTwoTeacherConfiguration(
-            Q=network_configuration[constants.Constants.STUDENT_SELF_OVERLAP],
-            R=network_configuration[constants.Constants.STUDENT_TEACHER_OVERLAPS][0],
-            U=network_configuration[constants.Constants.STUDENT_TEACHER_OVERLAPS][1],
-            T=network_configuration[constants.Constants.TEACHER_SELF_OVERLAP][0],
-            S=network_configuration[constants.Constants.TEACHER_SELF_OVERLAP][1],
-            V=network_configuration[constants.Constants.TEACHER_CROSS_OVERLAPS][0],
-            h1=network_configuration[constants.Constants.STUDENT_HEAD_WEIGHTS][0],
-            h2=network_configuration[constants.Constants.STUDENT_HEAD_WEIGHTS][1],
-            th1=network_configuration[constants.Constants.TEACHER_HEAD_WEIGHTS][0],
-            th2=network_configuration[constants.Constants.TEACHER_HEAD_WEIGHTS][1],
+            Q=self._network_configuration.student_self_overlap,
+            R=self._network_configuration.student_teacher_overlaps[0],
+            U=self._network_configuration.student_teacher_overlaps[1],
+            T=self._network_configuration.teacher_self_overlaps[0],
+            S=self._network_configuration.teacher_self_overlaps[1],
+            V=self._network_configuration.teacher_cross_overlaps[0],
+            h1=self._network_configuration.student_head_weights[0],
+            h2=self._network_configuration.student_head_weights[1],
+            th1=self._network_configuration.teacher_head_weights[0],
+            th2=self._network_configuration.teacher_head_weights[1],
         )
 
         curriculum = (
@@ -70,8 +73,8 @@ class ODERunner:
 
         ode.step(self._config.total_training_steps / self._config.input_dimension)
 
-        ode.save_to_csv(save_path=self._config.checkpoint_path)
-        ode.make_plot(
-            save_path=self._config.checkpoint_path,
-            total_time=self._config.total_training_steps,
-        )
+        # ode.save_to_csv(save_path=self._config.checkpoint_path)
+        # ode.make_plot(
+        #     save_path=self._config.checkpoint_path,
+        #     total_time=self._config.total_training_steps,
+        # )
