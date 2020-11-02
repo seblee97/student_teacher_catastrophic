@@ -1,15 +1,10 @@
 import abc
-import copy
 import math
-from typing import Callable
 from typing import List
 from typing import Optional
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 
-import constants
 from utils import base_network
 
 
@@ -33,10 +28,20 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
     ) -> None:
         self._initialise_outputs = initialise_outputs
         self._soft_committee = soft_committee
-        self._scale_hidden_lr = scale_hidden_lr
-        self._scale_head_lr = scale_head_lr
+
+        if scale_hidden_lr:
+            forward_scaling = 1 / math.sqrt(input_dimension)
+        else:
+            forward_scaling = 1.0
+        if scale_head_lr:
+            self._head_lr_scaling = 1 / input_dimension
+        else:
+            self._head_lr_scaling = 1.0
+
         self._num_teachers = num_teachers
         self._learning_rate = learning_rate
+
+        self._current_teacher: int
 
         super().__init__(
             input_dimension=input_dimension,
@@ -45,9 +50,14 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
             bias=bias,
             loss_type=loss_type,
             nonlinearity=nonlinearity,
+            forward_scaling=forward_scaling,
             symmetric_initialisation=symmetric_initialisation,
             initialisation_std=initialisation_std,
         )
+
+    @property
+    def heads(self):
+        return self._heads
 
     @abc.abstractmethod
     def _construct_output_layers(self):
@@ -59,53 +69,28 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         """Pass tensor through relevant head of student."""
         pass
 
+    def signal_task_boundary(self, new_task: int) -> None:
+        """Alert student to teacher change."""
+        self._current_teacher = new_task
+
     def get_trainable_parameters(self):  # TODO: return type
         """To instantiate optimiser, returns relevant (trainable) parameters
         of student network.
         """
-        if self._scale_hidden_lr:
-            trainable_parameters = [
-                {
-                    "params": filter(lambda p: p.requires_grad, layer.parameters()),
-                    "lr": self._learning_rate / math.sqrt(self._input_dimension),
-                }
-                for layer in self._layers
-            ]
-        else:
-            trainable_parameters = [
-                {"params": filter(lambda p: p.requires_grad, layer.parameters())}
-                for layer in self._layers
-            ]
+        trainable_parameters = [
+            {"params": filter(lambda p: p.requires_grad, layer.parameters())}
+            for layer in self._layers
+        ]
         if not self._soft_committee:
             trainable_head_parameters = [
                 {
                     "params": head.parameters(),
-                    "lr": self._learning_rate / self._input_dimension,
+                    "lr": self._learning_rate * self._head_lr_scaling,
                 }
                 for head in self._heads
             ]
             trainable_parameters += trainable_head_parameters
         return trainable_parameters
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """This method performs the forward pass. This implements the
-        abstract method from the nn.Module base class.
-
-        Args:
-            x: input tensor
-
-        Returns:
-            y: output of network
-        """
-        for layer in self._layers:
-            x = self._nonlinear_function(self.forward_scaling * layer(x))
-
-        y = self._get_output_from_head(x)
-
-        if self._classification_output:
-            return self._threshold(y)
-
-        return y
 
     def forward_all(self, x: torch.Tensor) -> List[torch.Tensor]:
         """Makes call to student forward, using all heads (used for evaluation)"""
@@ -140,10 +125,6 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
     # def _get_trainable_head_parameters(
     #     self,
     # ) -> List[Dict[str, Iterator[torch.nn.Parameter]]]:
-    #     raise NotImplementedError("Base class method")
-
-    # @abstractmethod
-    # def signal_task_boundary_to_learner(self, new_task: int) -> None:
     #     raise NotImplementedError("Base class method")
 
     # @abstractmethod
