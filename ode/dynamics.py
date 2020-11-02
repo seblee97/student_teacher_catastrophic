@@ -383,89 +383,89 @@ class StudentTeacherODE:
     def _get_data_diff(data: Union[List, np.ndarray]) -> np.ndarray:
         return np.insert(np.array(data[1:]) - np.array(data[:-1]), 0, 0)
 
-    def save_to_csv(self, save_path: str):
+    # def save_to_csv(self, save_path: str):
 
-        unwrapped_dict = {
-            **{f"Q_{i}": i_log for i, i_log in self._configuration.Q_log.items()},
-            **{
-                f"Q_{i}_diff": self._get_data_diff(i_log)
-                for i, i_log in self._configuration.Q_log.items()
-            },
-            **{f"R_{i}": i_log for i, i_log in self._configuration.R_log.items()},
-            **{
-                f"R_{i}_diff": self._get_data_diff(i_log)
-                for i, i_log in self._configuration.R_log.items()
-            },
-            **{f"U_{i}": i_log for i, i_log in self._configuration.U_log.items()},
-            **{
-                f"U_{i}_diff": self._get_data_diff(i_log)
-                for i, i_log in self._configuration.U_log.items()
-            },
-            **{
-                f"h1_{i}": np.array(i_log).squeeze()
-                for i, i_log in self._configuration.h1_log.items()
-            },
-            **{
-                f"h1_{i}_diff": self._get_data_diff(i_log)
-                for i, i_log in self._configuration.h1_log.items()
-            },
-            **{
-                f"h2_{i}": np.array(i_log).squeeze()
-                for i, i_log in self._configuration.h2_log.items()
-            },
-            **{
-                f"h2_{i}_diff": self._get_data_diff(i_log)
-                for i, i_log in self._configuration.h2_log.items()
-            },
-            **{f"error_linear_1": self._error_1_log},
-            **{
-                f"error_linear_1_diff": np.insert(
-                    np.array(self._error_1_log[1:]) - np.array(self._error_1_log[:-1]),
-                    0,
-                    0,
-                )
-            },
-            **{f"error_linear_2": self._error_2_log},
-            **{
-                f"error_linear_2_diff": np.insert(
-                    np.array(self._error_2_log[1:]) - np.array(self._error_2_log[:-1]),
-                    0,
-                    0,
-                )
-            },
-            **{f"error_log_1": np.log10(self._error_1_log)},
-            **{f"error_log_2": np.log10(self._error_2_log)},
-        }
+    #     unwrapped_dict = {
+    #         **{f"Q_{i}": i_log for i, i_log in self._configuration.Q_log.items()},
+    #         **{
+    #             f"Q_{i}_diff": self._get_data_diff(i_log)
+    #             for i, i_log in self._configuration.Q_log.items()
+    #         },
+    #         **{f"R_{i}": i_log for i, i_log in self._configuration.R_log.items()},
+    #         **{
+    #             f"R_{i}_diff": self._get_data_diff(i_log)
+    #             for i, i_log in self._configuration.R_log.items()
+    #         },
+    #         **{f"U_{i}": i_log for i, i_log in self._configuration.U_log.items()},
+    #         **{
+    #             f"U_{i}_diff": self._get_data_diff(i_log)
+    #             for i, i_log in self._configuration.U_log.items()
+    #         },
+    #         **{
+    #             f"h1_{i}": np.array(i_log).squeeze()
+    #             for i, i_log in self._configuration.h1_log.items()
+    #         },
+    #         **{
+    #             f"h1_{i}_diff": self._get_data_diff(i_log)
+    #             for i, i_log in self._configuration.h1_log.items()
+    #         },
+    #         **{
+    #             f"h2_{i}": np.array(i_log).squeeze()
+    #             for i, i_log in self._configuration.h2_log.items()
+    #         },
+    #         **{
+    #             f"h2_{i}_diff": self._get_data_diff(i_log)
+    #             for i, i_log in self._configuration.h2_log.items()
+    #         },
+    #         **{f"error_linear_1": self._error_1_log},
+    #         **{
+    #             f"error_linear_1_diff": np.insert(
+    #                 np.array(self._error_1_log[1:]) - np.array(self._error_1_log[:-1]),
+    #                 0,
+    #                 0,
+    #             )
+    #         },
+    #         **{f"error_linear_2": self._error_2_log},
+    #         **{
+    #             f"error_linear_2_diff": np.insert(
+    #                 np.array(self._error_2_log[1:]) - np.array(self._error_2_log[:-1]),
+    #                 0,
+    #                 0,
+    #             )
+    #         },
+    #         **{f"error_log_1": np.log10(self._error_1_log)},
+    #         **{f"error_log_2": np.log10(self._error_2_log)},
+    #     }
 
-        df = pd.DataFrame(unwrapped_dict)
+    #     df = pd.DataFrame(unwrapped_dict)
 
-        df["task_switch_error_1_log"] = pd.Series(self._task_switch_error_1_log)
-        df["task_switch_error_2_log"] = pd.Series(self._task_switch_error_2_log)
+    #     df["task_switch_error_1_log"] = pd.Series(self._task_switch_error_1_log)
+    #     df["task_switch_error_2_log"] = pd.Series(self._task_switch_error_2_log)
 
-        df.to_csv(os.path.join(save_path, "ode_logs.csv"), index=False)
+    #     df.to_csv(os.path.join(save_path, "ode_logs.csv"), index=False)
 
-    def make_plot(self, save_path: Optional[str], total_time: int):
-        error_dict = {
-            "Error (Linear)": {
-                "T1 Error": self._error_1_log,
-                "T2 Error": self._error_2_log,
-            },
-            "Error (Log)": {
-                "T1 Error": np.log10(self._error_1_log),
-                "T2 Error": np.log10(self._error_2_log),
-            },
-        }
+    # def make_plot(self, save_path: Optional[str], total_time: int):
+    #     error_dict = {
+    #         "Error (Linear)": {
+    #             "T1 Error": self._error_1_log,
+    #             "T2 Error": self._error_2_log,
+    #         },
+    #         "Error (Log)": {
+    #             "T1 Error": np.log10(self._error_1_log),
+    #             "T2 Error": np.log10(self._error_2_log),
+    #         },
+    #     }
 
-        overlap_dict = {
-            "Q": self._configuration.Q_log,
-            "R": self._configuration.R_log,
-            "U": self._configuration.U_log,
-            "h1": self._configuration.h1_log,
-            "h2": self._configuration.h2_log,
-        }
+    #     overlap_dict = {
+    #         "Q": self._configuration.Q_log,
+    #         "R": self._configuration.R_log,
+    #         "U": self._configuration.U_log,
+    #         "h1": self._configuration.h1_log,
+    #         "h2": self._configuration.h2_log,
+    #     }
 
-        scale = total_time / len(list(self._configuration.Q_log.values())[0])
-        fig = Plotter({**error_dict, **overlap_dict}, scale=scale).plot()
+    #     scale = total_time / len(list(self._configuration.Q_log.values())[0])
+    #     fig = Plotter({**error_dict, **overlap_dict}, scale=scale).plot()
 
-        if save_path:
-            fig.savefig(os.path.join(save_path, "ode_plot_summary.pdf"), dpi=100)
+    #     if save_path:
+    #         fig.savefig(os.path.join(save_path, "ode_plot_summary.pdf"), dpi=100)
