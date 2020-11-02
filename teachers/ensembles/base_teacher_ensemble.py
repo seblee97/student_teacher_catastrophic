@@ -1,11 +1,11 @@
 import abc
-import constants
-
-import torch
-
+import math
 from typing import Dict
 from typing import List
 
+import torch
+
+import constants
 from teachers import classification_teacher
 from teachers import regression_teacher
 
@@ -22,6 +22,7 @@ class BaseTeacherEnsemble(abc.ABC):
         bias: bool,
         loss_type: str,
         nonlinearity: str,
+        scale_hidden_lr: bool,
         unit_norm_teacher_head: bool,
         num_teachers: int,
         initialisation_std: float,
@@ -36,23 +37,43 @@ class BaseTeacherEnsemble(abc.ABC):
         self._num_teachers = num_teachers
         self._initialisation_std = initialisation_std
 
-        self._setup_teachers()
+        if scale_hidden_lr:
+            self._forward_scaling = 1 / math.sqrt(input_dimension)
+        else:
+            self._forward_scaling = 1.0
+
+        self._teachers = self._setup_teachers()
+
+    @property
+    def teachers(self) -> List:
+        """Getter method for teacher networks."""
+        return self._teachers
+
+    @property
+    def cross_overlaps(self):
+        overlaps = []
+        for i in range(len(self._teachers)):
+            for j in range(i, len(self._teachers)):
+                if i != j:
+                    overlap = torch.mm(
+                        self._teachers[i].layers[0].weight.data,
+                        self._teachers[j].layers[0].weight.data.T,
+                    )
+                    overlaps.append(overlap)
+        return overlaps
 
     @abc.abstractmethod
     def _setup_teachers(self) -> None:
         """instantiate teacher network(s)"""
         pass
 
-    @abc.abstractmethod
-    def test_set_forward(self, batch) -> List[torch.Tensor]:
-        pass
-
-    @abc.abstractmethod
     def forward(
         self, teacher_index: int, batch: Dict[str, torch.Tensor]
     ) -> torch.Tensor:
         """Call to current teacher forward."""
-        pass
+        x = batch[constants.Constants.X]
+        output = self._teachers[teacher_index](x)
+        return output
 
     def _init_teacher(self):
         if self._loss_type == constants.Constants.CLASSIFICATION:
@@ -67,6 +88,7 @@ class BaseTeacherEnsemble(abc.ABC):
             output_dimension=self._output_dimension,
             bias=self._bias,
             nonlinearity=self._nonlinearity,
+            forward_scaling=self._forward_scaling,
             unit_norm_teacher_head=self._unit_norm_teacher_head,
             initialisation_std=self._initialisation_std,
         )
@@ -79,8 +101,3 @@ class BaseTeacherEnsemble(abc.ABC):
         """Call to forward of all teachers (used primarily for evaluation)"""
         outputs = [self.forward(t, batch) for t in range(self._num_teachers)]
         return outputs
-
-    @property
-    def teachers(self) -> List:
-        """Getter method for teacher networks."""
-        return self._teachers
