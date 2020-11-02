@@ -3,12 +3,16 @@ use_gpu:                            True
 seed:                               5
 
 network_simulation: True
-ode_simulation: True
+ode_simulation: False
+
+ode_run:
+  implementation:                   python
+  timestep:                         0.01
 
 task:
   label_task_boundaries:            True                      
   learner_configuration:            continual                 # meta or continual - specifies whether student has separate heads for each teacher (continual) or not (meta)
-  teacher_configuration:            readout_rotation               # feature_rotation, readout_rotation,, noisy, independent, overlapping, drifting, trained_mnist (see README)
+  teacher_configuration:            feature_rotation               # feature_rotation, readout_rotation,, noisy, independent, overlapping, drifting, trained_mnist (see README)
   num_teachers:                     2                         
   loss_type:                        regression                # classification or regression
 
@@ -19,12 +23,16 @@ training:
   loss_function:                    mse                       # mse, bce
   scale_head_lr:                    True                      # whether to add 1/N factor in lr of output layer  
   scale_hidden_lr:                  True                      # whether to add 1/\sqrt{N} factor in forward of hidden layer(s)
-  ode_timestep:             0.01
   train_first_layer:                True
   train_head_layer:                 True
 
 data:
   input_source:                     iid_gaussian              # iid_gaussian, mnist_stream, mnist_digits, even_greater (see README)
+
+  iid_gaussian:
+    mean:                           0
+    variance:                       1
+    dataset_size:                   inf
 
 logging:
   verbose:                          True                      
@@ -45,7 +53,7 @@ model:
   output_dimension:                 1
 
   student:
-    student_hidden_layers:            [4]                       
+    student_hidden_layers:            [2]                       
     student_nonlinearity:             scaled_erf                      
     student_initialisation_std:       0.001                     # std of normal initialisation for student network
     initialise_student_outputs:       True                     # whether or not to initialise hidden -> output weights of student
@@ -54,7 +62,7 @@ model:
     symmetric_student_initialisation: False                     # identically initialised student hidden units
 
   teachers:
-    teacher_hidden_layers:            [8]                                                
+    teacher_hidden_layers:            [1]                                                
     teacher_nonlinearities:           [scaled_erf, scaled_erf]              # per teacher
     normalise_teachers:               True
     teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
@@ -70,5 +78,5 @@ model:
 
 curriculum:
   stopping_condition:               fixed_period              # condition on which to switch task (fixed_period or threshold)
-  fixed_period:                     250000                      # period for changing tasks 
+  fixed_period:                     2000                      # period for changing tasks 
   loss_thresholds:                  [0.0001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001, 0.000000001, 0.0000000001]                    # loss threshold under which teacher is changed
