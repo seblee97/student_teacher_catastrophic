@@ -73,6 +73,8 @@ def set_experiment_metadata(
         f"{MAIN_FILE_PATH}/{results_folder_base}/{exp_timestamp}/{experiment_name}/"
     )
 
+    os.makedirs(checkpoint_path, exist_ok=True)
+
     config.add_property(constants.Constants.CHECKPOINT_PATH, checkpoint_path)
     config.add_property(constants.Constants.EXPERIMENT_TIMESTAMP, exp_timestamp)
 
