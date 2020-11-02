@@ -1,9 +1,18 @@
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+
+import numpy as np
 import torch
+import torch.nn as nn
 
 from constants import Constants
 from curricula import base_curriculum
 from curricula import periodic_curriculum
 from curricula import threshold_curriculum
+from data_modules import base_data_module
+from data_modules import iid_data
 from run import student_teacher_config
 from students import base_student
 from students import continual_student
@@ -36,16 +45,47 @@ class NetworkRunner:
         self._teachers = self._setup_teachers(config=config)
         self._logger = self._setup_logger(config=config)
         self._data_module = self._setup_data(config=config)
-        self._loss_module = self._setup_loss(config=config)
+        self._loss_function = self._setup_loss(config=config)
         self._optimiser = self._setup_optimiser(config=config)
         self._curriculum = self._setup_curriculum(config=config)
 
-    def get_network_configuration(self):
+        self._total_training_steps = config.total_training_steps
+        self._test_frequency = config.test_frequency
+        self._total_step_count = 0
+
+    def get_network_configuration(self) -> Dict[str, Any]:
         """Get macroscopic configuration of networks in terms of order parameters.
 
         Used for both logging purposes and as input to ODE runner.
         """
-        pass
+        student_head_weights = [
+            head.weight.data.numpy().flatten() for head in self._student.heads
+        ]
+        teacher_head_weights = [
+            teacher.head.weight.data.numpy().flatten()
+            for teacher in self._teachers.teachers
+        ]
+        student_self_overlap = self._student.self_overlap.numpy()
+        teacher_self_overlaps = [
+            teacher.self_overlap.numpy() for teacher in self._teachers.teachers
+        ]
+        teacher_cross_overlaps = [o.numpy() for o in self._teachers.cross_overlaps]
+        student_teacher_overlaps = [
+            torch.mm(
+                self._student.layers[0].weight.data,
+                teacher.layers[0].weight.data.T,
+            ).numpy()
+            for teacher in self._teachers.teachers
+        ]
+        network_configuration = {
+            Constants.STUDENT_HEAD_WEIGHTS: student_head_weights,
+            Constants.TEACHER_HEAD_WEIGHTS: teacher_head_weights,
+            Constants.STUDENT_SELF_OVERLAP: student_self_overlap,
+            Constants.TEACHER_SELF_OVERLAP: teacher_self_overlaps,
+            Constants.TEACHER_CROSS_OVERLAPS: teacher_cross_overlaps,
+            Constants.STUDENT_TEACHER_OVERLAPS: student_teacher_overlaps,
+        }
+        return network_configuration
 
     @decorators.timer
     def _setup_student(
@@ -91,6 +131,7 @@ class NetworkRunner:
             Constants.NUM_TEACHERS: config.num_teachers,
             Constants.LOSS_TYPE: config.loss_type,
             Constants.NONLINEARITY: config.student_nonlinearity,
+            Constants.SCALE_HIDDEN_LR: config.scale_hidden_lr,
             Constants.UNIT_NORM_TEACHER_HEAD: config.unit_norm_teacher_head,
             Constants.INITIALISATION_STD: config.teacher_initialisation_std,
         }
@@ -116,12 +157,39 @@ class NetworkRunner:
         pass
 
     @decorators.timer
-    def _setup_data(self, config: student_teacher_config.StudentTeacherConfiguration):
-        pass
+    def _setup_data(
+        self, config: student_teacher_config.StudentTeacherConfiguration
+    ) -> base_data_module.BaseData:
+        """Initialise data module."""
+        if config.input_source == Constants.IID_GAUSSIAN:
+            data_module = iid_data.IIDData(
+                train_batch_size=config.train_batch_size,
+                test_batch_size=config.test_batch_size,
+                input_dimension=config.input_dimension,
+                mean=config.mean,
+                variance=config.variance,
+                dataset_size=config.dataset_size,
+            )
+        else:
+            raise ValueError(
+                f"Data module (specified by input source) {config.input_source} not recognised"
+            )
+        return data_module
 
     @decorators.timer
-    def _setup_loss(self, config: student_teacher_config.StudentTeacherConfiguration):
-        pass
+    def _setup_loss(
+        self, config: student_teacher_config.StudentTeacherConfiguration
+    ) -> Callable:
+        """Instantiate torch loss function"""
+        if config.loss_function == "mse":
+            loss_function = nn.MSELoss()
+        elif config.loss_function == "bce":
+            loss_function = nn.BCELoss()
+        else:
+            raise NotImplementedError(
+                f"Loss function {config.loss_function} not recognised."
+            )
+        return loss_function
 
     @decorators.timer
     def _setup_curriculum(
@@ -151,5 +219,103 @@ class NetworkRunner:
         trainable_parameters = self._student.get_trainable_parameters()
         return torch.optim.SGD(trainable_parameters, lr=config.learning_rate)
 
+    def _compute_loss(
+        self, prediction: torch.Tensor, target: torch.Tensor
+    ) -> torch.Tensor:
+        """Calculate loss of prediction of student vs. target from teacher
+
+        Args:
+            prediction: prediction made by student network on given input
+            target: teacher output on same input
+
+        Returns:
+            loss: loss between target (from teacher) and prediction (from student)
+        """
+        loss = 0.5 * self._loss_function(prediction, target)
+        return loss
+
+    @decorators.timer
+    def _setup_training(self):
+        """Prepare runner for training, including constructing a test dataset.
+        This method must be called before training loop is called.
+        """
+        self._test_data = self._data_module.get_test_data()
+        self._test_teacher_outputs = self._teachers.forward_all(self._test_data)
+
     def train(self):
-        print("TRAINING")
+        """Training orchestration."""
+
+        self._setup_training()
+
+        while self._total_step_count < self._total_training_steps:
+            teacher_index = next(self._curriculum)
+
+            self._train_on_teacher(teacher_index=teacher_index)
+
+    def _train_on_teacher(self, teacher_index: int):
+        """One phase of training (wrt one teacher)."""
+        self._student.signal_task_boundary(teacher_index)
+        task_step_count = 0
+        latest_task_generalisation_error = np.inf
+
+        while self._total_step_count < self._total_training_steps:
+
+            if self._total_step_count % self._test_frequency == 0:
+                generalisation_errors = self._compute_generalisation_errors()
+
+            if self._total_step_count % 500 == 0:
+                print(
+                    f"Generalisation errors @ step {self._total_step_count} "
+                    f"({task_step_count}'th step training on teacher {teacher_index}): "
+                )
+                for i, error in enumerate(generalisation_errors):
+                    print(f"    Teacher {i}: {error}\n")
+
+            latest_task_generalisation_error = generalisation_errors[teacher_index]
+
+            self._training_step(teacher_index=teacher_index)
+
+            task_step_count += 1
+
+            if self._curriculum.to_switch(
+                task_step=task_step_count, error=latest_task_generalisation_error
+            ):
+                break
+
+    def _training_step(self, teacher_index: int):
+        """Perform single training step."""
+        batch = self._data_module.get_batch()
+        batch_input = batch[Constants.X]
+
+        # forward through student network
+        student_output = self._student.forward(batch_input)
+
+        # forward through teacher network(s)
+        teacher_output = self._teachers.forward(teacher_index, batch)
+
+        # training iteration
+        self._optimiser.zero_grad()
+        loss = self._compute_loss(student_output, teacher_output)
+        loss.backward()
+        self._optimiser.step()
+
+        self._total_step_count += 1
+
+    def _compute_generalisation_errors(self) -> List[float]:
+        """Compute test errors for student with respect to all teachers."""
+        self._student.eval()
+
+        generalisation_errors = []
+
+        with torch.no_grad():
+            student_outputs = self._student.forward_all(self._test_data[Constants.X])
+
+            for student_output, teacher_output in zip(
+                student_outputs, self._test_teacher_outputs
+            ):
+                loss = self._compute_loss(student_output, teacher_output)
+                generalisation_errors.append(loss.item())
+
+        self._student.train()
+
+        return generalisation_errors
