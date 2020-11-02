@@ -5,8 +5,9 @@ from typing import List
 import numpy as np
 import torch
 
-from utils import custom_functions
+import constants
 from teachers.ensembles import base_teacher_ensemble
+from utils import custom_functions
 
 
 class FeatureRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
@@ -20,6 +21,7 @@ class FeatureRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
         bias: bool,
         loss_type: str,
         nonlinearity: str,
+        scale_hidden_lr: bool,
         unit_norm_teacher_head: bool,
         num_teachers: int,
         initialisation_std: float,
@@ -33,6 +35,7 @@ class FeatureRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             bias=bias,
             loss_type=loss_type,
             nonlinearity=nonlinearity,
+            scale_hidden_lr=scale_hidden_lr,
             unit_norm_teacher_head=unit_norm_teacher_head,
             num_teachers=num_teachers,
             initialisation_std=initialisation_std,
@@ -53,7 +56,7 @@ class FeatureRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             self._hidden_dimensions[0] == 1
         ), "Feature rotation teachers implemented for hidden dimension 1 only."
 
-        self._teachers = [self._init_teacher() for _ in range(self._num_teachers)]
+        teachers = [self._init_teacher() for _ in range(self._num_teachers)]
 
         rotated_weight_vectors = custom_functions.generate_rotated_vectors(
             dimension=self._input_dimension,
@@ -63,19 +66,13 @@ class FeatureRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
 
         teacher_0_rotated_weight_tensor = torch.Tensor(
             rotated_weight_vectors[0]
-        ).reshape(self._teachers[0].layers[0].weight.data.shape)
+        ).reshape(teachers[0].layers[0].weight.data.shape)
 
         teacher_1_rotated_weight_tensor = torch.Tensor(
             rotated_weight_vectors[1]
-        ).reshape(self._teachers[1].layers[0].weight.data.shape)
+        ).reshape(teachers[1].layers[0].weight.data.shape)
 
-        self._teachers[0].layers[0].weight.data = teacher_0_rotated_weight_tensor
-        self._teachers[1].layers[0].weight.data = teacher_1_rotated_weight_tensor
+        teachers[0].layers[0].weight.data = teacher_0_rotated_weight_tensor
+        teachers[1].layers[0].weight.data = teacher_1_rotated_weight_tensor
 
-    def test_set_forward(self, batch) -> List[torch.Tensor]:
-        raise NotImplementedError
-
-    def forward(
-        self, teacher_index: int, batch: Dict[str, torch.Tensor]
-    ) -> torch.Tensor:
-        raise NotImplementedError
+        return teachers
