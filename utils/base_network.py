@@ -1,4 +1,5 @@
 import abc
+import math
 import copy
 from typing import Callable
 from typing import List
@@ -21,9 +22,12 @@ class BaseNetwork(nn.Module, abc.ABC):
         bias: bool,
         loss_type: str,
         nonlinearity: str,
+        forward_scaling: float,
         symmetric_initialisation: Optional[bool] = False,
         initialisation_std: Optional[float] = None,
     ) -> None:
+        super().__init__()
+
         self._input_dimension = input_dimension
         self._hidden_dimensions = hidden_dimensions
         self._output_dimension = output_dimension
@@ -32,8 +36,7 @@ class BaseNetwork(nn.Module, abc.ABC):
         self._nonlinearity = nonlinearity
         self._initialisation_std = initialisation_std
         self._symmetric_initialisation = symmetric_initialisation
-
-        super().__init__()
+        self._forward_scaling = forward_scaling
 
         self._nonlinear_function = self._get_nonlinear_function()
         self._construct_layers()
@@ -41,6 +44,10 @@ class BaseNetwork(nn.Module, abc.ABC):
     @property
     def layers(self) -> nn.ModuleList:
         return self._layers
+
+    @property
+    def self_overlap(self):
+        return torch.mm(self._layers[0].weight.data, self._layers[0].weight.data.T)
 
     def _get_nonlinear_function(self) -> Callable:
         """Makes the nonlinearity function specified by the config.
@@ -109,7 +116,7 @@ class BaseNetwork(nn.Module, abc.ABC):
             y: output of network
         """
         for layer in self._layers:
-            x = self._nonlinear_function(self.forward_scaling * layer(x))
+            x = self._nonlinear_function(self._forward_scaling * layer(x))
 
         y = self._get_output_from_head(x)
 
