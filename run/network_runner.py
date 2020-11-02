@@ -21,6 +21,7 @@ from teachers.ensembles import base_teacher_ensemble
 from teachers.ensembles import feature_rotation_ensemble
 from teachers.ensembles import readout_rotation_ensemble
 from utils import decorators
+from utils import network_configuration
 
 
 class NetworkRunner:
@@ -53,7 +54,7 @@ class NetworkRunner:
         self._test_frequency = config.test_frequency
         self._total_step_count = 0
 
-    def get_network_configuration(self) -> Dict[str, Any]:
+    def get_network_configuration(self) -> network_configuration.NetworkConfiguration:
         """Get macroscopic configuration of networks in terms of order parameters.
 
         Used for both logging purposes and as input to ODE runner.
@@ -77,15 +78,15 @@ class NetworkRunner:
             ).numpy()
             for teacher in self._teachers.teachers
         ]
-        network_configuration = {
-            Constants.STUDENT_HEAD_WEIGHTS: student_head_weights,
-            Constants.TEACHER_HEAD_WEIGHTS: teacher_head_weights,
-            Constants.STUDENT_SELF_OVERLAP: student_self_overlap,
-            Constants.TEACHER_SELF_OVERLAP: teacher_self_overlaps,
-            Constants.TEACHER_CROSS_OVERLAPS: teacher_cross_overlaps,
-            Constants.STUDENT_TEACHER_OVERLAPS: student_teacher_overlaps,
-        }
-        return network_configuration
+
+        return network_configuration.NetworkConfiguration(
+            student_head_weights=student_head_weights,
+            teacher_head_weights=teacher_head_weights,
+            student_self_overlap=student_self_overlap,
+            teacher_self_overlaps=teacher_self_overlaps,
+            teacher_cross_overlaps=teacher_cross_overlaps,
+            student_teacher_overlaps=student_teacher_overlaps,
+        )
 
     @decorators.timer
     def _setup_student(
