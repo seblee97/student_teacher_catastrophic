@@ -19,6 +19,9 @@ class CoreRunner:
         """
         self._config = config
 
+        self._setup_runners()
+
+    def _setup_runners(self):
         # always generate initial configuration from networks,
         # even if only ODE simulations are performed.
         # This is a. easier and b. ensures correctness
@@ -29,18 +32,23 @@ class CoreRunner:
         network_configuration = (
             self._network_simulation_runner.get_network_configuration()
         )
-        self._ode_simulation_runner = ode_runner.ODERunner(config=self._config)
+        if self._config.ode_simulation:
+            self._ode_simulation_runner = ode_runner.ODERunner(
+                config=self._config, network_configuration=network_configuration
+            )
 
     def run(self):
         if self._config.network_simulation:
-            self._perform_network_simulations()
+            self._network_simulation_runner.train()
+            self._network_simulation_runner.post_process()
         if self._config.ode_simulation:
-            self._perform_ode_simulations()
+            self._ode_simulation_runner.run()
+            self._ode_simulation_runner.post_process()
+
+    def overlay_plot(self):
+        if self._config.network_simulation and self._config.ode_simulation:
+            self._overlay_plot()
 
     def _perform_ode_simulations(self):
         """Initialise and start training of ODE runner."""
         pass
-
-    def _perform_network_simulations(self):
-        """Initialise and start training of network simulation runner."""
-        self._network_simulation_runner.train()
