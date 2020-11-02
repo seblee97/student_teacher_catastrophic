@@ -6,6 +6,26 @@ import constants
 
 class ConfigTemplate:
 
+    _ode_template = config_template.Template(
+        fields=[
+            config_field.Field(
+                name=constants.Constants.IMPLEMENTATION,
+                types=[str],
+                requirements=[
+                    lambda x: x in [constants.Constants.CPP, constants.Constants.PYTHON]
+                ],
+            ),
+            config_field.Field(
+                name=constants.Constants.TIMESTEP,
+                types=[float, int],
+                requirements=[lambda x: x > 0],
+            ),
+        ],
+        level=[constants.Constants.ODE_RUN],
+        dependent_variables=[constants.Constants.ODE_SIMULATION],
+        dependent_variables_required_values=[[True]],
+    )
+
     _task_template = config_template.Template(
         fields=[
             config_field.Field(
@@ -83,11 +103,6 @@ class ConfigTemplate:
                 types=[bool],
             ),
             config_field.Field(
-                name=constants.Constants.ODE_TIMESTEP,
-                types=[float, int],
-                requirements=[lambda x: x > 0],
-            ),
-            config_field.Field(
                 name=constants.Constants.TRAIN_FIRST_LAYER,
                 types=[bool],
             ),
@@ -97,6 +112,28 @@ class ConfigTemplate:
             ),
         ],
         level=[constants.Constants.TRAINING],
+    )
+
+    _iid_gaussian_template = config_template.Template(
+        fields=[
+            config_field.Field(
+                name=constants.Constants.MEAN,
+                types=[float, int],
+            ),
+            config_field.Field(
+                name=constants.Constants.VARIANCE,
+                types=[int, float],
+                requirements=[lambda x: x > 0],
+            ),
+            config_field.Field(
+                name=constants.Constants.DATASET_SIZE,
+                types=[str, int],
+                requirements=[lambda x: x == constants.Constants.INF or x > 0],
+            ),
+        ],
+        level=[constants.Constants.DATA, constants.Constants.IID_GAUSSIAN],
+        dependent_variables=[constants.Constants.INPUT_SOURCE],
+        dependent_variables_required_values=[[constants.Constants.IID_GAUSSIAN]],
     )
 
     _data_template = config_template.Template(
@@ -113,6 +150,7 @@ class ConfigTemplate:
                 ],
             )
         ],
+        nested_templates=[_iid_gaussian_template],
         level=[constants.Constants.DATA],
     )
 
@@ -367,6 +405,7 @@ class ConfigTemplate:
             ),
         ],
         nested_templates=[
+            _ode_template,
             _task_template,
             _training_template,
             _data_template,
