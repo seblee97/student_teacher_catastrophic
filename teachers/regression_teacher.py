@@ -17,6 +17,7 @@ class RegressionTeacher(base_teacher.BaseTeacher):
         output_dimension: int,
         bias: bool,
         nonlinearity: str,
+        forward_scaling: float,
         unit_norm_teacher_head: bool,
         initialisation_std: float,
     ):
@@ -27,6 +28,7 @@ class RegressionTeacher(base_teacher.BaseTeacher):
             bias=bias,
             loss_type=constants.Constants.REGRESSION,
             nonlinearity=nonlinearity,
+            forward_scaling=forward_scaling,
             unit_norm_teacher_head=unit_norm_teacher_head,
             initialisation_std=initialisation_std,
         )

@@ -24,6 +24,7 @@ class BaseTeacher(base_network.BaseNetwork, abc.ABC):
         output_dimension: int,
         bias: bool,
         loss_type: str,
+        forward_scaling: float,
         nonlinearity: str,
         unit_norm_teacher_head: bool,
         initialisation_std: Optional[float] = None,
@@ -36,6 +37,7 @@ class BaseTeacher(base_network.BaseNetwork, abc.ABC):
             output_dimension=output_dimension,
             bias=bias,
             loss_type=loss_type,
+            forward_scaling=forward_scaling,
             nonlinearity=nonlinearity,
             initialisation_std=initialisation_std,
         )
