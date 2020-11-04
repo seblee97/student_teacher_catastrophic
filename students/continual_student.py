@@ -35,7 +35,7 @@ class ContinualStudent(base_student.BaseStudent):
             return self._threshold(y)
         return y
 
-    def signal_task_boundary(self, new_task: int) -> None:
+    def _signal_task_boundary(self, new_task: int) -> None:
         """Alert student to teacher change. Freeze previous head, unfreeze new head."""
         # freeze weights of head for previous task
         self._freeze_head(self._current_teacher)
