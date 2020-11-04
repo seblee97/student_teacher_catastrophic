@@ -47,7 +47,10 @@ class BaseNetwork(nn.Module, abc.ABC):
 
     @property
     def self_overlap(self):
-        return torch.mm(self._layers[0].weight.data, self._layers[0].weight.data.T)
+        return (
+            torch.mm(self._layers[0].weight.data, self._layers[0].weight.data.T)
+            / self._input_dimension
+        )
 
     def _get_nonlinear_function(self) -> Callable:
         """Makes the nonlinearity function specified by the config.
