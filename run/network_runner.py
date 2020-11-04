@@ -22,6 +22,7 @@ from teachers.ensembles import feature_rotation_ensemble
 from teachers.ensembles import readout_rotation_ensemble
 from utils import decorators
 from utils import network_configuration
+from utils import logger
 
 
 class NetworkRunner:
@@ -50,6 +51,8 @@ class NetworkRunner:
         self._optimiser = self._setup_optimiser(config=config)
         self._curriculum = self._setup_curriculum(config=config)
 
+        self._input_dimension = config.input_dimension
+        self._checkpoint_frequency = config.checkpoint_frequency
         self._total_training_steps = config.total_training_steps
         self._test_frequency = config.test_frequency
         self._total_step_count = 0
@@ -76,6 +79,7 @@ class NetworkRunner:
                 self._student.layers[0].weight.data,
                 teacher.layers[0].weight.data.T,
             ).numpy()
+            / self._input_dimension
             for teacher in self._teachers.teachers
         ]
 
@@ -155,7 +159,7 @@ class NetworkRunner:
 
     @decorators.timer
     def _setup_logger(self, config: student_teacher_config.StudentTeacherConfiguration):
-        pass
+        return logger.Logger(config=config, csv_file_name=Constants.NETWORK_CSV)
 
     @decorators.timer
     def _setup_data(
@@ -253,6 +257,8 @@ class NetworkRunner:
 
             self._train_on_teacher(teacher_index=teacher_index)
 
+        self._logger.checkpoint_df()
+
     def _train_on_teacher(self, teacher_index: int):
         """One phase of training (wrt one teacher)."""
         self._student.signal_task_boundary(teacher_index)
@@ -261,8 +267,22 @@ class NetworkRunner:
 
         while self._total_step_count < self._total_training_steps:
 
+            if (
+                self._total_step_count % self._checkpoint_frequency == 0
+                and self._total_step_count != 0
+            ):
+                self._logger.checkpoint_df()
+
             if self._total_step_count % self._test_frequency == 0:
                 generalisation_errors = self._compute_generalisation_errors()
+                self._logger.log_generalisation_errors(
+                    step=self._total_step_count,
+                    generalisation_errors=generalisation_errors,
+                )
+                self._logger.log_network_configuration(
+                    step=self._total_step_count,
+                    network_configuration=self.get_network_configuration(),
+                )
 
             if self._total_step_count % 500 == 0:
                 print(
