@@ -1,9 +1,0 @@
-python main.py --tro '[0, 0]' --en no_overlap
-python main.py --tro '[0.7854, 0]' --en quarter_overlap
-python main.py --tro '[1.571, 0]' --en half_overlap
-python main.py --tro '[2.356, 0]' --en three_quarter_overlap
-python main.py --tro '[3.14159, 0]' --en full_overlap
-python main.py --tro '[3.927, 0]' --en full_quarter_overlap
-python main.py --tro '[4.712, 0]' --en full_half_overlap
-python main.py --tro '[5.498, 0]' --en full_three_quarter_overlap
-python main.py --tro '[6.283, 0]' --en twice_overlap

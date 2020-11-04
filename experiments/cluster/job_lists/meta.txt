@@ -1,3 +1,0 @@
-python main.py --lc meta --en relu_meta_1_2
-python main.py --lc meta --sh '[4]' --en relu_meta_1_4
-python main.py --lc meta --sh '[1]' --en relu_meta_1_1

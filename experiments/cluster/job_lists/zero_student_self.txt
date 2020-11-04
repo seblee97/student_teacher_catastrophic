@@ -1,3 +1,0 @@
-python main.py --snl sigmoid --tnl '[sigmoid, sigmoid]' --zsho --en sigmoid_zero_student_self
-python main.py --snl relu --tnl '[relu, relu]' --zsho --en relu_zero_student_self
-python main.py --snl linear --tnl '[linear, linear]' --zsho --en linear_zero_student_self
