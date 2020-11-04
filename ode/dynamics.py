@@ -74,7 +74,7 @@ class StudentTeacherODE:
 
     @property
     def configuration(self) -> StudentTwoTeacherConfiguration:
-        return self._configuration
+        return self._configuration.configuration
 
     @property
     def step_count(self):
@@ -327,7 +327,15 @@ class StudentTeacherODE:
                 error -= head_unit_i * teacher_head_unit_p * self._i2_fn(cov)
         return error
 
-    def _step(self):
+    @property
+    def next_switch_step(self):
+        return self._next_switch_step
+
+    @property
+    def time(self):
+        return self._time
+
+    def step(self):
         self._time += self._dt
         self._step_count += 1
 
@@ -360,7 +368,7 @@ class StudentTeacherODE:
         self._configuration.step_h1(h1_delta)
         self._configuration.step_h2(h2_delta)
 
-    def _switch_teacher(self):
+    def switch_teacher(self):
         self._active_teacher = int(not self._active_teacher)
         try:
             self._next_switch_step = next(self._curriculum)
@@ -369,15 +377,15 @@ class StudentTeacherODE:
         self._task_switch_error_1_log[self._step_count] = self.error_1
         self._task_switch_error_2_log[self._step_count] = self.error_2
 
-    def step(self, time: int):
-        while self._time < time:
-            # for i in range(num_steps):
-            if self._curriculum is not None:
-                if self._time > self._next_switch_step:
-                    self._switch_teacher()
-            if self._time % 1000 == 0:
-                print(f"Step {self._time} of ODE dynamics")
-            self._step()
+    # def step(self, time: int):
+    #     while self._time < time:
+    #         # for i in range(num_steps):
+    #         if self._curriculum is not None:
+    #             if self._time > self._next_switch_step:
+    #                 self._switch_teacher()
+    #         if self._time % 1000 == 0:
+    #             print(f"Step {self._time} of ODE dynamics")
+    #         self._step()
 
     @staticmethod
     def _get_data_diff(data: Union[List, np.ndarray]) -> np.ndarray:
