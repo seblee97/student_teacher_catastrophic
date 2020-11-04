@@ -1,7 +1,10 @@
-from run import student_teacher_config
+import os
 
+import constants
 from run import network_runner
 from run import ode_runner
+from run import student_teacher_config
+from utils import plotter
 
 
 class CoreRunner:
@@ -40,15 +43,29 @@ class CoreRunner:
     def run(self):
         if self._config.network_simulation:
             self._network_simulation_runner.train()
-            self._network_simulation_runner.post_process()
         if self._config.ode_simulation:
             self._ode_simulation_runner.run()
-            self._ode_simulation_runner.post_process()
 
-    def overlay_plot(self):
-        if self._config.network_simulation and self._config.ode_simulation:
-            self._overlay_plot()
+    def post_process(self):
+        """Method to make plots from data collected by loggers."""
+        if self._config.ode_simulation:
+            ode_log_path = os.path.join(
+                self._config.checkpoint_path, constants.Constants.ODE_CSV
+            )
+        else:
+            ode_log_path = None
+        if self._config.network_simulation:
+            network_log_path = os.path.join(
+                self._config.checkpoint_path, constants.Constants.NETWORK_CSV
+            )
+        else:
+            network_log_path = None
 
-    def _perform_ode_simulations(self):
-        """Initialise and start training of ODE runner."""
-        pass
+        plotter.Plotter(
+            ode_logger_path=ode_log_path,
+            network_logger_path=network_log_path,
+            save_folder=self._config.checkpoint_path,
+            num_steps=self._config.total_training_steps,
+        ).make_plots()
+        # if self._config.network_simulation and self._config.ode_simulation:
+        #     self._overlay_plot()
