@@ -75,8 +75,9 @@ class ODERunner:
             dt=timestep,
             curriculum=curriculum,
             soft_committee=self._config.soft_committee,
-            train_first_layer=self._config.train_first_layer,
+            train_first_layer=self._config.train_hidden_layers,
             train_head_layer=self._config.train_head_layer,
+            frozen_feature=self._config.frozen_feature,
         )
 
         steps = 0
