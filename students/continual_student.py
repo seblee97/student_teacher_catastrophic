@@ -1,7 +1,8 @@
-from students import base_student
-
 import torch
 import torch.nn as nn
+
+import constants
+from students import base_student
 
 
 class ContinualStudent(base_student.BaseStudent):
@@ -33,3 +34,20 @@ class ContinualStudent(base_student.BaseStudent):
         if self._classification_output:
             return self._threshold(y)
         return y
+
+    def signal_task_boundary(self, new_task: int) -> None:
+        """Alert student to teacher change. Freeze previous head, unfreeze new head."""
+        # freeze weights of head for previous task
+        self._freeze_head(self._current_teacher)
+        self._unfreeze_head(new_task)
+        self._current_teacher = new_task
+
+    def _freeze_head(self, head_index: int) -> None:
+        """Freeze weights of head for task with index head index."""
+        for param in self._heads[head_index].parameters():
+            param.requires_grad = False
+
+    def _unfreeze_head(self, head_index: int) -> None:
+        """Unfreeze weights of head for task with index head index."""
+        for param in self._heads[head_index].parameters():
+            param.requires_grad = True
