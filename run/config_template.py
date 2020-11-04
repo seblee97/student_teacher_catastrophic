@@ -103,13 +103,14 @@ class ConfigTemplate:
                 types=[bool],
             ),
             config_field.Field(
-                name=constants.Constants.TRAIN_FIRST_LAYER,
+                name=constants.Constants.TRAIN_HIDDEN_LAYERS,
                 types=[bool],
             ),
             config_field.Field(
                 name=constants.Constants.TRAIN_HEAD_LAYER,
                 types=[bool],
             ),
+            config_field.Field(name=constants.Constants.FROZEN_FEATURE, types=[bool]),
         ],
         level=[constants.Constants.TRAINING],
     )
