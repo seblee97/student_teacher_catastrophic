@@ -28,3 +28,7 @@ class MetaStudent(base_student.BaseStudent):
         if self._classification_output:
             return self._threshold(y)
         return y
+
+    def signal_task_boundary(self, new_task: int) -> None:
+        """Alert student to teacher change."""
+        pass
