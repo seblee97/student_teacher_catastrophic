@@ -9,6 +9,7 @@ from ode import dynamics
 from run import student_teacher_config
 
 from utils import network_configuration
+from utils import logger
 
 
 class ODERunner:
@@ -21,6 +22,11 @@ class ODERunner:
     ) -> None:
         self._config = config
         self._network_configuration = network_configuration
+
+        if self._config.implementation == constants.Constants.PYTHON:
+            self._logger = logger.Logger(
+                config=self._config, csv_file_name=constants.Constants.ODE_CSV
+            )
 
     def run(self):
         if self._config.implementation == constants.Constants.CPP:
@@ -59,6 +65,8 @@ class ODERunner:
             / self._config.input_dimension
         )
 
+        time = self._config.total_training_steps / self._config.input_dimension
+
         ode = dynamics.StudentTeacherODE(
             overlap_configuration=ode_configuration,
             nonlinearity=self._config.student_nonlinearity,
@@ -71,7 +79,22 @@ class ODERunner:
             train_head_layer=self._config.train_head_layer,
         )
 
-        ode.step(self._config.total_training_steps / self._config.input_dimension)
+        steps = 0
+        while ode.time < time:
+            if steps % self._config.checkpoint_frequency == 0 and steps != 0:
+                self._logger.checkpoint_df()
+            if ode.time > ode.next_switch_step:
+                ode.switch_teacher()
+            ode.step()
+            self._logger.log_network_configuration(
+                step=steps, network_configuration=ode.configuration
+            )
+            self._logger.log_generalisation_errors(
+                step=steps, generalisation_errors=[ode.error_1, ode.error_2]
+            )
+            steps += 1
+
+        self._logger.checkpoint_df()
 
         # ode.save_to_csv(save_path=self._config.checkpoint_path)
         # ode.make_plot(
