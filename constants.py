@@ -21,7 +21,7 @@ class Constants:
     SCALE_HIDDEN_LR = "scale_hidden_lr"
     TIMESTEP = "timestep"
     ODE_TIMESTEP = "ode_timestep"
-    TRAIN_FIRST_LAYER = "train_first_layer"
+    TRAIN_HIDDEN_LAYERS = "train_hidden_layers"
     TRAIN_HEAD_LAYER = "train_head_layer"
     TRAINING = "training"
     INPUT_SOURCE = "input_source"
@@ -131,6 +131,7 @@ class Constants:
     SOLID = "solid"
     STEP = "steps"
     PRIVATE_CURRENT_TEACHER = "_current_teacher"
+    FROZEN_FEATURE = "frozen_feature"
 
     CHECKPOINT_PATH = "checkpoint_path"
     EXPERIMENT_TIMESTAMP = "experiment_timestamp"
