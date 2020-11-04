@@ -41,7 +41,8 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         self._num_teachers = num_teachers
         self._learning_rate = learning_rate
 
-        self._current_teacher: int
+        # set to 0 by default
+        self._current_teacher: int = 0
 
         super().__init__(
             input_dimension=input_dimension,
@@ -69,9 +70,10 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         """Pass tensor through relevant head of student."""
         pass
 
+    @abc.abstractmethod
     def signal_task_boundary(self, new_task: int) -> None:
         """Alert student to teacher change."""
-        self._current_teacher = new_task
+        pass
 
     def get_trainable_parameters(self):  # TODO: return type
         """To instantiate optimiser, returns relevant (trainable) parameters
