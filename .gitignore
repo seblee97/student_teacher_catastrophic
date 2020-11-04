@@ -13,3 +13,4 @@ saved_model_weights/
 mypy.txt
 tests/experiment_tests/test_results/
 tests/experiment_tests/target_dfs/
+*.egg-info
