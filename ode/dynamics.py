@@ -226,7 +226,7 @@ class StudentTeacherODE:
     @property
     def dh1_dt(self):
         derivative = np.zeros(self._configuration.h1.shape).astype(float)
-        if not self._train_head_layer and self._active_teacher == 0:
+        if self._train_head_layer and self._active_teacher == 0:
             for i in range(len(derivative)):
                 i_derivative = 0
                 for m, head_unit in enumerate(self._configuration.th1):
@@ -245,7 +245,7 @@ class StudentTeacherODE:
     @property
     def dh2_dt(self):
         derivative = np.zeros(self._configuration.h2.shape).astype(float)
-        if not self._train_head_layer and self._active_teacher == 1:
+        if self._train_head_layer and self._active_teacher == 1:
             for i in range(len(derivative)):
                 i_derivative = 0
                 for p, head_unit in enumerate(self._configuration.th2):
