@@ -24,6 +24,7 @@ class StudentTeacherODE:
         soft_committee: bool,
         train_first_layer: bool,
         train_head_layer: bool,
+        frozen_feature: bool,
     ):
 
         self._configuration = overlap_configuration
@@ -34,6 +35,10 @@ class StudentTeacherODE:
         self._soft_committee = soft_committee
         self._train_first_layer = train_first_layer
         self._train_head_layer = train_head_layer
+        self._frozen_feature = frozen_feature
+
+        self._frozen = False
+        self._num_switches = 0
 
         if curriculum is not None:
             self._curriculum = iter(curriculum)
@@ -221,7 +226,7 @@ class StudentTeacherODE:
     @property
     def dh1_dt(self):
         derivative = np.zeros(self._configuration.h1.shape).astype(float)
-        if not self._soft_committee and self._active_teacher == 0:
+        if not self._train_head_layer and self._active_teacher == 0:
             for i in range(len(derivative)):
                 i_derivative = 0
                 for m, head_unit in enumerate(self._configuration.th1):
@@ -240,7 +245,7 @@ class StudentTeacherODE:
     @property
     def dh2_dt(self):
         derivative = np.zeros(self._configuration.h2.shape).astype(float)
-        if not self._soft_committee and self._active_teacher == 1:
+        if not self._train_head_layer and self._active_teacher == 1:
             for i in range(len(derivative)):
                 i_derivative = 0
                 for p, head_unit in enumerate(self._configuration.th2):
@@ -347,7 +352,7 @@ class StudentTeacherODE:
         self._error_1_log.append(error_1)
         self._error_2_log.append(error_2)
 
-        if self._train_first_layer:
+        if self._train_first_layer and not self._frozen:
             q_delta = self.dq_dt
             r_delta = self.dr_dt
             u_delta = self.du_dt
@@ -376,6 +381,9 @@ class StudentTeacherODE:
             self._next_switch_step = np.inf
         self._task_switch_error_1_log[self._step_count] = self.error_1
         self._task_switch_error_2_log[self._step_count] = self.error_2
+        self._num_switches += 1
+        if self._frozen_feature and self._num_switches == 1:
+            self._frozen = True
 
     # def step(self, time: int):
     #     while self._time < time:
