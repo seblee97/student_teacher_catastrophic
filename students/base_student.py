@@ -19,6 +19,9 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         nonlinearity: str,
         initialise_outputs: bool,
         soft_committee: bool,
+        train_hidden_layers: bool,
+        train_head_layer: bool,
+        frozen_feature: bool,
         scale_hidden_lr: bool,
         scale_head_lr: bool,
         num_teachers: int,
@@ -26,8 +29,11 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         symmetric_initialisation: bool = False,
         initialisation_std: Optional[float] = None,
     ) -> None:
-        self._initialise_outputs = initialise_outputs
         self._soft_committee = soft_committee
+        self._train_hidden_layers = train_hidden_layers
+        self._train_head_layer = train_head_layer
+        self._frozen_feature = frozen_feature
+        self._initialise_outputs = initialise_outputs
 
         if scale_hidden_lr:
             forward_scaling = 1 / math.sqrt(input_dimension)
@@ -40,6 +46,8 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
 
         self._num_teachers = num_teachers
         self._learning_rate = learning_rate
+
+        self._num_switches = -1
 
         # set to 0 by default
         self._current_teacher: int = 0
@@ -71,19 +79,29 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         pass
 
     @abc.abstractmethod
+    def _signal_task_boundary(self, new_task: int) -> None:
+        """Logic for specific students on teacher change."""
+        pass
+
     def signal_task_boundary(self, new_task: int) -> None:
         """Alert student to teacher change."""
-        pass
+        self._num_switches += 1
+        self._signal_task_boundary(new_task=new_task)
+        if self._frozen_feature and self._num_switches == 1:
+            self._freeze_hidden_layers()
 
     def get_trainable_parameters(self):  # TODO: return type
         """To instantiate optimiser, returns relevant (trainable) parameters
         of student network.
         """
-        trainable_parameters = [
-            {"params": filter(lambda p: p.requires_grad, layer.parameters())}
-            for layer in self._layers
-        ]
-        if not self._soft_committee:
+        trainable_parameters = []
+        if self._train_hidden_layers:
+            trainable_hidden_parameters = [
+                {"params": filter(lambda p: p.requires_grad, layer.parameters())}
+                for layer in self._layers
+            ]
+            trainable_parameters += trainable_hidden_parameters
+        if self._train_head_layer:
             trainable_head_parameters = [
                 {
                     "params": head.parameters(),
@@ -93,6 +111,13 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
             ]
             trainable_parameters += trainable_head_parameters
         return trainable_parameters
+
+    def _freeze_hidden_layers(self) -> None:
+        """Freeze weights in all but head weights
+        (used for e.g. frozen feature model)."""
+        for layer in self._layers:
+            for param in layer.parameters():
+                param.requires_grad = False
 
     def forward_all(self, x: torch.Tensor) -> List[torch.Tensor]:
         """Makes call to student forward, using all heads (used for evaluation)"""
