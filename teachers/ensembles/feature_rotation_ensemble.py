@@ -58,21 +58,22 @@ class FeatureRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
 
         teachers = [self._init_teacher() for _ in range(self._num_teachers)]
 
-        rotated_weight_vectors = custom_functions.generate_rotated_vectors(
-            dimension=self._input_dimension,
-            theta=self._rotation_magnitude,
-            normalisation=np.sqrt(self._input_dimension),
-        )
+        with torch.no_grad():
+            rotated_weight_vectors = custom_functions.generate_rotated_vectors(
+                dimension=self._input_dimension,
+                theta=self._rotation_magnitude,
+                normalisation=np.sqrt(self._input_dimension),
+            )
 
-        teacher_0_rotated_weight_tensor = torch.Tensor(
-            rotated_weight_vectors[0]
-        ).reshape(teachers[0].layers[0].weight.data.shape)
+            teacher_0_rotated_weight_tensor = torch.Tensor(
+                rotated_weight_vectors[0]
+            ).reshape(teachers[0].layers[0].weight.data.shape)
 
-        teacher_1_rotated_weight_tensor = torch.Tensor(
-            rotated_weight_vectors[1]
-        ).reshape(teachers[1].layers[0].weight.data.shape)
+            teacher_1_rotated_weight_tensor = torch.Tensor(
+                rotated_weight_vectors[1]
+            ).reshape(teachers[1].layers[0].weight.data.shape)
 
-        teachers[0].layers[0].weight.data = teacher_0_rotated_weight_tensor
-        teachers[1].layers[0].weight.data = teacher_1_rotated_weight_tensor
+            teachers[0].layers[0].weight.data = teacher_0_rotated_weight_tensor
+            teachers[1].layers[0].weight.data = teacher_1_rotated_weight_tensor
 
         return teachers
