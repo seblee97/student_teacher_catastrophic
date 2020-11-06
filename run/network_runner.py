@@ -62,26 +62,25 @@ class NetworkRunner:
 
         Used for both logging purposes and as input to ODE runner.
         """
-        student_head_weights = [
-            head.weight.data.numpy().flatten() for head in self._student.heads
-        ]
-        teacher_head_weights = [
-            teacher.head.weight.data.numpy().flatten()
-            for teacher in self._teachers.teachers
-        ]
-        student_self_overlap = self._student.self_overlap.numpy()
-        teacher_self_overlaps = [
-            teacher.self_overlap.numpy() for teacher in self._teachers.teachers
-        ]
-        teacher_cross_overlaps = [o.numpy() for o in self._teachers.cross_overlaps]
-        student_teacher_overlaps = [
-            torch.mm(
-                self._student.layers[0].weight.data,
-                teacher.layers[0].weight.data.T,
-            ).numpy()
-            / self._input_dimension
-            for teacher in self._teachers.teachers
-        ]
+        with torch.no_grad():
+            student_head_weights = [
+                head.weight.data.numpy().flatten() for head in self._student.heads
+            ]
+            teacher_head_weights = [
+                teacher.head.weight.data.numpy().flatten()
+                for teacher in self._teachers.teachers
+            ]
+            student_self_overlap = self._student.self_overlap.numpy()
+            teacher_self_overlaps = [
+                teacher.self_overlap.numpy() for teacher in self._teachers.teachers
+            ]
+            teacher_cross_overlaps = [o.numpy() for o in self._teachers.cross_overlaps]
+            student_layer = self._student.layers[0].weight.data
+            student_teacher_overlaps = [
+                student_layer.mm(teacher.layers[0].weight.data.t()).numpy()
+                / self._input_dimension
+                for teacher in self._teachers.teachers
+            ]
 
         return network_configuration.NetworkConfiguration(
             student_head_weights=student_head_weights,
