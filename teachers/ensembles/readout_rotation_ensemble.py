@@ -69,34 +69,35 @@ class ReadoutRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
 
         teachers = [self._init_teacher() for _ in range(self._num_teachers)]
 
-        # copy specified fraction of first teacher input -> hidden
-        # weights to second teacher.
-        index_weight_copy = int(
-            self._input_dimension * self._feature_copy_percentage / 100
-        )
-        for h in range(self._hidden_dimensions[0]):
-            teacher_0_weight_vector = teachers[0].layers[0].weight.data[h]
-            teachers[1].layers[0].weight.data[h][
-                :index_weight_copy
-            ] = teacher_0_weight_vector[:index_weight_copy]
+        with torch.no_grad():
+            # copy specified fraction of first teacher input -> hidden
+            # weights to second teacher.
+            index_weight_copy = int(
+                self._input_dimension * self._feature_copy_percentage / 100
+            )
+            for h in range(self._hidden_dimensions[0]):
+                teacher_0_weight_vector = teachers[0].layers[0].weight.data[h]
+                teachers[1].layers[0].weight.data[h][
+                    :index_weight_copy
+                ] = teacher_0_weight_vector[:index_weight_copy]
 
-        # rotate hidden -> output weights by specified amount.
-        rotated_weight_vectors = custom_functions.generate_rotated_vectors(
-            dimension=self._hidden_dimensions[0],
-            theta=self._rotation_magnitude,
-            normalisation=np.sqrt(self._hidden_dimensions[0]),
-        )
+            # rotate hidden -> output weights by specified amount.
+            rotated_weight_vectors = custom_functions.generate_rotated_vectors(
+                dimension=self._hidden_dimensions[0],
+                theta=self._rotation_magnitude,
+                normalisation=np.sqrt(self._hidden_dimensions[0]),
+            )
 
-        teacher_0_rotated_weight_tensor = torch.Tensor(
-            rotated_weight_vectors[0]
-        ).reshape(teachers[0].head.weight.data.shape)
+            teacher_0_rotated_weight_tensor = torch.Tensor(
+                rotated_weight_vectors[0]
+            ).reshape(teachers[0].head.weight.data.shape)
 
-        teacher_1_rotated_weight_tensor = torch.Tensor(
-            rotated_weight_vectors[1]
-        ).reshape(teachers[1].head.weight.data.shape)
+            teacher_1_rotated_weight_tensor = torch.Tensor(
+                rotated_weight_vectors[1]
+            ).reshape(teachers[1].head.weight.data.shape)
 
-        teachers[0].head.weight.data = teacher_0_rotated_weight_tensor
-        teachers[1].head.weight.data = teacher_1_rotated_weight_tensor
+            teachers[0].head.weight.data = teacher_0_rotated_weight_tensor
+            teachers[1].head.weight.data = teacher_1_rotated_weight_tensor
 
         return teachers
 
