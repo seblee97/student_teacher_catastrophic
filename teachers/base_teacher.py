@@ -42,9 +42,16 @@ class BaseTeacher(base_network.BaseNetwork, abc.ABC):
             initialisation_std=initialisation_std,
         )
 
+        self._freeze()
+
     @property
     def head(self) -> nn.Linear:
         return self._head
+
+    def _freeze(self) -> None:
+        for layer in self._layers:
+            for param in layer.parameters():
+                param.requires_grad = False
 
     # def get_output_statistics(self, repeats=5000):
     #     with torch.no_grad():
