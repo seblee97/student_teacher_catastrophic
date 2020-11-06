@@ -52,17 +52,18 @@ class BaseTeacherEnsemble(abc.ABC):
     @property
     def cross_overlaps(self):
         overlaps = []
-        for i in range(len(self._teachers)):
-            for j in range(i, len(self._teachers)):
-                if i != j:
-                    overlap = (
-                        torch.mm(
-                            self._teachers[i].layers[0].weight.data,
-                            self._teachers[j].layers[0].weight.data.T,
+        with torch.no_grad():
+            for i in range(len(self._teachers)):
+                for j in range(i, len(self._teachers)):
+                    if i != j:
+                        overlap = (
+                            torch.mm(
+                                self._teachers[i].layers[0].weight.data,
+                                self._teachers[j].layers[0].weight.data.T,
+                            )
+                            / self._input_dimension
                         )
-                        / self._input_dimension
-                    )
-                    overlaps.append(overlap)
+                        overlaps.append(overlap)
         return overlaps
 
     @abc.abstractmethod
