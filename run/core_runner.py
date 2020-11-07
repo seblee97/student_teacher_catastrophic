@@ -21,6 +21,7 @@ class CoreRunner:
             config: configuration object specifying experiment setup.
         """
         self._config = config
+        self._config.save_configuration(folder_path=self._config.checkpoint_path)
 
         self._setup_runners()
 
