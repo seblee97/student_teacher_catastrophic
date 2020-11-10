@@ -132,6 +132,9 @@ class Constants:
     STEP = "steps"
     PRIVATE_CURRENT_TEACHER = "_current_teacher"
     FROZEN_FEATURE = "frozen_feature"
+    LOG_OVERLAPS = "log_overlaps"
+    EXPERIMENT_DEVICE = "experiment_device"
+    USING_GPU = "using_gpu"
 
     CHECKPOINT_PATH = "checkpoint_path"
     EXPERIMENT_TIMESTAMP = "experiment_timestamp"
