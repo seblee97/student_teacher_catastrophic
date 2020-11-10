@@ -71,12 +71,9 @@ class BaseTeacherEnsemble(abc.ABC):
         """instantiate teacher network(s)"""
         pass
 
-    def forward(
-        self, teacher_index: int, batch: Dict[str, torch.Tensor]
-    ) -> torch.Tensor:
+    def forward(self, teacher_index: int, batch: torch.Tensor) -> torch.Tensor:
         """Call to current teacher forward."""
-        x = batch[constants.Constants.X]
-        output = self._teachers[teacher_index](x)
+        output = self._teachers[teacher_index](batch)
         return output
 
     def _init_teacher(self):
@@ -101,7 +98,7 @@ class BaseTeacherEnsemble(abc.ABC):
         """Save weights associated with given teacher index"""
         torch.save(self._teachers[teacher_index].state_dict(), save_path)
 
-    def forward_all(self, batch: Dict) -> List[torch.Tensor]:
+    def forward_all(self, batch: torch.Tensor) -> List[torch.Tensor]:
         """Call to forward of all teachers (used primarily for evaluation)"""
         outputs = [self.forward(t, batch) for t in range(self._num_teachers)]
         return outputs
