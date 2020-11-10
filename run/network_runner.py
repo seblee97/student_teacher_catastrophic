@@ -23,6 +23,7 @@ from teachers.ensembles import readout_rotation_ensemble
 from utils import decorators
 from utils import network_configuration
 from utils import logger
+import time
 
 
 class NetworkRunner:
@@ -56,6 +57,7 @@ class NetworkRunner:
         self._total_training_steps = config.total_training_steps
         self._test_frequency = config.test_frequency
         self._total_step_count = 0
+        self._log_overlaps = config.log_overlaps
 
     def get_network_configuration(self) -> network_configuration.NetworkConfiguration:
         """Get macroscopic configuration of networks in terms of order parameters.
@@ -123,6 +125,7 @@ class NetworkRunner:
             initialise_outputs=config.initialise_student_outputs,
             symmetric_initialisation=config.symmetric_student_initialisation,
             initialisation_std=config.student_initialisation_std,
+            device=config.experiment_device,
         )
 
     @decorators.timer
@@ -141,6 +144,7 @@ class NetworkRunner:
             Constants.SCALE_HIDDEN_LR: config.scale_hidden_lr,
             Constants.UNIT_NORM_TEACHER_HEAD: config.unit_norm_teacher_head,
             Constants.INITIALISATION_STD: config.teacher_initialisation_std,
+            Constants.EXPERIMENT_DEVICE: config.experiment_device,
         }
         if config.teacher_configuration == Constants.FEATURE_ROTATION:
             teachers_class = feature_rotation_ensemble.FeatureRotationTeacherEnsemble
@@ -176,6 +180,7 @@ class NetworkRunner:
                 mean=config.mean,
                 variance=config.variance,
                 dataset_size=config.dataset_size,
+                experiment_device=config.experiment_device,
             )
         else:
             raise ValueError(
@@ -266,6 +271,7 @@ class NetworkRunner:
         self._student.signal_task_boundary(teacher_index)
         task_step_count = 0
         latest_task_generalisation_error = np.inf
+        timer = time.time()
 
         while self._total_step_count < self._total_training_steps:
 
@@ -281,16 +287,20 @@ class NetworkRunner:
                     step=self._total_step_count,
                     generalisation_errors=generalisation_errors,
                 )
-                self._logger.log_network_configuration(
-                    step=self._total_step_count,
-                    network_configuration=self.get_network_configuration(),
-                )
+                if self._log_overlaps:
+                    self._logger.log_network_configuration(
+                        step=self._total_step_count,
+                        network_configuration=self.get_network_configuration(),
+                    )
 
             if self._total_step_count % 500 == 0:
                 print(
                     f"Generalisation errors @ step {self._total_step_count} "
                     f"({task_step_count}'th step training on teacher {teacher_index}): "
                 )
+                if self._total_step_count != 0:
+                    print(f"Time for last 500 steps: {time.time() - timer}")
+                    timer = time.time()
                 for i, error in enumerate(generalisation_errors):
                     print(f"    Teacher {i}: {error}\n")
 
