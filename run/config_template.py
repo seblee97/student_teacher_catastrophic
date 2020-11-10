@@ -187,6 +187,10 @@ class ConfigTemplate:
                 name=constants.Constants.SAVE_INITIAL_WEIGHTS,
                 types=[bool],
             ),
+            config_field.Field(
+                name=constants.Constants.LOG_OVERLAPS,
+                types=[bool],
+            ),
         ],
         level=[constants.Constants.LOGGING],
     )
