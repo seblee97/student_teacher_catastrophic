@@ -67,6 +67,7 @@ class CoreRunner:
             network_logger_path=network_log_path,
             save_folder=self._config.checkpoint_path,
             num_steps=self._config.total_training_steps,
+            log_overlaps=self._config.log_overlaps,
         ).make_plots()
         # if self._config.network_simulation and self._config.ode_simulation:
         #     self._overlay_plot()
