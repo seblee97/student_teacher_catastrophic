@@ -52,12 +52,15 @@ class NetworkRunner:
         self._optimiser = self._setup_optimiser(config=config)
         self._curriculum = self._setup_curriculum(config=config)
 
+        self._device = config.experiment_device
         self._input_dimension = config.input_dimension
         self._checkpoint_frequency = config.checkpoint_frequency
         self._total_training_steps = config.total_training_steps
         self._test_frequency = config.test_frequency
         self._total_step_count = 0
         self._log_overlaps = config.log_overlaps
+
+        self._manage_network_devices()
 
     def get_network_configuration(self) -> network_configuration.NetworkConfiguration:
         """Get macroscopic configuration of networks in terms of order parameters.
@@ -125,7 +128,6 @@ class NetworkRunner:
             initialise_outputs=config.initialise_student_outputs,
             symmetric_initialisation=config.symmetric_student_initialisation,
             initialisation_std=config.student_initialisation_std,
-            device=config.experiment_device,
         )
 
     @decorators.timer
@@ -144,7 +146,6 @@ class NetworkRunner:
             Constants.SCALE_HIDDEN_LR: config.scale_hidden_lr,
             Constants.UNIT_NORM_TEACHER_HEAD: config.unit_norm_teacher_head,
             Constants.INITIALISATION_STD: config.teacher_initialisation_std,
-            Constants.EXPERIMENT_DEVICE: config.experiment_device,
         }
         if config.teacher_configuration == Constants.FEATURE_ROTATION:
             teachers_class = feature_rotation_ensemble.FeatureRotationTeacherEnsemble
@@ -180,7 +181,6 @@ class NetworkRunner:
                 mean=config.mean,
                 variance=config.variance,
                 dataset_size=config.dataset_size,
-                experiment_device=config.experiment_device,
             )
         else:
             raise ValueError(
@@ -231,6 +231,13 @@ class NetworkRunner:
         trainable_parameters = self._student.get_trainable_parameters()
         return torch.optim.SGD(trainable_parameters, lr=config.learning_rate)
 
+    @decorators.timer
+    def _manage_network_devices(self) -> None:
+        """Move relevant networks etc. to device specified in config (CPU or GPU)."""
+        self._student.to(device=self._device)
+        for teacher in self._teachers.teachers:
+            teacher.to(device=self._device)
+
     def _compute_loss(
         self, prediction: torch.Tensor, target: torch.Tensor
     ) -> torch.Tensor:
@@ -251,8 +258,10 @@ class NetworkRunner:
         """Prepare runner for training, including constructing a test dataset.
         This method must be called before training loop is called.
         """
-        self._test_data = self._data_module.get_test_data()
-        self._test_teacher_outputs = self._teachers.forward_all(self._test_data)
+        self._test_data_inputs = self._data_module.get_test_data()[Constants.X].to(
+            self._device
+        )
+        self._test_teacher_outputs = self._teachers.forward_all(self._test_data_inputs)
 
     def train(self):
         """Training orchestration."""
@@ -318,13 +327,13 @@ class NetworkRunner:
     def _training_step(self, teacher_index: int):
         """Perform single training step."""
         batch = self._data_module.get_batch()
-        batch_input = batch[Constants.X]
+        batch_input = batch[Constants.X].to(self._device)
 
         # forward through student network
         student_output = self._student.forward(batch_input)
 
         # forward through teacher network(s)
-        teacher_output = self._teachers.forward(teacher_index, batch)
+        teacher_output = self._teachers.forward(teacher_index, batch_input)
 
         # training iteration
         self._optimiser.zero_grad()
@@ -341,7 +350,7 @@ class NetworkRunner:
         generalisation_errors = []
 
         with torch.no_grad():
-            student_outputs = self._student.forward_all(self._test_data[Constants.X])
+            student_outputs = self._student.forward_all(self._test_data_inputs)
 
             for student_output, teacher_output in zip(
                 student_outputs, self._test_teacher_outputs
