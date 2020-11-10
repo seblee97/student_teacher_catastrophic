@@ -1,6 +1,7 @@
 experiment_name:                    
-use_gpu:                            True                      
-seed:                               5
+use_gpu:                            True
+gpu_id:                             0                    
+seed:                               0
 
 network_simulation: True
 ode_simulation: True
