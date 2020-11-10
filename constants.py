@@ -135,6 +135,7 @@ class Constants:
     LOG_OVERLAPS = "log_overlaps"
     EXPERIMENT_DEVICE = "experiment_device"
     USING_GPU = "using_gpu"
+    GPU_ID = "gpu_id"
 
     CHECKPOINT_PATH = "checkpoint_path"
     EXPERIMENT_TIMESTAMP = "experiment_timestamp"
