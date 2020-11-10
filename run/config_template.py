@@ -396,6 +396,10 @@ class ConfigTemplate:
                 types=[bool],
             ),
             config_field.Field(
+                name=constants.Constants.GPU_ID,
+                types=[int],
+            ),
+            config_field.Field(
                 name=constants.Constants.SEED,
                 types=[int],
                 requirements=[lambda x: x >= 0],
