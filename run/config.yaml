@@ -43,6 +43,7 @@ logging:
   merge_at_checkpoint:              True
   save_weights_at_switch:           True
   save_initial_weights:             True
+  log_overlaps:                     False
   
 testing:
   test_batch_size:                  50000                     # generalisation error
