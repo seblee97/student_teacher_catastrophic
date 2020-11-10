@@ -69,20 +69,23 @@ class NetworkRunner:
         """
         with torch.no_grad():
             student_head_weights = [
-                head.weight.data.numpy().flatten() for head in self._student.heads
+                head.weight.data.cpu().numpy().flatten() for head in self._student.heads
             ]
             teacher_head_weights = [
-                teacher.head.weight.data.numpy().flatten()
+                teacher.head.weight.data.cpu().numpy().flatten()
                 for teacher in self._teachers.teachers
             ]
-            student_self_overlap = self._student.self_overlap.numpy()
+            student_self_overlap = self._student.self_overlap.cpu().numpy()
             teacher_self_overlaps = [
-                teacher.self_overlap.numpy() for teacher in self._teachers.teachers
+                teacher.self_overlap.cpu().numpy()
+                for teacher in self._teachers.teachers
             ]
-            teacher_cross_overlaps = [o.numpy() for o in self._teachers.cross_overlaps]
+            teacher_cross_overlaps = [
+                o.cpu().numpy() for o in self._teachers.cross_overlaps
+            ]
             student_layer = self._student.layers[0].weight.data
             student_teacher_overlaps = [
-                student_layer.mm(teacher.layers[0].weight.data.t()).numpy()
+                student_layer.mm(teacher.layers[0].weight.data.t()).cpu().numpy()
                 / self._input_dimension
                 for teacher in self._teachers.teachers
             ]
