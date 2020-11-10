@@ -93,7 +93,7 @@ def set_device(
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
             config.add_property(constants.Constants.USING_GPU, True)
-            experiment_device = torch.device("cuda:{}".format(args.gpu_id))
+            experiment_device = torch.device("cuda:{}".format(config.gpu_id))
         else:
             print("GPU not found, reverting to CPU")
             config.add_property(constants.Constants.USING_GPU, False)
