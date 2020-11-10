@@ -3,11 +3,12 @@ import datetime
 import os
 import time
 
-import constants
+import torch
 
+import constants
+from run import core_runner
 from run import student_teacher_config
 from run.config_template import ConfigTemplate
-from run import core_runner
 
 MAIN_FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -81,6 +82,29 @@ def set_experiment_metadata(
     return config
 
 
+def set_device(
+    config: student_teacher_config.StudentTeacherConfiguration,
+) -> student_teacher_config.StudentTeacherConfiguration:
+    """Establish availability of GPU."""
+    if config.use_gpu:
+        print("Attempting to find GPU...")
+        if torch.cuda.is_available():
+            print("GPU found, using the GPU...")
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+            config.add_property(constants.Constants.USING_GPU, True)
+            experiment_device = torch.device("cuda:{}".format(args.gpu_id))
+        else:
+            print("GPU not found, reverting to CPU")
+            config.add_property(constants.Constants.USING_GPU, False)
+            experiment_device = torch.device("cpu")
+    else:
+        print("Using the CPU")
+        experiment_device = torch.device("cpu")
+    config.add_property(constants.Constants.EXPERIMENT_DEVICE, experiment_device)
+    return config
+
+
 def run(config: student_teacher_config.StudentTeacherConfiguration):
     runner = core_runner.CoreRunner(config=config)
     runner.run()
@@ -91,5 +115,6 @@ if __name__ == "__main__":
     args = get_args()
     config = get_config_object(args)
     config = set_experiment_metadata(config=config)
+    config = set_device(config=config)
     set_random_seeds(seed=config.seed)
     run(config)
