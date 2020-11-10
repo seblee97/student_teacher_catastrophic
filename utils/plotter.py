@@ -16,19 +16,25 @@ import constants
 class Plotter:
     """Class for plotting generalisation error and overlaps."""
 
-    IDENTIFIERS = {
+    ERROR_IDENTIFIERS = {
         constants.Constants.GENERALISATION_ERROR: constants.Constants.GENERALISATION_ERROR_LABEL,
         constants.Constants.LOG_GENERALISATION_ERROR: constants.Constants.LOG_GENERALISATION_ERROR_LABEL,
+    }
+
+    OVERLAP_IDENTIFIERS = {
         constants.Constants.STUDENT_HEAD: constants.Constants.STUDENT_HEAD_LABEL,
         constants.Constants.STUDENT_SELF: constants.Constants.STUDENT_SELF_LABEL,
         constants.Constants.STUDENT_TEACHER_0: constants.Constants.STUDENT_TEACHER_0_LABEL,
         constants.Constants.STUDENT_TEACHER_1: constants.Constants.STUDENT_TEACHER_1_LABEL,
     }
 
+    IDENTIFIERS = {**ERROR_IDENTIFIERS, **OVERLAP_IDENTIFIERS}
+
     def __init__(
         self,
         save_folder: str,
         num_steps: int,
+        log_overlaps: bool,
         ode_logger_path: Optional[str] = None,
         network_logger_path: Optional[str] = None,
     ):
@@ -36,6 +42,7 @@ class Plotter:
         self._num_steps = num_steps
         self._ode_logger_path = ode_logger_path
         self._network_logger_path = network_logger_path
+        self._log_overlaps = log_overlaps
 
         if self._ode_logger_path is not None:
             self._ode_logger = pd.read_csv(ode_logger_path)
@@ -81,7 +88,11 @@ class Plotter:
 
         key_groups = {}
 
-        for identifier in self.IDENTIFIERS.keys():
+        identifiers = list(self.ERROR_IDENTIFIERS.keys())
+        if self._log_overlaps:
+            identifiers.extend(list(self.OVERLAP_IDENTIFIERS.keys()))
+
+        for identifier in identifiers:
             tags = [col for col in df.columns if col.startswith(identifier)]
             key_groups[identifier] = tags
 
