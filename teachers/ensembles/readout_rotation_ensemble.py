@@ -100,8 +100,3 @@ class ReadoutRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             teachers[1].head.weight.data = teacher_1_rotated_weight_tensor
 
         return teachers
-
-    def forward(
-        self, teacher_index: int, batch: Dict[str, torch.Tensor]
-    ) -> torch.Tensor:
-        raise NotImplementedError
