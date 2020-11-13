@@ -1,14 +1,16 @@
+import os
+from itertools import cycle
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
 
-import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import os
+from matplotlib import colors as mcolors
 
 import constants
 
@@ -163,11 +165,18 @@ class Plotter:
 
         fig_sub = self.fig.add_subplot(self.spec[row, col])
 
+        # base range of colors
         colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-        color_dict = {key: color for key, color in zip(keys, colors)}
+        # additional set of colors
+        colors.extend(list(mcolors.CSS4_COLORS.values()))
+        # create cyclical iterator to ensure sufficient colors
+        color_cycle = cycle(colors)
+
+        color_dict = {}
+        for key in keys:
+            color_dict[key] = next(color_cycle)
 
         for df_tag, df in dfs.items():
-            scaling = self._num_steps / len(df)
             if df_tag == constants.Constants.ODE:
                 linestyle = constants.Constants.SOLID
             elif df_tag == constants.Constants.SIM:
@@ -176,7 +185,8 @@ class Plotter:
                 data_indexing = "".join(
                     [s for s in key.split(group_name)[1].split("_") if s.isdigit()]
                 )
-                data = df[key]
+                data = df[key].dropna()
+                scaling = self._num_steps / len(data)
                 fig_sub.plot(
                     scaling * np.arange(len(data)),
                     data,
