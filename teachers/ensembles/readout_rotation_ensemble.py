@@ -85,7 +85,7 @@ class ReadoutRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             rotated_weight_vectors = custom_functions.generate_rotated_vectors(
                 dimension=self._hidden_dimensions[0],
                 theta=self._rotation_magnitude,
-                normalisation=np.sqrt(self._hidden_dimensions[0]),
+                normalisation=1,
             )
 
             teacher_0_rotated_weight_tensor = torch.Tensor(
