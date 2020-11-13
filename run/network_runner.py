@@ -44,8 +44,8 @@ class NetworkRunner:
         """
         # initialise student, teachers, logger_module,
         # data_module, loss_module, torch optimiser, and curriculum object
-        self._student = self._setup_student(config=config)
         self._teachers = self._setup_teachers(config=config)
+        self._student = self._setup_student(config=config)
         self._logger = self._setup_logger(config=config)
         self._data_module = self._setup_data(config=config)
         self._loss_function = self._setup_loss(config=config)
@@ -56,6 +56,7 @@ class NetworkRunner:
         self._input_dimension = config.input_dimension
         self._checkpoint_frequency = config.checkpoint_frequency
         self._total_training_steps = config.total_training_steps
+        self._log_frequency = config.log_frequency
         self._test_frequency = config.test_frequency
         self._total_step_count = 0
         self._log_overlaps = config.log_overlaps
@@ -299,11 +300,11 @@ class NetworkRunner:
                     step=self._total_step_count,
                     generalisation_errors=generalisation_errors,
                 )
-                if self._log_overlaps:
-                    self._logger.log_network_configuration(
-                        step=self._total_step_count,
-                        network_configuration=self.get_network_configuration(),
-                    )
+            if self._log_overlaps and self._total_step_count % self._log_frequency == 0:
+                self._logger.log_network_configuration(
+                    step=self._total_step_count,
+                    network_configuration=self.get_network_configuration(),
+                )
 
             if self._total_step_count % 500 == 0:
                 print(
