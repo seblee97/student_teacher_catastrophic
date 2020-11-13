@@ -87,12 +87,13 @@ class ODERunner:
             if ode.time > ode.next_switch_step:
                 ode.switch_teacher()
             ode.step()
-            self._logger.log_network_configuration(
-                step=steps, network_configuration=ode.configuration
-            )
             self._logger.log_generalisation_errors(
                 step=steps, generalisation_errors=[ode.error_1, ode.error_2]
             )
+            if self._config.log_overlaps and steps % self._config.log_frequency == 0:
+                self._logger.log_network_configuration(
+                    step=steps, network_configuration=ode.configuration
+                )
             steps += 1
 
         self._logger.checkpoint_df()
