@@ -30,6 +30,7 @@ class Constants:
     DATA = "data"
     VERBOSE = "verbose"
     VERBOSE_TB = "verbose_tb"
+    LOG_FREQUENCY = "log_frequency"
     CHECKPOINT_FREQUENCY = "checkpoint_frequency"
     LOG_TO_DF = "log_to_df"
     MERGE_AT_CHECKPOINT = "merge_at_checkpoint"
