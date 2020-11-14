@@ -4,6 +4,7 @@ from typing import List
 from typing import Optional
 
 import torch
+import torch.nn as nn
 
 from utils import base_network
 
@@ -21,18 +22,21 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         soft_committee: bool,
         train_hidden_layers: bool,
         train_head_layer: bool,
-        frozen_feature: bool,
+        freeze_features: List[int],
         scale_hidden_lr: bool,
         scale_head_lr: bool,
         num_teachers: int,
         learning_rate: float,
         symmetric_initialisation: bool = False,
         initialisation_std: Optional[float] = None,
+        teacher_features_copy: Optional[torch.Tensor] = None,
     ) -> None:
         self._soft_committee = soft_committee
         self._train_hidden_layers = train_hidden_layers
         self._train_head_layer = train_head_layer
-        self._frozen_feature = frozen_feature
+        self._freeze_feature_schedule = iter(freeze_features)
+        self._next_freeze_feature_toggle = next(self._freeze_feature_schedule)
+        self._frozen = False
         self._initialise_outputs = initialise_outputs
 
         if scale_hidden_lr:
@@ -64,6 +68,9 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
             initialisation_std=initialisation_std,
         )
 
+        if teacher_features_copy is not None:
+            self._manually_initialise_student(teacher_features_copy)
+
     @property
     def heads(self):
         return self._heads
@@ -83,12 +90,15 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         """Logic for specific students on teacher change."""
         pass
 
-    def signal_task_boundary(self, new_task: int) -> None:
+    def signal_task_boundary(self, step: int, new_task: int) -> None:
         """Alert student to teacher change."""
         self._num_switches += 1
         self._signal_task_boundary(new_task=new_task)
-        if self._frozen_feature and self._num_switches == 1:
-            self._freeze_hidden_layers()
+        if step == self._next_freeze_feature_toggle:
+            if self._frozen:
+                self._freeze_hidden_layers()
+            else:
+                self._unfreeze_hidden_layers()
 
     def get_trainable_parameters(self):  # TODO: return type
         """To instantiate optimiser, returns relevant (trainable) parameters
@@ -118,6 +128,15 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         for layer in self._layers:
             for param in layer.parameters():
                 param.requires_grad = False
+        self._frozen = True
+
+    def _unfreeze_hidden_layers(self) -> None:
+        """Unfreeze weights in all but head weights
+        (used for e.g. frozen feature model)."""
+        for layer in self._layers:
+            for param in layer.parameters():
+                param.requires_grad = True
+        self._frozen = False
 
     def forward_all(self, x: torch.Tensor) -> List[torch.Tensor]:
         """Makes call to student forward, using all heads (used for evaluation)"""
@@ -132,6 +151,16 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         """Apply sigmoid threshold."""
         return torch.sigmoid(y)
 
+    def _manually_initialise_student(self, weights: nn.ModuleList):
+        student_dim = len(self._layers[0].weight)
+        weights_dim = len(weights[0].weight)
+
+        overparameterisation_factor = student_dim / weights_dim
+
+        for i in range(int(overparameterisation_factor)):
+            self._layers[0].weight.data[
+                i * weights_dim : (i + 1) * weights_dim
+            ] = weights[0].weight.data
         # @abc.abstractmethod
 
     # def _construct_output_layers(self):
