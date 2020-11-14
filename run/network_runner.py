@@ -1,3 +1,5 @@
+import copy
+import time
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -21,9 +23,8 @@ from teachers.ensembles import base_teacher_ensemble
 from teachers.ensembles import feature_rotation_ensemble
 from teachers.ensembles import readout_rotation_ensemble
 from utils import decorators
-from utils import network_configuration
 from utils import logger
-import time
+from utils import network_configuration
 
 
 class NetworkRunner:
@@ -101,40 +102,6 @@ class NetworkRunner:
         )
 
     @decorators.timer
-    def _setup_student(
-        self, config: student_teacher_config.StudentTeacherConfiguration
-    ) -> base_student.BaseStudent:
-        """Initialise object containing student network."""
-        if config.learner_configuration == Constants.CONTINUAL:
-            student_class = continual_student.ContinualStudent
-        elif config.learner_configuration == Constants.META:
-            student_class = meta_student.MetaStudent
-        else:
-            raise ValueError(
-                f"Learner type '{config.learning_configuration}' not recognised"
-            )
-
-        return student_class(
-            input_dimension=config.input_dimension,
-            hidden_dimensions=config.student_hidden_layers,
-            output_dimension=config.output_dimension,
-            bias=config.student_bias_parameters,
-            soft_committee=config.soft_committee,
-            num_teachers=config.num_teachers,
-            loss_type=config.loss_type,
-            learning_rate=config.learning_rate,
-            scale_head_lr=config.scale_head_lr,
-            scale_hidden_lr=config.scale_hidden_lr,
-            nonlinearity=config.student_nonlinearity,
-            frozen_feature=config.frozen_feature,
-            train_hidden_layers=config.train_hidden_layers,
-            train_head_layer=config.train_head_layer,
-            initialise_outputs=config.initialise_student_outputs,
-            symmetric_initialisation=config.symmetric_student_initialisation,
-            initialisation_std=config.student_initialisation_std,
-        )
-
-    @decorators.timer
     def _setup_teachers(
         self, config: student_teacher_config.StudentTeacherConfiguration
     ) -> base_teacher_ensemble.BaseTeacherEnsemble:
@@ -167,6 +134,49 @@ class NetworkRunner:
                 f"Teacher configuration '{config.teacher_configuration}' not recognised."
             )
         return teachers_class(**base_arguments, **additional_arguments)
+
+    @decorators.timer
+    def _setup_student(
+        self, config: student_teacher_config.StudentTeacherConfiguration
+    ) -> base_student.BaseStudent:
+        """Initialise object containing student network."""
+        if config.learner_configuration == Constants.CONTINUAL:
+            student_class = continual_student.ContinualStudent
+        elif config.learner_configuration == Constants.META:
+            student_class = meta_student.MetaStudent
+        else:
+            raise ValueError(
+                f"Learner type '{config.learning_configuration}' not recognised"
+            )
+
+        teacher_features_copy = (
+            None
+            if config.teacher_features_copy is None
+            else copy.deepcopy(
+                self._teachers.teachers[config.teacher_features_copy].layers
+            )
+        )
+
+        return student_class(
+            input_dimension=config.input_dimension,
+            hidden_dimensions=config.student_hidden_layers,
+            output_dimension=config.output_dimension,
+            bias=config.student_bias_parameters,
+            soft_committee=config.soft_committee,
+            num_teachers=config.num_teachers,
+            loss_type=config.loss_type,
+            learning_rate=config.learning_rate,
+            scale_head_lr=config.scale_head_lr,
+            scale_hidden_lr=config.scale_hidden_lr,
+            nonlinearity=config.student_nonlinearity,
+            freeze_features=config.freeze_features,
+            train_hidden_layers=config.train_hidden_layers,
+            train_head_layer=config.train_head_layer,
+            initialise_outputs=config.initialise_student_outputs,
+            symmetric_initialisation=config.symmetric_student_initialisation,
+            initialisation_std=config.student_initialisation_std,
+            teacher_features_copy=teacher_features_copy,
+        )
 
     @decorators.timer
     def _setup_logger(self, config: student_teacher_config.StudentTeacherConfiguration):
@@ -281,7 +291,9 @@ class NetworkRunner:
 
     def _train_on_teacher(self, teacher_index: int):
         """One phase of training (wrt one teacher)."""
-        self._student.signal_task_boundary(teacher_index)
+        self._student.signal_task_boundary(
+            step=self._total_step_count, new_task=teacher_index
+        )
         task_step_count = 0
         latest_task_generalisation_error = np.inf
         timer = time.time()
