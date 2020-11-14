@@ -110,7 +110,11 @@ class ConfigTemplate:
                 name=constants.Constants.TRAIN_HEAD_LAYER,
                 types=[bool],
             ),
-            config_field.Field(name=constants.Constants.FROZEN_FEATURE, types=[bool]),
+            config_field.Field(
+                name=constants.Constants.FREEZE_FEATURES,
+                types=[list],
+                requirements=[lambda x: all(isinstance(y, int) for y in x)],
+            ),
         ],
         level=[constants.Constants.TRAINING],
     )
@@ -223,6 +227,11 @@ class ConfigTemplate:
 
     _student_template = config_template.Template(
         fields=[
+            config_field.Field(
+                name=constants.Constants.TEACHER_FEATURES_COPY,
+                types=[type(None), int],
+                requirements=[lambda x: x is None or x >= 0],
+            ),
             config_field.Field(
                 name=constants.Constants.STUDENT_HIDDEN_LAYERS,
                 types=[list],
