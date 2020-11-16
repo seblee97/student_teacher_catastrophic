@@ -310,9 +310,7 @@ class NetworkRunner:
 
     def _train_on_teacher(self, teacher_index: int):
         """One phase of training (wrt one teacher)."""
-        self._student.signal_task_boundary(
-            step=self._total_step_count, new_task=teacher_index
-        )
+        self._student.signal_task_boundary(new_task=teacher_index)
         task_step_count = 0
         latest_task_generalisation_error = np.inf
         timer = time.time()
@@ -377,6 +375,8 @@ class NetworkRunner:
         self._optimiser.step()
 
         self._total_step_count += 1
+
+        self._student.signal_step(step=self._total_step_count)
 
     def _compute_generalisation_errors(self) -> List[float]:
         """Compute test errors for student with respect to all teachers."""
