@@ -13,6 +13,7 @@ from constants import Constants
 from curricula import base_curriculum
 from curricula import periodic_curriculum
 from curricula import threshold_curriculum
+from curricula import hard_steps_curriculum
 from data_modules import base_data_module
 from data_modules import iid_data
 from run import student_teacher_config
@@ -231,6 +232,8 @@ class NetworkRunner:
             curriculum = periodic_curriculum.PeriodicCurriculum(config=config)
         elif config.stopping_condition == Constants.LOSS_THRESHOLDS:
             curriculum = threshold_curriculum.ThresholdCurriculum(config=config)
+        elif config.stopping_condition == Constants.SWITCH_STEPS:
+            curriculum = hard_steps_curriculum.HardStepsCurriculum(config=config)
         else:
             raise ValueError(
                 f"Stopping condition {config.stopping_condition} not recognised."
