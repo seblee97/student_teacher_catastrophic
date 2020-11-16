@@ -138,6 +138,7 @@ class Constants:
     EXPERIMENT_DEVICE = "experiment_device"
     USING_GPU = "using_gpu"
     GPU_ID = "gpu_id"
+    SWITCH_STEPS = "switch_steps"
 
     CHECKPOINT_PATH = "checkpoint_path"
     EXPERIMENT_TIMESTAMP = "experiment_timestamp"
