@@ -90,15 +90,17 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         """Logic for specific students on teacher change."""
         pass
 
-    def signal_task_boundary(self, step: int, new_task: int) -> None:
+    def signal_task_boundary(self, new_task: int) -> None:
         """Alert student to teacher change."""
         self._num_switches += 1
         self._signal_task_boundary(new_task=new_task)
+
+    def signal_step(self, step: int) -> None:
         if step == self._next_freeze_feature_toggle:
             if self._frozen:
-                self._freeze_hidden_layers()
-            else:
                 self._unfreeze_hidden_layers()
+            else:
+                self._freeze_hidden_layers()
 
     def get_trainable_parameters(self):  # TODO: return type
         """To instantiate optimiser, returns relevant (trainable) parameters
