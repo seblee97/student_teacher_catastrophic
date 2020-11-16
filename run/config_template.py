@@ -200,6 +200,7 @@ class ConfigTemplate:
                 name=constants.Constants.LOG_OVERLAPS,
                 types=[bool],
             ),
+            config_field.Field(name=constants.Constants.SPLIT_LOGGING, types=[bool]),
         ],
         level=[constants.Constants.LOGGING],
     )
@@ -377,13 +378,22 @@ class ConfigTemplate:
                 types=[str],
                 requirements=[
                     lambda x: x
-                    in [constants.Constants.FIXED_PERIOD, constants.Constants.THRESHOLD]
+                    in [
+                        constants.Constants.FIXED_PERIOD,
+                        constants.Constants.THRESHOLD,
+                        constants.Constants.SWITCH_STEPS,
+                    ]
                 ],
             ),
             config_field.Field(
                 name=constants.Constants.FIXED_PERIOD,
                 types=[int],
                 requirements=[lambda x: x > 0],
+            ),
+            config_field.Field(
+                name=constants.Constants.SWITCH_STEPS,
+                types=[list],
+                requirements=[lambda x: all(isinstance(y, int) and y > 0 for y in x)],
             ),
             config_field.Field(
                 name=constants.Constants.LOSS_THRESHOLDS,
