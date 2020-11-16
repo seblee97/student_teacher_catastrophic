@@ -1,10 +1,11 @@
 import os
 
 import constants
+from plotters import split_plotter
+from plotters import unified_plotter
 from run import network_runner
 from run import ode_runner
 from run import student_teacher_config
-from utils import plotter
 
 
 class CoreRunner:
@@ -49,25 +50,18 @@ class CoreRunner:
 
     def post_process(self):
         """Method to make plots from data collected by loggers."""
-        if self._config.ode_simulation:
-            ode_log_path = os.path.join(
-                self._config.checkpoint_path, constants.Constants.ODE_CSV
-            )
+        if self._config.split_logging:
+            plotter_class = split_plotter.SplitPlotter
         else:
-            ode_log_path = None
-        if self._config.network_simulation:
-            network_log_path = os.path.join(
-                self._config.checkpoint_path, constants.Constants.NETWORK_CSV
-            )
-        else:
-            network_log_path = None
+            plotter_class = unified_plotter.UnifiedPlotter
 
-        plotter.Plotter(
-            ode_logger_path=ode_log_path,
-            network_logger_path=network_log_path,
+        plotter = plotter_class(
             save_folder=self._config.checkpoint_path,
             num_steps=self._config.total_training_steps,
             log_overlaps=self._config.log_overlaps,
-        ).make_plots()
+            log_ode=self._config.ode_simulation,
+            log_network=self._config.network_simulation,
+        )
+        plotter.make_plots()
         # if self._config.network_simulation and self._config.ode_simulation:
         #     self._overlay_plot()
