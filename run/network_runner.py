@@ -11,11 +11,14 @@ import torch.nn as nn
 
 from constants import Constants
 from curricula import base_curriculum
+from curricula import hard_steps_curriculum
 from curricula import periodic_curriculum
 from curricula import threshold_curriculum
-from curricula import hard_steps_curriculum
 from data_modules import base_data_module
 from data_modules import iid_data
+from loggers import base_logger
+from loggers import split_logger
+from loggers import unified_logger
 from run import student_teacher_config
 from students import base_student
 from students import continual_student
@@ -24,7 +27,6 @@ from teachers.ensembles import base_teacher_ensemble
 from teachers.ensembles import feature_rotation_ensemble
 from teachers.ensembles import readout_rotation_ensemble
 from utils import decorators
-from utils import logger
 from utils import network_configuration
 
 
@@ -44,6 +46,16 @@ class NetworkRunner:
         Args:
             config: configuration object containing parameters to specify run.
         """
+        # extract class-relevant attributes from config
+        self._device = config.experiment_device
+        self._input_dimension = config.input_dimension
+        self._checkpoint_frequency = config.checkpoint_frequency
+        self._total_training_steps = config.total_training_steps
+        self._log_frequency = config.log_frequency
+        self._test_frequency = config.test_frequency
+        self._total_step_count = 0
+        self._log_overlaps = config.log_overlaps
+
         # initialise student, teachers, logger_module,
         # data_module, loss_module, torch optimiser, and curriculum object
         self._teachers = self._setup_teachers(config=config)
@@ -53,15 +65,6 @@ class NetworkRunner:
         self._loss_function = self._setup_loss(config=config)
         self._optimiser = self._setup_optimiser(config=config)
         self._curriculum = self._setup_curriculum(config=config)
-
-        self._device = config.experiment_device
-        self._input_dimension = config.input_dimension
-        self._checkpoint_frequency = config.checkpoint_frequency
-        self._total_training_steps = config.total_training_steps
-        self._log_frequency = config.log_frequency
-        self._test_frequency = config.test_frequency
-        self._total_step_count = 0
-        self._log_overlaps = config.log_overlaps
 
         self._manage_network_devices()
 
@@ -180,8 +183,21 @@ class NetworkRunner:
         )
 
     @decorators.timer
-    def _setup_logger(self, config: student_teacher_config.StudentTeacherConfiguration):
-        return logger.Logger(config=config, csv_file_name=Constants.NETWORK_CSV)
+    def _setup_logger(
+        self, config: student_teacher_config.StudentTeacherConfiguration
+    ) -> base_logger.BaseLogger:
+        if config.split_logging:
+            logger = split_logger.SplitLogger(
+                config=config,
+                run_type=Constants.SIM,
+                network_config=self.get_network_configuration(),
+            )
+        else:
+            logger = unified_logger.UnifiedLogger(
+                config=config,
+                run_type=Constants.SIM,
+            )
+        return logger
 
     @decorators.timer
     def _setup_data(
@@ -318,7 +334,7 @@ class NetworkRunner:
             if self._log_overlaps and self._total_step_count % self._log_frequency == 0:
                 self._logger.log_network_configuration(
                     step=self._total_step_count,
-                    network_configuration=self.get_network_configuration(),
+                    network_config=self.get_network_configuration(),
                 )
 
             if self._total_step_count % 500 == 0:
