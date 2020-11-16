@@ -26,7 +26,7 @@ training:
   scale_hidden_lr:                  True                      # whether to add 1/\sqrt{N} factor in forward of hidden layer(s)
   train_hidden_layers:              True
   train_head_layer:                 True
-  frozen_feature:                   False                      # hidden layers frozen after first switch
+  freeze_features:                  [0]                      # hidden layers frozen / unfrozen at these steps.
 
 data:
   input_source:                     iid_gaussian              # iid_gaussian, mnist_stream, mnist_digits, even_greater (see README)
@@ -45,7 +45,8 @@ logging:
   merge_at_checkpoint:              True
   save_weights_at_switch:           True
   save_initial_weights:             True
-  log_overlaps:                     False
+  log_overlaps:                     True
+  split_logging:                    True
   
 testing:
   test_batch_size:                  50000                     # generalisation error
@@ -57,7 +58,8 @@ model:
   output_dimension:                 1
 
   student:
-    student_hidden_layers:            [2]                       
+    teacher_features_copy:            0                         # emtpy/None = indpendent of teachers, integer = index of teacher to copy
+    student_hidden_layers:            [20]                       
     student_nonlinearity:             scaled_erf                      
     student_initialisation_std:       0.001                     # std of normal initialisation for student network
     initialise_student_outputs:       True                      # whether or not to initialise hidden -> output weights of student
@@ -77,10 +79,11 @@ model:
       rotation_magnitude:             1.5708
     readout_rotation:
       rotation_magnitude:             3.14159
-      feature_copy_percentage:        20
+      feature_copy_percentage:        100
     
 
 curriculum:
-  stopping_condition:               fixed_period              # condition on which to switch task (fixed_period or threshold)
+  stopping_condition:               switch_steps              # condition on which to switch task (fixed_period, switch_steps, or threshold)
+  switch_steps:                     [10000, 500000]
   fixed_period:                     2500                      # period for changing tasks 
   loss_thresholds:                  [0.0001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001, 0.000000001, 0.0000000001]                    # loss threshold under which teacher is changed
