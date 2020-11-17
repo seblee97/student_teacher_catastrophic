@@ -3,6 +3,7 @@ import math
 from typing import List
 from typing import Optional
 
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -101,6 +102,10 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
                 self._unfreeze_hidden_layers()
             else:
                 self._freeze_hidden_layers()
+            try:
+                self._next_freeze_feature_toggle = next(self._freeze_feature_schedule)
+            except StopIteration:
+                self._next_freeze_feature_toggle = np.inf
 
     def get_trainable_parameters(self):  # TODO: return type
         """To instantiate optimiser, returns relevant (trainable) parameters
