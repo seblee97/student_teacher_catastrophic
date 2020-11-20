@@ -2,6 +2,7 @@ import abc
 import math
 from typing import List
 from typing import Optional
+from typing import Union
 
 import numpy as np
 import torch
