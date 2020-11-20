@@ -36,7 +36,7 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         self._train_hidden_layers = train_hidden_layers
         self._train_head_layer = train_head_layer
         self._freeze_feature_schedule = iter(freeze_features)
-        self._next_freeze_feature_toggle = next(self._freeze_feature_schedule)
+        self._next_freeze_feature_toggle = self._get_next_freeze_feature_toggle()
         self._frozen = False
         self._initialise_outputs = initialise_outputs
 
@@ -96,16 +96,21 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         self._num_switches += 1
         self._signal_task_boundary(new_task=new_task)
 
+    def _get_next_freeze_feature_toggle(self) -> Union[int, float]:
+        """Get next step index at which to freeze/unfreeze feature weights."""
+        try:
+            next_freeze_feature_toggle = next(self._freeze_feature_schedule)
+        except StopIteration:
+            next_freeze_feature_toggle = np.inf
+        return next_freeze_feature_toggle
+
     def signal_step(self, step: int) -> None:
         if step == self._next_freeze_feature_toggle:
             if self._frozen:
                 self._unfreeze_hidden_layers()
             else:
                 self._freeze_hidden_layers()
-            try:
-                self._next_freeze_feature_toggle = next(self._freeze_feature_schedule)
-            except StopIteration:
-                self._next_freeze_feature_toggle = np.inf
+            self._next_freeze_feature_toggle = self._get_next_freeze_feature_toggle()
 
     def get_trainable_parameters(self):  # TODO: return type
         """To instantiate optimiser, returns relevant (trainable) parameters
