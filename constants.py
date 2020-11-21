@@ -144,6 +144,12 @@ class Constants:
     CHECKPOINT_PATH = "checkpoint_path"
     EXPERIMENT_TIMESTAMP = "experiment_timestamp"
     RESULTS = "results"
+    PARALLEL = "parallel"
+    SERIAL = "serial"
+    FORGETTING_PLOT = "forgetting_plot.pdf"
+    TRANSFER_PLOT = "transfer_plot.pdf"
+    PLASMA = "plasma"
+    VIRIDIS = "viridis"
 
     WEIGHT = "weight"
     OVERLAP = "overlap"
