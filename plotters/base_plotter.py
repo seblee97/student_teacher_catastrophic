@@ -169,6 +169,7 @@ class BasePlotter(abc.ABC):
         color_cycle = cycle(self.COLORS)
 
         color_dict = {}
+
         for key in list(data_collection.values())[0].keys():
             color_dict[key] = next(color_cycle)
 
