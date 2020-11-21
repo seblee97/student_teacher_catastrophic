@@ -4,12 +4,17 @@ from typing import Dict
 import numpy as np
 
 import constants
+from curricula import base_curriculum
+from curricula import hard_steps_curriculum
+from curricula import periodic_curriculum
+from curricula import threshold_curriculum
+from loggers import base_logger
+from loggers import split_logger
+from loggers import unified_logger
 from ode import configuration
 from ode import dynamics
 from run import student_teacher_config
-
 from utils import network_configuration
-from utils import logger
 
 
 class ODERunner:
@@ -23,10 +28,43 @@ class ODERunner:
         self._config = config
         self._network_configuration = network_configuration
 
+        self._curriculum = self._setup_curriculum()
+
         if self._config.implementation == constants.Constants.PYTHON:
-            self._logger = logger.Logger(
-                config=self._config, csv_file_name=constants.Constants.ODE_CSV
+            self._logger = self._setup_logger()
+
+    def _setup_logger(self) -> base_logger.BaseLogger:
+        if self._config.split_logging:
+            logger = split_logger.SplitLogger(
+                config=self._config,
+                run_type=constants.Constants.ODE,
+                network_config=self._network_configuration,
             )
+        else:
+            logger = unified_logger.UnifiedLogger(
+                config=self._config,
+                run_type=constants.Constants.ODE,
+            )
+        return logger
+
+    def _setup_curriculum(self) -> base_curriculum.BaseCurriculum:
+        """Initialise curriculum object (when to switch teacher,
+        how to decide subsequent teacher etc.)
+
+        Raises:
+            ValueError: if stopping condition is not recognised.
+        """
+        if self._config.stopping_condition == constants.Constants.FIXED_PERIOD:
+            curriculum = periodic_curriculum.PeriodicCurriculum(config=self._config)
+        elif self._config.stopping_condition == constants.Constants.LOSS_THRESHOLDS:
+            curriculum = threshold_curriculum.ThresholdCurriculum(config=self._config)
+        elif self._config.stopping_condition == constants.Constants.SWITCH_STEPS:
+            curriculum = hard_steps_curriculum.HardStepsCurriculum(config=self._config)
+        else:
+            raise ValueError(
+                f"Stopping condition {self._config.stopping_condition} not recognised."
+            )
+        return curriculum
 
     def run(self):
         if self._config.implementation == constants.Constants.CPP:
@@ -58,12 +96,12 @@ class ODERunner:
             th2=self._network_configuration.teacher_head_weights[1],
         )
 
-        curriculum = (
-            np.arange(0, self._config.total_training_steps, self._config.fixed_period)[
-                1:
-            ]
-            / self._config.input_dimension
-        )
+        # curriculum = (
+        #     np.arange(0, self._config.total_training_steps, self._config.fixed_period)[
+        #         1:
+        #     ]
+        #     / self._config.input_dimension
+        # )
 
         time = self._config.total_training_steps / self._config.input_dimension
 
@@ -73,28 +111,34 @@ class ODERunner:
             w_learning_rate=self._config.learning_rate,
             h_learning_rate=self._config.learning_rate,
             dt=timestep,
-            curriculum=curriculum,
             soft_committee=self._config.soft_committee,
             train_first_layer=self._config.train_hidden_layers,
             train_head_layer=self._config.train_head_layer,
-            frozen_feature=self._config.frozen_feature,
+            frozen_feature=False,
         )
 
         steps = 0
+        task_steps = 0
         while ode.time < time:
             if steps % self._config.checkpoint_frequency == 0 and steps != 0:
                 self._logger.checkpoint_df()
-            if ode.time > ode.next_switch_step:
+
+            if self._curriculum.to_switch(
+                task_step=task_steps, error=ode.current_teacher_error
+            ):
                 ode.switch_teacher()
+                task_steps = 0
+
             ode.step()
             self._logger.log_generalisation_errors(
                 step=steps, generalisation_errors=[ode.error_1, ode.error_2]
             )
             if self._config.log_overlaps and steps % self._config.log_frequency == 0:
                 self._logger.log_network_configuration(
-                    step=steps, network_configuration=ode.configuration
+                    step=steps, network_config=ode.configuration
                 )
-            steps += 1
+            steps += timestep * self._config.input_dimension
+            task_steps += timestep * self._config.input_dimension
 
         self._logger.checkpoint_df()
 
