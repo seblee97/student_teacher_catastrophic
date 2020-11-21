@@ -88,12 +88,12 @@ class UnifiedPlotter(base_plotter.BasePlotter):
         """Make plots for a set of results (e.g. ode or network or both).
 
         Args:
-            dfs: mapping from type of results (ode, network etc.)
+            data: mapping from type of results (ode, network etc.)
             to dataframes with results.
             save_path: path to save the plot.
         """
         # can use arbitrary dataframe since columns will be the same.
-        tag_groups = self._collate_tags(tags=list(dfs.values())[0])
+        tag_groups = self._collate_tags(tags=list(list(data.values())[0].keys()))
 
         # e.g. [error, overlap, ...]
         group_names = list(tag_groups.keys())
@@ -119,13 +119,21 @@ class UnifiedPlotter(base_plotter.BasePlotter):
                     group_name = group_names[graph_index]
                     keys = group_key_names[graph_index]
 
+                    data_collection = {
+                        data_type: {
+                            key: data[data_type][key].dropna().to_numpy()
+                            for key in keys
+                        }
+                        for data_type in data.keys()
+                    }
+
                     fig = self._plot_scalar(
                         fig=fig,
                         spec=spec,
                         row=row,
                         col=col,
                         tag_group_name=group_name,
-                        data_collection=0,
+                        data_collection=data_collection,
                     )
 
-        self.fig.savefig(save_path, dpi=100)
+        fig.savefig(save_path, dpi=100)
