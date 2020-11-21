@@ -20,7 +20,6 @@ class StudentTeacherODE:
         w_learning_rate: float,
         h_learning_rate: float,
         dt: Union[float, int],
-        curriculum: List[int],
         soft_committee: bool,
         train_first_layer: bool,
         train_head_layer: bool,
@@ -40,14 +39,14 @@ class StudentTeacherODE:
         self._frozen = False
         self._num_switches = 0
 
-        if curriculum is not None:
-            self._curriculum = iter(curriculum)
-            try:
-                self._next_switch_step = next(self._curriculum)
-            except StopIteration:
-                self._next_switch_step = np.inf
-        else:
-            self._curriculum = None
+        # if curriculum is not None:
+        #     self._curriculum = iter(curriculum)
+        #     try:
+        #         self._next_switch_step = next(self._curriculum)
+        #     except StopIteration:
+        #         self._next_switch_step = np.inf
+        # else:
+        #     self._curriculum = None
 
         self._active_teacher = 0
 
@@ -92,6 +91,19 @@ class StudentTeacherODE:
     @property
     def error_2_log(self):
         return self._error_2_log
+
+    @property
+    def current_teacher_error(self) -> float:
+        if self._active_teacher == 0:
+            if self._error_1_log:
+                return self._error_1_log[-1]
+            else:
+                return np.nan
+        elif self._active_teacher == 1:
+            if self._error_2_log:
+                return self._error_2_log[-1]
+            else:
+                return np.nan
 
     @property
     def dr_dt(self) -> np.ndarray:
@@ -375,113 +387,16 @@ class StudentTeacherODE:
 
     def switch_teacher(self):
         self._active_teacher = int(not self._active_teacher)
-        try:
-            self._next_switch_step = next(self._curriculum)
-        except StopIteration:
-            self._next_switch_step = np.inf
+        # try:
+        #     self._next_switch_step = next(self._curriculum)
+        # except StopIteration:
+        #     self._next_switch_step = np.inf
         self._task_switch_error_1_log[self._step_count] = self.error_1
         self._task_switch_error_2_log[self._step_count] = self.error_2
         self._num_switches += 1
         if self._frozen_feature and self._num_switches == 1:
             self._frozen = True
 
-    # def step(self, time: int):
-    #     while self._time < time:
-    #         # for i in range(num_steps):
-    #         if self._curriculum is not None:
-    #             if self._time > self._next_switch_step:
-    #                 self._switch_teacher()
-    #         if self._time % 1000 == 0:
-    #             print(f"Step {self._time} of ODE dynamics")
-    #         self._step()
-
     @staticmethod
     def _get_data_diff(data: Union[List, np.ndarray]) -> np.ndarray:
         return np.insert(np.array(data[1:]) - np.array(data[:-1]), 0, 0)
-
-    # def save_to_csv(self, save_path: str):
-
-    #     unwrapped_dict = {
-    #         **{f"Q_{i}": i_log for i, i_log in self._configuration.Q_log.items()},
-    #         **{
-    #             f"Q_{i}_diff": self._get_data_diff(i_log)
-    #             for i, i_log in self._configuration.Q_log.items()
-    #         },
-    #         **{f"R_{i}": i_log for i, i_log in self._configuration.R_log.items()},
-    #         **{
-    #             f"R_{i}_diff": self._get_data_diff(i_log)
-    #             for i, i_log in self._configuration.R_log.items()
-    #         },
-    #         **{f"U_{i}": i_log for i, i_log in self._configuration.U_log.items()},
-    #         **{
-    #             f"U_{i}_diff": self._get_data_diff(i_log)
-    #             for i, i_log in self._configuration.U_log.items()
-    #         },
-    #         **{
-    #             f"h1_{i}": np.array(i_log).squeeze()
-    #             for i, i_log in self._configuration.h1_log.items()
-    #         },
-    #         **{
-    #             f"h1_{i}_diff": self._get_data_diff(i_log)
-    #             for i, i_log in self._configuration.h1_log.items()
-    #         },
-    #         **{
-    #             f"h2_{i}": np.array(i_log).squeeze()
-    #             for i, i_log in self._configuration.h2_log.items()
-    #         },
-    #         **{
-    #             f"h2_{i}_diff": self._get_data_diff(i_log)
-    #             for i, i_log in self._configuration.h2_log.items()
-    #         },
-    #         **{f"error_linear_1": self._error_1_log},
-    #         **{
-    #             f"error_linear_1_diff": np.insert(
-    #                 np.array(self._error_1_log[1:]) - np.array(self._error_1_log[:-1]),
-    #                 0,
-    #                 0,
-    #             )
-    #         },
-    #         **{f"error_linear_2": self._error_2_log},
-    #         **{
-    #             f"error_linear_2_diff": np.insert(
-    #                 np.array(self._error_2_log[1:]) - np.array(self._error_2_log[:-1]),
-    #                 0,
-    #                 0,
-    #             )
-    #         },
-    #         **{f"error_log_1": np.log10(self._error_1_log)},
-    #         **{f"error_log_2": np.log10(self._error_2_log)},
-    #     }
-
-    #     df = pd.DataFrame(unwrapped_dict)
-
-    #     df["task_switch_error_1_log"] = pd.Series(self._task_switch_error_1_log)
-    #     df["task_switch_error_2_log"] = pd.Series(self._task_switch_error_2_log)
-
-    #     df.to_csv(os.path.join(save_path, "ode_logs.csv"), index=False)
-
-    # def make_plot(self, save_path: Optional[str], total_time: int):
-    #     error_dict = {
-    #         "Error (Linear)": {
-    #             "T1 Error": self._error_1_log,
-    #             "T2 Error": self._error_2_log,
-    #         },
-    #         "Error (Log)": {
-    #             "T1 Error": np.log10(self._error_1_log),
-    #             "T2 Error": np.log10(self._error_2_log),
-    #         },
-    #     }
-
-    #     overlap_dict = {
-    #         "Q": self._configuration.Q_log,
-    #         "R": self._configuration.R_log,
-    #         "U": self._configuration.U_log,
-    #         "h1": self._configuration.h1_log,
-    #         "h2": self._configuration.h2_log,
-    #     }
-
-    #     scale = total_time / len(list(self._configuration.Q_log.values())[0])
-    #     fig = Plotter({**error_dict, **overlap_dict}, scale=scale).plot()
-
-    #     if save_path:
-    #         fig.savefig(os.path.join(save_path, "ode_plot_summary.pdf"), dpi=100)
