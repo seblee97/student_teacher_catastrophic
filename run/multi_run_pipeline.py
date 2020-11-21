@@ -96,8 +96,7 @@ def parallel_run(
 ):
     procs = []
 
-    for config_change in config_changes:
-        run_name, changes = config_change.items()
+    for run_name, changes in config_changes.items():
         for seed in seeds:
             p = Process(
                 target=single_run,
