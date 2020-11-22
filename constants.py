@@ -150,6 +150,8 @@ class Constants:
     TRANSFER_PLOT = "transfer_plot.pdf"
     PLASMA = "plasma"
     VIRIDIS = "viridis"
+    FORGETTING_VS_V_PLOT = "forgetting_vs_v.pdf"
+    TRANSFER_VS_V_PLOT = "transfer_vs_v.pdf"
 
     WEIGHT = "weight"
     OVERLAP = "overlap"
