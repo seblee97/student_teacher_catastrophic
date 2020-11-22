@@ -152,6 +152,8 @@ class Constants:
     VIRIDIS = "viridis"
     FORGETTING_VS_V_PLOT = "forgetting_vs_v.pdf"
     TRANSFER_VS_V_PLOT = "transfer_vs_v.pdf"
+    FORGETTING_RATE_PLOT = "forgetting_rate.pdf"
+    TRANSFER_RATE_PLOT = "transfer_rate.pdf"
 
     WEIGHT = "weight"
     OVERLAP = "overlap"
