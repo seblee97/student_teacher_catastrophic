@@ -4,21 +4,22 @@ import itertools
 import os
 from multiprocessing import Process
 from typing import Any
+from typing import Dict
 from typing import List
-from typing import Tuple, Dict
+from typing import Tuple
 
 import matplotlib.pyplot as plt
-from matplotlib import cm
-import torch
+import numpy as np
 import pandas as pd
+import torch
+from matplotlib import cm
 
 import constants
-from run import student_teacher_config
 from run import config_template
-from run.config_changes import ConfigChange
 from run import core_runner
+from run import student_teacher_config
+from run.config_changes import ConfigChange
 from utils import experiment_utils
-
 
 MAIN_FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -191,18 +192,27 @@ def summary_plot(
     experiment_path: str,
     seeds: List[int],
 ):
+    num_steps = config.total_training_steps
+
     # plot generalisation error over time for each overlap
     dfs = get_dfs(folder=experiment_path, seeds=seeds)
 
     teacher_1_fig = plt.figure()
     teacher_1_colormap = cm.get_cmap(constants.Constants.VIRIDIS)
 
-    for i, index in enumerate(dfs.keys()):
+    indices = sorted(dfs.keys(), key=lambda x: float(x.split("_")[1]))
+
+    for i, index in enumerate(indices):
         # TODO: ignore seeds for now!
         log_generalisation_error_0 = dfs[index][0][
             f"{constants.Constants.LOG_GENERALISATION_ERROR}_0"
         ].to_numpy()
-        plt.plot(log_generalisation_error_0, color=teacher_1_colormap(i / len(dfs)))
+        scaling = num_steps / len(log_generalisation_error_0)
+        plt.plot(
+            scaling * np.arange(len(log_generalisation_error_0)),
+            log_generalisation_error_0,
+            color=teacher_1_colormap(i / len(dfs)),
+        )
 
     save_name = os.path.join(experiment_path, constants.Constants.FORGETTING_PLOT)
     teacher_1_fig.savefig(save_name, dpi=100)
@@ -210,7 +220,7 @@ def summary_plot(
     teacher_2_fig = plt.figure()
     teacher_2_colormap = cm.get_cmap(constants.Constants.PLASMA)
 
-    for i, index in enumerate(dfs.keys()):
+    for i, index in enumerate(indices):
         # TODO: ignore seeds for now!
         log_generalisation_error_1 = dfs[index][0][
             f"{constants.Constants.LOG_GENERALISATION_ERROR}_1"
