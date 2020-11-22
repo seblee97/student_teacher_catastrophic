@@ -137,8 +137,8 @@ class ODERunner:
                 self._logger.log_network_configuration(
                     step=steps, network_config=ode.configuration
                 )
-            steps += timestep * self._config.input_dimension
-            task_steps += timestep * self._config.input_dimension
+            steps += (timestep / time) * self._config.total_training_steps
+            task_steps += (timestep / time) * self._config.total_training_steps
 
         self._logger.checkpoint_df()
 
