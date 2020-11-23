@@ -24,6 +24,7 @@ from students import base_student
 from students import continual_student
 from students import meta_student
 from teachers.ensembles import base_teacher_ensemble
+from teachers.ensembles import both_rotation_ensemble
 from teachers.ensembles import feature_rotation_ensemble
 from teachers.ensembles import readout_rotation_ensemble
 from utils import decorators
@@ -119,6 +120,7 @@ class NetworkRunner:
             Constants.LOSS_TYPE: config.loss_type,
             Constants.NONLINEARITY: config.student_nonlinearity,
             Constants.SCALE_HIDDEN_LR: config.scale_hidden_lr,
+            Constants.SCALE_FORWARD_BY_HIDDEN: config.scale_forward_by_hidden,
             Constants.UNIT_NORM_TEACHER_HEAD: config.unit_norm_teacher_head,
             Constants.INITIALISATION_STD: config.teacher_initialisation_std,
         }
@@ -132,6 +134,12 @@ class NetworkRunner:
             additional_arguments = {
                 Constants.ROTATION_MAGNITUDE: config.readout_rotation_magnitude,
                 Constants.FEATURE_COPY_PERCENTAGE: config.feature_copy_percentage,
+            }
+        elif config.teacher_configuration == Constants.BOTH_ROTATION:
+            teachers_class = both_rotation_ensemble.BothRotationTeacherEnsemble
+            additional_arguments = {
+                Constants.FEATURE_ROTATION_ALPHA: config.feature_rotation_alpha,
+                Constants.READOUT_ROTATION_MAGNITUDE: config.readout_rotation_magnitude,
             }
         else:
             raise ValueError(
@@ -172,6 +180,7 @@ class NetworkRunner:
             learning_rate=config.learning_rate,
             scale_head_lr=config.scale_head_lr,
             scale_hidden_lr=config.scale_hidden_lr,
+            scale_forward_by_hidden=config.scale_forward_by_hidden,
             nonlinearity=config.student_nonlinearity,
             freeze_features=config.freeze_features,
             train_hidden_layers=config.train_hidden_layers,
