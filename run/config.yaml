@@ -81,6 +81,9 @@ model:
     readout_rotation:
       rotation_magnitude:             3.14159
       feature_copy_percentage:        100
+    both_rotation:
+      feature_rotation_alpha:         0.5
+      rotation_magnitude:             1.04719
     
 
 curriculum:
