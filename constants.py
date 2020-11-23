@@ -158,6 +158,10 @@ class Constants:
     WEIGHT = "weight"
     OVERLAP = "overlap"
 
+    BOTH_ROTATION = "both_rotation"
+    FEATURE_ROTATION_ALPHA = "feature_rotation_alpha"
+    SCALE_FORWARD_BY_HIDDEN = "scale_forward_by_hidden"
+
     EVEN_ODD_MAPPING = {0: 0, 1: 1, 2: 0, 3: 1, 4: 0, 5: 1, 6: 0, 7: 1, 8: 0, 9: 1}
 
     GREATER_FIVE_MAPPING = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1}
