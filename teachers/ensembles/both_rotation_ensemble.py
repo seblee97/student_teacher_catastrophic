@@ -87,7 +87,7 @@ class BothRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             # construct input to hidden weights of second teacher
             second_teacher_rotated_weights = (
                 self._feature_rotation_alpha * orthonormal_weights
-                + (1 - self._feature_rotation_alpha)
+                + np.sqrt(1 - self._feature_rotation_alpha ** 2)
                 * torch.randn(orthonormal_weights.shape)
             )
 
