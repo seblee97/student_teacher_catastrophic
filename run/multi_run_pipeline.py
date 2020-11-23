@@ -234,7 +234,7 @@ def cross_section_figs(
     """Plot forgetting/transfer vs. v for various time intervals post switch."""
     overlaps = [float(index.split("_")[1]) for index in indices]
 
-    for interval in np.linspace(switch_step, num_ode_steps, 10):
+    for interval in np.linspace(switch_step, num_ode_steps, 10)[:-1]:
 
         error_deltas_0 = []
         error_deltas_1 = []
