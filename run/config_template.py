@@ -47,6 +47,7 @@ class ConfigTemplate:
                     in [
                         constants.Constants.FEATURE_ROTATION,
                         constants.Constants.READOUT_ROTATION,
+                        constants.Constants.BOTH_ROTATION,
                     ]
                 ],
             ),
@@ -100,6 +101,10 @@ class ConfigTemplate:
             ),
             config_field.Field(
                 name=constants.Constants.SCALE_HIDDEN_LR,
+                types=[bool],
+            ),
+            config_field.Field(
+                name=constants.Constants.SCALE_FORWARD_BY_HIDDEN,
                 types=[bool],
             ),
             config_field.Field(
@@ -310,6 +315,28 @@ class ConfigTemplate:
         dependent_variables_required_values=[[constants.Constants.READOUT_ROTATION]],
     )
 
+    _both_rotation_template = config_template.Template(
+        fields=[
+            config_field.Field(
+                name=constants.Constants.ROTATION_MAGNITUDE,
+                key=constants.Constants.READOUT_ROTATION_MAGNITUDE,
+                types=[float, int],
+            ),
+            config_field.Field(
+                name=constants.Constants.FEATURE_ROTATION_ALPHA,
+                types=[int, float],
+                requirements=[lambda x: x >= 0 and x <= 1],
+            ),
+        ],
+        level=[
+            constants.Constants.MODEL,
+            constants.Constants.TEACHERS,
+            constants.Constants.BOTH_ROTATION,
+        ],
+        dependent_variables=[constants.Constants.TEACHER_CONFIGURATION],
+        dependent_variables_required_values=[[constants.Constants.BOTH_ROTATION]],
+    )
+
     _teachers_template = config_template.Template(
         fields=[
             config_field.Field(
@@ -350,7 +377,11 @@ class ConfigTemplate:
                 types=[bool],
             ),
         ],
-        nested_templates=[_feature_rotation_template, _readout_rotation_template],
+        nested_templates=[
+            _feature_rotation_template,
+            _readout_rotation_template,
+            _both_rotation_template,
+        ],
         level=[constants.Constants.MODEL, constants.Constants.TEACHERS],
     )
 
