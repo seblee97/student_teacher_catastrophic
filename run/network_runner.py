@@ -111,6 +111,11 @@ class NetworkRunner:
         self, config: student_teacher_config.StudentTeacherConfiguration
     ) -> base_teacher_ensemble.BaseTeacherEnsemble:
         """Initialise teacher object containing teacher networks."""
+        forward_scaling = (
+            1 / config.student_hidden_layers[0]
+            if config.scale_forward_by_hidden
+            else 1.0
+        )
         base_arguments = {
             Constants.INPUT_DIMENSION: config.input_dimension,
             Constants.HIDDEN_DIMENSIONS: config.teacher_hidden_layers,
@@ -120,7 +125,7 @@ class NetworkRunner:
             Constants.LOSS_TYPE: config.loss_type,
             Constants.NONLINEARITY: config.student_nonlinearity,
             Constants.SCALE_HIDDEN_LR: config.scale_hidden_lr,
-            Constants.SCALE_FORWARD_BY_HIDDEN: config.scale_forward_by_hidden,
+            Constants.FORWARD_SCALING: forward_scaling,
             Constants.UNIT_NORM_TEACHER_HEAD: config.unit_norm_teacher_head,
             Constants.INITIALISATION_STD: config.teacher_initialisation_std,
         }
