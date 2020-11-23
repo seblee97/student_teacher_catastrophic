@@ -27,6 +27,7 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         freeze_features: List[int],
         scale_hidden_lr: bool,
         scale_head_lr: bool,
+        scale_forward_by_hidden: bool,
         num_teachers: int,
         learning_rate: float,
         symmetric_initialisation: bool = False,
@@ -66,6 +67,7 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
             loss_type=loss_type,
             nonlinearity=nonlinearity,
             forward_scaling=forward_scaling,
+            scale_forward_by_hidden=scale_forward_by_hidden,
             symmetric_initialisation=symmetric_initialisation,
             initialisation_std=initialisation_std,
         )

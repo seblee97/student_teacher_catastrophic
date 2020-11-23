@@ -25,6 +25,7 @@ class BaseTeacher(base_network.BaseNetwork, abc.ABC):
         bias: bool,
         loss_type: str,
         forward_scaling: float,
+        scale_forward_by_hidden: bool,
         nonlinearity: str,
         unit_norm_teacher_head: bool,
         initialisation_std: Optional[float] = None,
@@ -38,6 +39,7 @@ class BaseTeacher(base_network.BaseNetwork, abc.ABC):
             bias=bias,
             loss_type=loss_type,
             forward_scaling=forward_scaling,
+            scale_forward_by_hidden=scale_forward_by_hidden,
             nonlinearity=nonlinearity,
             initialisation_std=initialisation_std,
         )

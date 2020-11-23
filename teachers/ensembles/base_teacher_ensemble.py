@@ -23,6 +23,7 @@ class BaseTeacherEnsemble(abc.ABC):
         loss_type: str,
         nonlinearity: str,
         scale_hidden_lr: bool,
+        scale_forward_by_hidden: bool,
         unit_norm_teacher_head: bool,
         num_teachers: int,
         initialisation_std: float,
@@ -33,6 +34,7 @@ class BaseTeacherEnsemble(abc.ABC):
         self._bias = bias
         self._loss_type = loss_type
         self._nonlinearity = nonlinearity
+        self._scale_forward_by_hidden = scale_forward_by_hidden
         self._unit_norm_teacher_head = unit_norm_teacher_head
         self._num_teachers = num_teachers
         self._initialisation_std = initialisation_std
@@ -90,6 +92,7 @@ class BaseTeacherEnsemble(abc.ABC):
             bias=self._bias,
             nonlinearity=self._nonlinearity,
             forward_scaling=self._forward_scaling,
+            scale_forward_by_hidden=self._scale_forward_by_hidden,
             unit_norm_teacher_head=self._unit_norm_teacher_head,
             initialisation_std=self._initialisation_std,
         )
