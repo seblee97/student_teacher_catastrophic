@@ -43,13 +43,18 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         self._initialise_outputs = initialise_outputs
 
         if scale_hidden_lr:
-            forward_scaling = 1 / math.sqrt(input_dimension)
+            forward_hidden_scaling = 1 / math.sqrt(input_dimension)
         else:
-            forward_scaling = 1.0
+            forward_hidden_scaling = 1.0
         if scale_head_lr:
             self._head_lr_scaling = 1 / input_dimension
         else:
             self._head_lr_scaling = 1.0
+
+        if scale_forward_by_hidden:
+            forward_scaling = 1 / hidden_dimensions[0]
+        else:
+            forward_scaling = 1.0
 
         self._num_teachers = num_teachers
         self._learning_rate = learning_rate
@@ -66,8 +71,8 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
             bias=bias,
             loss_type=loss_type,
             nonlinearity=nonlinearity,
+            forward_hidden_scaling=forward_hidden_scaling,
             forward_scaling=forward_scaling,
-            scale_forward_by_hidden=scale_forward_by_hidden,
             symmetric_initialisation=symmetric_initialisation,
             initialisation_std=initialisation_std,
         )

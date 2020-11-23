@@ -22,8 +22,8 @@ class BaseNetwork(nn.Module, abc.ABC):
         bias: bool,
         loss_type: str,
         nonlinearity: str,
+        forward_hidden_scaling: float,
         forward_scaling: float,
-        scale_forward_by_hidden: Optional[bool] = False,
         symmetric_initialisation: Optional[bool] = False,
         initialisation_std: Optional[float] = None,
     ) -> None:
@@ -37,8 +37,8 @@ class BaseNetwork(nn.Module, abc.ABC):
         self._nonlinearity = nonlinearity
         self._initialisation_std = initialisation_std
         self._symmetric_initialisation = symmetric_initialisation
+        self._forward_hidden_scaling = forward_hidden_scaling
         self._forward_scaling = forward_scaling
-        self._scale_forward_by_hidden = scale_forward_by_hidden
 
         self._nonlinear_function = self._get_nonlinear_function()
         self._construct_layers()
@@ -121,12 +121,9 @@ class BaseNetwork(nn.Module, abc.ABC):
             y: output of network
         """
         for layer in self._layers:
-            x = self._nonlinear_function(self._forward_scaling * layer(x))
+            x = self._nonlinear_function(self._forward_hidden_scaling * layer(x))
 
-        y = self._get_output_from_head(x)
-
-        if self._scale_forward_by_hidden:
-            y = y / self._hidden_dimensions[0]
+        y = self._forward_scaling * self._get_output_from_head(x)
 
         return y
 
