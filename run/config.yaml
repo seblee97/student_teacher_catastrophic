@@ -24,6 +24,7 @@ training:
   loss_function:                    mse                       # mse, bce
   scale_head_lr:                    True                      # whether to add 1/N factor in lr of output layer  
   scale_hidden_lr:                  True                      # whether to add 1/\sqrt{N} factor in forward of hidden layer(s)
+  scale_forward_by_hidden:          True                      # whether to scale forward of network by 1/K (hidden dim)--for mean-field regime
   train_hidden_layers:              True
   train_head_layer:                 True
   freeze_features:                  [0]                      # hidden layers frozen / unfrozen at these steps.
