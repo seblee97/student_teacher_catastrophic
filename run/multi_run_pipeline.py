@@ -39,6 +39,7 @@ def get_args() -> argparse.Namespace:
     parser.add_argument(
         "--config_changes", metavar="-CC", default=ConfigChange.config_changes
     )
+    parser.add_argument("--skip_summary", action="store_true")
 
     args = parser.parse_args()
 
@@ -374,6 +375,7 @@ if __name__ == "__main__":
             timestamp=timestamp,
         )
 
-    summary_plot(
-        config=base_configuration, experiment_path=experiment_path, seeds=args.seeds
-    )
+    if not args.skip_summary:
+        summary_plot(
+            config=base_configuration, experiment_path=experiment_path, seeds=args.seeds
+        )
