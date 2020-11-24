@@ -112,7 +112,7 @@ class NetworkRunner:
     ) -> base_teacher_ensemble.BaseTeacherEnsemble:
         """Initialise teacher object containing teacher networks."""
         forward_scaling = (
-            1 / config.student_hidden_layers[0]
+            1 / config.teacher_hidden_layers[0]
             if config.scale_forward_by_hidden
             else 1.0
         )
