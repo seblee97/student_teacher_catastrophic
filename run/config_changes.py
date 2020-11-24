@@ -21,7 +21,7 @@ class ConfigChange:
     config_changes = {
         f"feature_{a}_readout_{round(b, 4)}": [
             ("feature_rotation_alpha", a),
-            ("rotation_magnitude", b),
+            ("readout_rotation_magnitude", b),
         ]
         for (a, b) in search_space
     }
