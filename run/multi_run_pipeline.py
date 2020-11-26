@@ -205,8 +205,13 @@ def generalisation_error_figs(
             scaling * np.arange(len(log_generalisation_error_0)),
             log_generalisation_error_0,
             color=teacher_1_colormap(i / len(dfs)),
+            label=index,
         )
 
+    if len(indices) > 5:
+        plt.colorbar()
+    else:
+        plt.legend()
     save_name = os.path.join(experiment_path, constants.Constants.FORGETTING_PLOT)
     teacher_1_fig.savefig(save_name, dpi=100)
     plt.close()
@@ -219,8 +224,16 @@ def generalisation_error_figs(
         log_generalisation_error_1 = dfs[index][0][
             f"{constants.Constants.LOG_GENERALISATION_ERROR}_1"
         ].to_numpy()
-        plt.plot(log_generalisation_error_1, color=teacher_2_colormap(i / len(dfs)))
+        plt.plot(
+            log_generalisation_error_1,
+            color=teacher_2_colormap(i / len(dfs)),
+            label=index,
+        )
 
+    if len(indices) > 5:
+        plt.colorbar()
+    else:
+        plt.legend()
     save_name = os.path.join(experiment_path, constants.Constants.TRANSFER_PLOT)
     teacher_2_fig.savefig(save_name, dpi=100)
     plt.close()
@@ -255,6 +268,8 @@ def cross_section_figs(
 
         forgetting_vs_v_fig = plt.figure()
         plt.plot(overlaps, error_deltas_0, linewidth=5)
+        plt.xlabel("Overlap")
+        plt.ylabel(f"Forgetting {int(interval) - switch_step} Steps Post-Switch")
         save_name = os.path.join(
             experiment_path,
             f"{int(interval) - switch_step}_{constants.Constants.FORGETTING_VS_V_PLOT}",
@@ -264,6 +279,8 @@ def cross_section_figs(
 
         transfer_vs_v_fig = plt.figure()
         plt.plot(overlaps, error_deltas_1, linewidth=5)
+        plt.xlabel("Overlap")
+        plt.ylabel(f"Transfer {int(interval) - switch_step} Steps Post-Switch")
         save_name = os.path.join(
             experiment_path,
             f"{int(interval) - switch_step}_{constants.Constants.TRANSFER_VS_V_PLOT}",
@@ -307,6 +324,8 @@ def rate_figs(dfs: List[pd.DataFrame], indices: List[str], switch_step: int):
 
     forgetting_rate_fig = plt.figure()
     plt.plot(overlaps, forgetting_rates, linewidth=5)
+    plt.xlabel("Overlap")
+    plt.ylabel("Initial Rate of Forgetting")
     save_name = os.path.join(
         experiment_path,
         constants.Constants.FORGETTING_RATE_PLOT,
@@ -316,6 +335,8 @@ def rate_figs(dfs: List[pd.DataFrame], indices: List[str], switch_step: int):
 
     transfer_rate_fig = plt.figure()
     plt.plot(overlaps, transfer_rates, linewidth=5)
+    plt.xlabel("Overlap")
+    plt.ylabel("Initial Rate of Transfer")
     save_name = os.path.join(
         experiment_path,
         constants.Constants.TRANSFER_RATE_PLOT,
