@@ -150,7 +150,16 @@ class NetworkRunner:
             raise ValueError(
                 f"Teacher configuration '{config.teacher_configuration}' not recognised."
             )
-        return teachers_class(**base_arguments, **additional_arguments)
+
+        teachers = teachers_class(**base_arguments, **additional_arguments)
+
+        if config.save_teacher_weights:
+            save_path = os.path.join(
+                config.checkpoint_path, Constants.TEACHER_WEIGHT_SAVE_PATH
+            )
+            teachers.save_all_teacher_weights(save_path=save_path)
+
+        return teachers
 
     @decorators.timer
     def _setup_student(
