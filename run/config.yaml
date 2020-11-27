@@ -47,7 +47,7 @@ logging:
   save_weights_at_switch:           True
   save_initial_weights:             True
   save_teacher_weights:             True
-  log_overlaps:                     False
+  log_overlaps:                     True
   split_logging:                    False
   
 testing:
