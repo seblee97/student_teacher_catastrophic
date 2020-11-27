@@ -29,6 +29,7 @@ from teachers.ensembles import both_rotation_ensemble
 from teachers.ensembles import feature_rotation_ensemble
 from teachers.ensembles import readout_rotation_ensemble
 from utils import decorators
+from utils import experiment_utils
 from utils import network_configuration
 
 
@@ -49,6 +50,7 @@ class NetworkRunner:
             config: configuration object containing parameters to specify run.
         """
         # extract class-relevant attributes from config
+        self._seed = config.seed
         self._device = config.experiment_device
         self._input_dimension = config.input_dimension
         self._checkpoint_frequency = config.checkpoint_frequency
@@ -315,6 +317,10 @@ class NetworkRunner:
         """Prepare runner for training, including constructing a test dataset.
         This method must be called before training loop is called.
         """
+        # different configurations make different number of calls to rng
+        # reset seeds before training to ensure data is the same.
+        experiment_utils.set_random_seeds(self._seed)
+
         self._test_data_inputs = self._data_module.get_test_data()[Constants.X].to(
             self._device
         )
