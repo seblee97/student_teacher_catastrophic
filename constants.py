@@ -163,6 +163,9 @@ class Constants:
     SCALE_FORWARD_BY_HIDDEN = "scale_forward_by_hidden"
     FORWARD_SCALING = "forward_scaling"
 
+    SAVE_TEACHER_WEIGHTS = "save_teacher_weights"
+    TEACHER_WEIGHT_SAVE_PATH = "teacher_weights"
+
     EVEN_ODD_MAPPING = {0: 0, 1: 1, 2: 0, 3: 1, 4: 0, 5: 1, 6: 0, 7: 1, 8: 0, 9: 1}
 
     GREATER_FIVE_MAPPING = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1}
