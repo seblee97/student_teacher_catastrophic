@@ -105,7 +105,7 @@ class BaseTeacherEnsemble(abc.ABC):
             _i where i is the index of the teacher.
         """
         for t, teacher in enumerate(self._teachers):
-            torch.save(teacher.state_dict(), f"save_path_{t}")
+            torch.save(teacher.state_dict(), f"{save_path}_{t}")
 
     def save_weights(self, teacher_index: int, save_path: str) -> None:
         """Save weights associated with given teacher index"""
