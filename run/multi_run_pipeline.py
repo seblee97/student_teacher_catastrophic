@@ -313,8 +313,8 @@ def cross_section_figs(
         plt.plot(overlaps, error_deltas_0_means, linewidth=5, color="b")
         plt.fill_between(
             overlaps,
-            error_deltas_0_means - error_deltas_0_stds,
-            error_deltas_0_means + error_deltas_0_stds,
+            np.array(error_deltas_0_means) - np.array(error_deltas_0_stds),
+            np.array(error_deltas_0_means) + np.array(error_deltas_0_stds_,
             linewidth=5,
             color="b",
             alpha=0.3,
@@ -332,8 +332,8 @@ def cross_section_figs(
         plt.plot(overlaps, error_deltas_1_means, linewidth=5, color="r")
         plt.fill_between(
             overlaps,
-            error_deltas_1_means - error_deltas_1_stds,
-            error_deltas_1_means + error_deltas_1_stds,
+            np.array(error_deltas_1_means) - np.array(error_deltas_1_stds),
+            np.array(error_deltas_1_means) + np.array(error_deltas_1_stds),
             linewidth=5,
             color="r",
             alpha=0.3,
