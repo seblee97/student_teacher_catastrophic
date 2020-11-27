@@ -35,7 +35,7 @@ def get_args() -> argparse.Namespace:
         help="run in 'parallel' or 'serial'",
     )
     parser.add_argument("--config", metavar="-C", default="config.yaml")
-    parser.add_argument("--seeds", metavar="-S", default=range(1))
+    parser.add_argument("--seeds", metavar="-S", default="[0]")
     parser.add_argument(
         "--config_changes", metavar="-CC", default=ConfigChange.config_changes
     )
@@ -466,6 +466,7 @@ def summary_plot(
 if __name__ == "__main__":
 
     args = get_args()
+    seeds = [int(s) for s in args.seeds.strip("[").strip("]").split(",")]
     base_configuration = get_config_object(args.config)
     base_configuration = set_device(config=base_configuration)
 
@@ -477,7 +478,7 @@ if __name__ == "__main__":
         parallel_run(
             base_configuration=base_configuration,
             config_changes=args.config_changes,
-            seeds=args.seeds,
+            seeds=seeds,
             experiment_path=experiment_path,
             results_folder=results_folder,
             timestamp=timestamp,
@@ -486,7 +487,7 @@ if __name__ == "__main__":
         serial_run(
             base_configuration=base_configuration,
             config_changes=args.config_changes,
-            seeds=args.seeds,
+            seeds=seeds,
             experiment_path=experiment_path,
             results_folder=results_folder,
             timestamp=timestamp,
@@ -494,5 +495,5 @@ if __name__ == "__main__":
 
     if not args.skip_summary:
         summary_plot(
-            config=base_configuration, experiment_path=experiment_path, seeds=args.seeds
+            config=base_configuration, experiment_path=experiment_path, seeds=seeds
         )
