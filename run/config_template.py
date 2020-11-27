@@ -202,6 +202,10 @@ class ConfigTemplate:
                 types=[bool],
             ),
             config_field.Field(
+                name=constants.Constants.SAVE_TEACHER_WEIGHTS,
+                types=[bool],
+            ),
+            config_field.Field(
                 name=constants.Constants.LOG_OVERLAPS,
                 types=[bool],
             ),
