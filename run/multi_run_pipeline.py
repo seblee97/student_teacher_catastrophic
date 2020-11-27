@@ -217,6 +217,7 @@ def generalisation_error_figs(
             mean_log_generalisation_error_0 - std_log_generalisation_error_0,
             mean_log_generalisation_error_0 + std_log_generalisation_error_0,
             color=teacher_1_colormap(i / len(dfs)),
+            alpha=0.3,
             label=index,
         )
 
