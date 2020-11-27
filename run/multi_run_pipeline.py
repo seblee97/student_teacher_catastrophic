@@ -189,21 +189,33 @@ def get_dfs(folder: str, seeds: List[int]) -> Dict[str, List[pd.DataFrame]]:
 
 
 def generalisation_error_figs(
-    dfs: List[pd.DataFrame], indices: List[str], num_steps: int
+    dfs: List[pd.DataFrame], indices: List[str], num_steps: int, seeds: List[int]
 ) -> None:
     """Plot generalisation error over time for each overlap."""
     teacher_1_fig = plt.figure()
     teacher_1_colormap = cm.get_cmap(constants.Constants.VIRIDIS)
 
     for i, index in enumerate(indices):
-        # TODO: ignore seeds for now!
-        log_generalisation_error_0 = dfs[index][0][
-            f"{constants.Constants.LOG_GENERALISATION_ERROR}_0"
-        ].to_numpy()
+        log_generalisation_error_0s = []
+        for seed in seeds:
+            log_generalisation_error_0 = dfs[index][seed][
+                f"{constants.Constants.LOG_GENERALISATION_ERROR}_0"
+            ].to_numpy()
+            log_generalisation_error_0s.append(log_generalisation_error_0)
+
         scaling = num_steps / len(log_generalisation_error_0)
+        mean_log_generalisation_error_0 = np.mean(log_generalisation_error_0s, axis=1)
+        std_log_generalisation_error_0 = np.std(log_generalisation_error_0s, axis=1)
         plt.plot(
-            scaling * np.arange(len(log_generalisation_error_0)),
-            log_generalisation_error_0,
+            scaling * np.arange(len(mean_log_generalisation_error_0)),
+            mean_log_generalisation_error_0,
+            color=teacher_1_colormap(i / len(dfs)),
+            label=index,
+        )
+        plt.fill_between(
+            scaling * np.arange(len(mean_log_generalisation_error_0)),
+            mean_log_generalisation_error_0 - std_log_generalisation_error_0,
+            mean_log_generalisation_error_0 + std_log_generalisation_error_0,
             color=teacher_1_colormap(i / len(dfs)),
             label=index,
         )
@@ -220,14 +232,30 @@ def generalisation_error_figs(
     teacher_2_colormap = cm.get_cmap(constants.Constants.PLASMA)
 
     for i, index in enumerate(indices):
-        # TODO: ignore seeds for now!
-        log_generalisation_error_1 = dfs[index][0][
-            f"{constants.Constants.LOG_GENERALISATION_ERROR}_1"
-        ].to_numpy()
+        log_generalisation_error_1s = []
+        for seed in seeds:
+            log_generalisation_error_1 = dfs[index][seed][
+                f"{constants.Constants.LOG_GENERALISATION_ERROR}_1"
+            ].to_numpy()
+            log_generalisation_error_1s.append(log_generalisation_error_1)
+
+        scaling = num_steps / len(log_generalisation_error_1)
+        mean_log_generalisation_error_1 = np.mean(log_generalisation_error_1s, axis=1)
+        std_log_generalisation_error_1 = np.std(log_generalisation_error_1s, axis=1)
         plt.plot(
-            log_generalisation_error_1,
+            scaling * np.arange(len(mean_log_generalisation_error_1)),
+            mean_log_generalisation_error_1,
             color=teacher_2_colormap(i / len(dfs)),
             label=index,
+            alpha=0.3,
+        )
+        plt.fill_between(
+            scaling * np.arange(len(mean_log_generalisation_error_1)),
+            mean_log_generalisation_error_1 - std_log_generalisation_error_1,
+            mean_log_generalisation_error_1 + std_log_generalisation_error_1,
+            color=teacher_2_colormap(i / len(dfs)),
+            label=index,
+            alpha=0.3,
         )
 
     if len(indices) > 5:
@@ -242,6 +270,7 @@ def generalisation_error_figs(
 def cross_section_figs(
     dfs: List[pd.DataFrame],
     indices: List[str],
+    seeds: List[int],
     switch_step: int,
     num_ode_steps: int,
 ):
@@ -250,24 +279,46 @@ def cross_section_figs(
 
     for interval in np.linspace(switch_step, num_ode_steps, 10)[:-1]:
 
-        error_deltas_0 = []
-        error_deltas_1 = []
+        error_deltas_0_means = []
+        error_deltas_0_stds = []
+        error_deltas_1_means = []
+        error_deltas_1_stds = []
+
         for i, index in enumerate(indices):
-            generalisation_error_0 = dfs[index][0][
-                f"{constants.Constants.GENERALISATION_ERROR}_0"
-            ].to_numpy()
-            generalisation_error_1 = dfs[index][0][
-                f"{constants.Constants.GENERALISATION_ERROR}_1"
-            ].to_numpy()
-            switch_error_0 = generalisation_error_0[switch_step]
-            switch_error_1 = generalisation_error_1[switch_step]
-            error_delta_0 = generalisation_error_0[int(interval)] - switch_error_0
-            error_delta_1 = switch_error_1 - generalisation_error_1[int(interval)]
-            error_deltas_0.append(error_delta_0)
-            error_deltas_1.append(error_delta_1)
+
+            error_deltas_0 = []
+            error_deltas_1 = []
+
+            for seed in seeds:
+                generalisation_error_0 = dfs[index][seed][
+                    f"{constants.Constants.GENERALISATION_ERROR}_0"
+                ].to_numpy()
+                generalisation_error_1 = dfs[index][seed][
+                    f"{constants.Constants.GENERALISATION_ERROR}_1"
+                ].to_numpy()
+                switch_error_0 = generalisation_error_0[switch_step]
+                switch_error_1 = generalisation_error_1[switch_step]
+                error_delta_0 = generalisation_error_0[int(interval)] - switch_error_0
+                error_delta_1 = switch_error_1 - generalisation_error_1[int(interval)]
+
+                error_deltas_0.append(error_delta_0)
+                error_deltas_1.append(error_delta_1)
+
+            error_deltas_0_means.append(np.mean(error_deltas_0))
+            error_deltas_0_stds.append(np.std(error_deltas_0))
+            error_deltas_1_means.append(np.mean(error_deltas_1))
+            error_deltas_1_stds.append(np.std(error_deltas_1))
 
         forgetting_vs_v_fig = plt.figure()
-        plt.plot(overlaps, error_deltas_0, linewidth=5)
+        plt.plot(overlaps, error_deltas_0_means, linewidth=5, color="b")
+        plt.fill_between(
+            overlaps,
+            error_deltas_0_means - error_deltas_0_stds,
+            error_deltas_0_means + error_deltas_0_stds,
+            linewidth=5,
+            color="b",
+            alpha=0.3,
+        )
         plt.xlabel("Overlap")
         plt.ylabel(f"Forgetting {int(interval) - switch_step} Steps Post-Switch")
         save_name = os.path.join(
@@ -278,7 +329,15 @@ def cross_section_figs(
         plt.close()
 
         transfer_vs_v_fig = plt.figure()
-        plt.plot(overlaps, error_deltas_1, linewidth=5)
+        plt.plot(overlaps, error_deltas_1_means, linewidth=5, color="r")
+        plt.fill_between(
+            overlaps,
+            error_deltas_1_means - error_deltas_1_stds,
+            error_deltas_1_means + error_deltas_1_stds,
+            linewidth=5,
+            color="r",
+            alpha=0.3,
+        )
         plt.xlabel("Overlap")
         plt.ylabel(f"Transfer {int(interval) - switch_step} Steps Post-Switch")
         save_name = os.path.join(
@@ -289,41 +348,64 @@ def cross_section_figs(
         plt.close()
 
 
-def rate_figs(dfs: List[pd.DataFrame], indices: List[str], switch_step: int):
+def rate_figs(
+    dfs: List[pd.DataFrame], indices: List[str], switch_step: int, seeds: List[int]
+):
     """Plot initial forgetting/transfer rate vs. v."""
 
-    forgetting_rates = []
-    transfer_rates = []
+    forgetting_rates_mean = []
+    forgetting_rates_std = []
+    transfer_rates_mean = []
+    transfer_rates_std = []
 
     overlaps = [float(index.split("_")[1]) for index in indices]
 
     for i, index in enumerate(indices):
-        generalisation_error_0 = dfs[index][0][
-            f"{constants.Constants.GENERALISATION_ERROR}_0"
-        ].to_numpy()
-        generalisation_error_1 = dfs[index][0][
-            f"{constants.Constants.GENERALISATION_ERROR}_1"
-        ].to_numpy()
 
-        initial_error_deltas_0 = [
-            generalisation_error_0[switch_step + i + 1]
-            - generalisation_error_0[switch_step + i]
-            for i in range(10)
-        ]
-        initial_error_deltas_1 = [
-            generalisation_error_1[switch_step + i]
-            - generalisation_error_1[switch_step + i + 1]
-            for i in range(10)
-        ]
+        error_delta_rate_0s = []
+        error_delta_rate_1s = []
 
-        error_delta_rate_0 = np.mean(initial_error_deltas_0)
-        error_delta_rate_1 = np.mean(initial_error_deltas_1)
+        for seed in seeds:
+            generalisation_error_0 = dfs[index][seed][
+                f"{constants.Constants.GENERALISATION_ERROR}_0"
+            ].to_numpy()
+            generalisation_error_1 = dfs[index][seed][
+                f"{constants.Constants.GENERALISATION_ERROR}_1"
+            ].to_numpy()
 
-        forgetting_rates.append(error_delta_rate_0)
-        transfer_rates.append(error_delta_rate_1)
+            initial_error_deltas_0 = [
+                generalisation_error_0[switch_step + i + 1]
+                - generalisation_error_0[switch_step + i]
+                for i in range(10)
+            ]
+            initial_error_deltas_1 = [
+                generalisation_error_1[switch_step + i]
+                - generalisation_error_1[switch_step + i + 1]
+                for i in range(10)
+            ]
+
+            error_delta_rate_0 = np.mean(initial_error_deltas_0)
+            error_delta_rate_1 = np.mean(initial_error_deltas_1)
+
+            error_delta_rate_0s.append(error_delta_rate_0)
+            error_delta_rate_1s.append(error_delta_rate_1)
+
+        forgetting_rates_mean.append(np.mean(error_delta_rate_0s))
+        forgetting_rates_std.append(np.std(error_delta_rate_0s))
+
+        transfer_rates_mean.append(np.mean(error_delta_rate_1s))
+        transfer_rates_std.append(np.std(error_delta_rate_1s))
 
     forgetting_rate_fig = plt.figure()
-    plt.plot(overlaps, forgetting_rates, linewidth=5)
+    plt.plot(overlaps, forgetting_rates_mean, linewidth=5, color="b")
+    plt.fill_between(
+        overlaps,
+        forgetting_rates_mean - forgetting_rates_std,
+        forgetting_rates_mean + forgetting_rates_std,
+        linewidth=5,
+        color="b",
+        alpha=0.3,
+    )
     plt.xlabel("Overlap")
     plt.ylabel("Initial Rate of Forgetting")
     save_name = os.path.join(
@@ -334,7 +416,15 @@ def rate_figs(dfs: List[pd.DataFrame], indices: List[str], switch_step: int):
     plt.close()
 
     transfer_rate_fig = plt.figure()
-    plt.plot(overlaps, transfer_rates, linewidth=5)
+    plt.plot(overlaps, transfer_rates_mean, linewidth=5, color="r")
+    plt.fill_between(
+        overlaps,
+        transfer_rates_mean - transfer_rates_std,
+        transfer_rates_mean + transfer_rates_std,
+        linewidth=5,
+        color="r",
+        alpha=0.3,
+    )
     plt.xlabel("Overlap")
     plt.ylabel("Initial Rate of Transfer")
     save_name = os.path.join(
@@ -360,11 +450,17 @@ def summary_plot(
     dfs = get_dfs(folder=experiment_path, seeds=seeds)
     indices = sorted(dfs.keys(), key=lambda x: float(x.split("_")[1]))
 
-    generalisation_error_figs(dfs=dfs, indices=indices, num_steps=num_steps)
-    cross_section_figs(
-        dfs=dfs, indices=indices, switch_step=switch_step, num_ode_steps=num_ode_steps
+    generalisation_error_figs(
+        dfs=dfs, indices=indices, num_steps=num_steps, seeds=seeds
     )
-    rate_figs(dfs=dfs, indices=indices, switch_step=switch_step)
+    cross_section_figs(
+        dfs=dfs,
+        indices=indices,
+        switch_step=switch_step,
+        num_ode_steps=num_ode_steps,
+        seeds=seeds,
+    )
+    rate_figs(dfs=dfs, indices=indices, switch_step=switch_step, seeds=seeds)
 
 
 if __name__ == "__main__":
