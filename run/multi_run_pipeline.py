@@ -314,7 +314,7 @@ def cross_section_figs(
         plt.fill_between(
             overlaps,
             np.array(error_deltas_0_means) - np.array(error_deltas_0_stds),
-            np.array(error_deltas_0_means) + np.array(error_deltas_0_stds_,
+            np.array(error_deltas_0_means) + np.array(error_deltas_0_stds),
             linewidth=5,
             color="b",
             alpha=0.3,
@@ -400,8 +400,8 @@ def rate_figs(
     plt.plot(overlaps, forgetting_rates_mean, linewidth=5, color="b")
     plt.fill_between(
         overlaps,
-        forgetting_rates_mean - forgetting_rates_std,
-        forgetting_rates_mean + forgetting_rates_std,
+        np.array(forgetting_rates_mean) - np.array(forgetting_rates_std),
+        np.array(forgetting_rates_mean) + np.array(forgetting_rates_std),
         linewidth=5,
         color="b",
         alpha=0.3,
@@ -419,8 +419,8 @@ def rate_figs(
     plt.plot(overlaps, transfer_rates_mean, linewidth=5, color="r")
     plt.fill_between(
         overlaps,
-        transfer_rates_mean - transfer_rates_std,
-        transfer_rates_mean + transfer_rates_std,
+        np.array(transfer_rates_mean) - np.array(transfer_rates_std),
+        np.array(transfer_rates_mean) + np.array(transfer_rates_std),
         linewidth=5,
         color="r",
         alpha=0.3,
