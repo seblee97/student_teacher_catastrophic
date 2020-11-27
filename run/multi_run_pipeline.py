@@ -241,8 +241,8 @@ def generalisation_error_figs(
             log_generalisation_error_1s.append(log_generalisation_error_1)
 
         scaling = num_steps / len(log_generalisation_error_1)
-        mean_log_generalisation_error_1 = np.mean(log_generalisation_error_1s, axis=1)
-        std_log_generalisation_error_1 = np.std(log_generalisation_error_1s, axis=1)
+        mean_log_generalisation_error_1 = np.mean(log_generalisation_error_1s, axis=0)
+        std_log_generalisation_error_1 = np.std(log_generalisation_error_1s, axis=0)
         plt.plot(
             scaling * np.arange(len(mean_log_generalisation_error_1)),
             mean_log_generalisation_error_1,
