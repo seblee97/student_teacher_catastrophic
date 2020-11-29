@@ -350,7 +350,11 @@ def cross_section_figs(
 
 
 def rate_figs(
-    dfs: List[pd.DataFrame], indices: List[str], switch_step: int, seeds: List[int]
+    dfs: List[pd.DataFrame],
+    indices: List[str],
+    switch_step: int,
+    seeds: List[int],
+    num_points: int,
 ):
     """Plot initial forgetting/transfer rate vs. v."""
 
@@ -377,12 +381,12 @@ def rate_figs(
             initial_error_deltas_0 = [
                 generalisation_error_0[switch_step + i + 1]
                 - generalisation_error_0[switch_step + i]
-                for i in range(10)
+                for i in range(num_points)
             ]
             initial_error_deltas_1 = [
                 generalisation_error_1[switch_step + i]
                 - generalisation_error_1[switch_step + i + 1]
-                for i in range(10)
+                for i in range(num_points)
             ]
 
             error_delta_rate_0 = np.mean(initial_error_deltas_0)
