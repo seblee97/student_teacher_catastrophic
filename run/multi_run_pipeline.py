@@ -415,7 +415,7 @@ def rate_figs(
     plt.ylabel("Initial Rate of Forgetting")
     save_name = os.path.join(
         experiment_path,
-        constants.Constants.FORGETTING_RATE_PLOT,
+        f"{num_points}_{constants.Constants.FORGETTING_RATE_PLOT}",
     )
     forgetting_rate_fig.savefig(save_name, dpi=100)
     plt.close()
@@ -434,7 +434,7 @@ def rate_figs(
     plt.ylabel("Initial Rate of Transfer")
     save_name = os.path.join(
         experiment_path,
-        constants.Constants.TRANSFER_RATE_PLOT,
+        f"{num_points}_{constants.Constants.TRANSFER_RATE_PLOT}",
     )
     transfer_rate_fig.savefig(save_name, dpi=100)
     plt.close()
@@ -465,7 +465,15 @@ def summary_plot(
         num_ode_steps=num_ode_steps,
         seeds=seeds,
     )
-    rate_figs(dfs=dfs, indices=indices, switch_step=switch_step, seeds=seeds)
+    rate_figs(
+        dfs=dfs, indices=indices, switch_step=switch_step, seeds=seeds, num_points=10
+    )
+    rate_figs(
+        dfs=dfs, indices=indices, switch_step=switch_step, seeds=seeds, num_points=100
+    )
+    rate_figs(
+        dfs=dfs, indices=indices, switch_step=switch_step, seeds=seeds, num_points=200
+    )
 
 
 if __name__ == "__main__":
