@@ -34,10 +34,10 @@ class CoreRunner:
         self._network_simulation_runner = network_runner.NetworkRunner(
             config=self._config
         )
-        network_configuration = (
-            self._network_simulation_runner.get_network_configuration()
-        )
         if self._config.ode_simulation:
+            network_configuration = (
+                self._network_simulation_runner.get_network_configuration()
+            )
             self._ode_simulation_runner = ode_runner.ODERunner(
                 config=self._config, network_configuration=network_configuration
             )
