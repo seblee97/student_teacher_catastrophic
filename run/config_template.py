@@ -256,6 +256,10 @@ class ConfigTemplate:
                 ],
             ),
             config_field.Field(
+                name=constants.Constants.APPLY_NONLINEARITY_ON_OUTPUT,
+                types=[bool],
+            ),
+            config_field.Field(
                 name=constants.Constants.STUDENT_INITIALISATION_STD,
                 types=[float, int],
                 requirements=[lambda x: x > 0],
