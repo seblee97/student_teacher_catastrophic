@@ -222,7 +222,7 @@ def generalisation_error_figs(
         )
 
     if len(indices) > 5:
-        plt.colorbar()
+        pass
     else:
         plt.legend()
     save_name = os.path.join(experiment_path, constants.Constants.FORGETTING_PLOT)
@@ -260,7 +260,7 @@ def generalisation_error_figs(
         )
 
     if len(indices) > 5:
-        plt.colorbar()
+        pass
     else:
         plt.legend()
     save_name = os.path.join(experiment_path, constants.Constants.TRANSFER_PLOT)
