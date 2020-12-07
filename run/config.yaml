@@ -63,6 +63,7 @@ model:
     teacher_features_copy:            0                         # emtpy/None = indpendent of teachers, integer = index of teacher to copy
     student_hidden_layers:            [20]                       
     student_nonlinearity:             scaled_erf                      
+    apply_nonlinearity_on_output:     False
     student_initialisation_std:       0.001                     # std of normal initialisation for student network
     initialise_student_outputs:       True                      # whether or not to initialise hidden -> output weights of student
     soft_committee:                   False                     # whether or not to fix output layer of student to 1 (scm)
