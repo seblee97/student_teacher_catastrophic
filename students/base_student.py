@@ -21,6 +21,7 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         loss_type: str,
         nonlinearity: str,
         initialise_outputs: bool,
+        apply_nonlinearity_on_output: bool,
         soft_committee: bool,
         train_hidden_layers: bool,
         train_head_layer: bool,
@@ -41,6 +42,7 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         self._next_freeze_feature_toggle = self._get_next_freeze_feature_toggle()
         self._frozen = False
         self._initialise_outputs = initialise_outputs
+        self._apply_nonlinearity_on_output = apply_nonlinearity_on_output
 
         if scale_hidden_lr:
             forward_hidden_scaling = 1 / math.sqrt(input_dimension)
