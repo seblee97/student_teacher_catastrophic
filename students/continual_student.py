@@ -12,7 +12,7 @@ class ContinualStudent(base_student.BaseStudent):
         self._heads = nn.ModuleList([])
         for _ in range(self._num_teachers):
             output_layer = nn.Linear(
-                self._hidden_dimensions[-1], self._output_dimension, bias=self._bias
+                self._layer_dimensions[-1], self._output_dimension, bias=self._bias
             )
             if self._soft_committee:
                 output_layer.weight.data.fill_(1)
@@ -33,6 +33,8 @@ class ContinualStudent(base_student.BaseStudent):
         y = self.heads[self._current_teacher](x)
         if self._classification_output:
             return self._threshold(y)
+        if self._apply_nonlinearity_on_output:
+            y = self._nonlinear_function(y)
         return y
 
     def _signal_task_boundary(self, new_task: int) -> None:
