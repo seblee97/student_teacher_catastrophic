@@ -115,7 +115,7 @@ class NetworkRunner:
     ) -> base_teacher_ensemble.BaseTeacherEnsemble:
         """Initialise teacher object containing teacher networks."""
         forward_scaling = (
-            1 / config.teacher_hidden_layers[0]
+            1 / np.sqrt(config.teacher_hidden_layers[0])
             if config.scale_forward_by_hidden
             else 1.0
         )
@@ -203,6 +203,7 @@ class NetworkRunner:
             train_hidden_layers=config.train_hidden_layers,
             train_head_layer=config.train_head_layer,
             initialise_outputs=config.initialise_student_outputs,
+            apply_nonlinearity_on_output=config.apply_nonlinearity_on_output,
             symmetric_initialisation=config.symmetric_student_initialisation,
             initialisation_std=config.student_initialisation_std,
             teacher_features_copy=teacher_features_copy,
