@@ -15,13 +15,14 @@ class StudentTeacherConfiguration(base_configuration.BaseConfiguration):
         """Method to check for non-trivial associations
         in the configuration.
         """
-        if self.teacher_configuration == constants.Constants.BOTH_ROTATION:
-            assert self.scale_forward_by_hidden == True, (
-                "In both rotation regime, i.e. mean field limit, "
-                "need to scale forward by 1/K."
-            )
-        else:
-            assert self.scale_forward_by_hidden == False, (
-                "When not in both rotation regime, i.e. mean field limit, "
-                "no need to scale forward by 1/K."
-            )
+        pass
+        # if self.teacher_configuration == constants.Constants.BOTH_ROTATION:
+        #     assert self.scale_forward_by_hidden == True, (
+        #         "In both rotation regime, i.e. mean field limit, "
+        #         "need to scale forward by 1/K."
+        #     )
+        # else:
+        #     assert self.scale_forward_by_hidden == False, (
+        #         "When not in both rotation regime, i.e. mean field limit, "
+        #         "no need to scale forward by 1/K."
+        #     )
