@@ -32,6 +32,7 @@ class BaseNetwork(nn.Module, abc.ABC):
         self._input_dimension = input_dimension
         self._hidden_dimensions = hidden_dimensions
         self._output_dimension = output_dimension
+        self._layer_dimensions = [self._input_dimension] + self._hidden_dimensions
         self._bias = bias
         self._classification_output = loss_type == constants.Constants.CLASSIFICATION
         self._nonlinearity = nonlinearity
@@ -83,9 +84,9 @@ class BaseNetwork(nn.Module, abc.ABC):
         """
         self._layers = nn.ModuleList([])
 
-        layer_dimensions = [self._input_dimension] + self._hidden_dimensions
-
-        for layer_size, next_layer_size in zip(layer_dimensions, layer_dimensions[1:]):
+        for layer_size, next_layer_size in zip(
+            self._layer_dimensions, self._layer_dimensions[1:]
+        ):
             layer = nn.Linear(layer_size, next_layer_size, bias=self._bias)
             self._initialise_weights(layer)
             self._layers.append(layer)
