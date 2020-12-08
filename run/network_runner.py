@@ -116,7 +116,7 @@ class NetworkRunner:
         """Initialise teacher object containing teacher networks."""
         forward_scaling = (
             1 / np.sqrt(config.teacher_hidden_layers[0])
-            if config.scale_forward_by_hidden
+            if config.scale_teacher_forward_by_hidden
             else 1.0
         )
         base_arguments = {
@@ -197,7 +197,7 @@ class NetworkRunner:
             learning_rate=config.learning_rate,
             scale_head_lr=config.scale_head_lr,
             scale_hidden_lr=config.scale_hidden_lr,
-            scale_forward_by_hidden=config.scale_forward_by_hidden,
+            scale_forward_by_hidden=config.scale_student_forward_by_hidden,
             nonlinearity=config.student_nonlinearity,
             freeze_features=config.freeze_features,
             train_hidden_layers=config.train_hidden_layers,
