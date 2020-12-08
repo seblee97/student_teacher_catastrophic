@@ -161,6 +161,8 @@ class Constants:
     BOTH_ROTATION = "both_rotation"
     FEATURE_ROTATION_ALPHA = "feature_rotation_alpha"
     SCALE_FORWARD_BY_HIDDEN = "scale_forward_by_hidden"
+    SCALE_TEACHER_FORWARD_BY_HIDDEN = "scale_teacher_forward_by_hidden"
+    SCALE_STUDENT_FORWARD_BY_HIDDEN = "scale_student_forward_by_hidden"
     FORWARD_SCALING = "forward_scaling"
 
     SAVE_TEACHER_WEIGHTS = "save_teacher_weights"
