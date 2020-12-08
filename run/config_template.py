@@ -104,10 +104,6 @@ class ConfigTemplate:
                 types=[bool],
             ),
             config_field.Field(
-                name=constants.Constants.SCALE_FORWARD_BY_HIDDEN,
-                types=[bool],
-            ),
-            config_field.Field(
                 name=constants.Constants.TRAIN_HIDDEN_LAYERS,
                 types=[bool],
             ),
@@ -277,6 +273,10 @@ class ConfigTemplate:
                 types=[bool],
             ),
             config_field.Field(
+                name=constants.Constants.SCALE_STUDENT_FORWARD_BY_HIDDEN,
+                types=[bool],
+            ),
+            config_field.Field(
                 name=constants.Constants.SYMMETRIC_STUDENT_INITIALISATION,
                 types=[bool],
             ),
@@ -382,6 +382,10 @@ class ConfigTemplate:
             ),
             config_field.Field(
                 name=constants.Constants.TEACHER_BIAS_PARAMETERS,
+                types=[bool],
+            ),
+            config_field.Field(
+                name=constants.Constants.SCALE_TEACHER_FORWARD_BY_HIDDEN,
                 types=[bool],
             ),
         ],
