@@ -85,7 +85,7 @@ class BaseNetwork(nn.Module, abc.ABC):
         self._layers = nn.ModuleList([])
 
         for layer_size, next_layer_size in zip(
-            self._layer_dimensions, self._layer_dimensions[1:]
+            self._layer_dimensions[:-1], self._layer_dimensions[1:]
         ):
             layer = nn.Linear(layer_size, next_layer_size, bias=self._bias)
             self._initialise_weights(layer)
