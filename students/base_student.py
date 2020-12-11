@@ -86,6 +86,10 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
     def heads(self):
         return self._heads
 
+    @property
+    def frozen(self):
+        return self._frozen
+
     @abc.abstractmethod
     def _construct_output_layers(self):
         """Instantiate the output layer."""
