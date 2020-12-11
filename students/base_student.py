@@ -167,11 +167,14 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
     def forward_all(self, x: torch.Tensor) -> List[torch.Tensor]:
         """Makes call to student forward, using all heads (used for evaluation)"""
         for layer in self._layers:
-            x = self._nonlinear_function(self._forward_scaling * layer(x))
+            x = self._nonlinear_function(self._forward_hidden_scaling * layer(x))
         task_outputs = [head(x) for head in self._heads]
+        if self._apply_nonlinearity_on_output:
+            task_outputs = [self._nonlinear_function(x) for x in task_outputs]
         if self._classification_output:
-            return [self._threshold(y) for y in task_outputs]
-        return task_outputs
+            task_outputs = [self._threshold(x) for x in task_outputs]
+        y = [self._forward_scaling * x for x in task_outputs]
+        return y
 
     def _threshold(self, y: torch.Tensor) -> torch.Tensor:
         """Apply sigmoid threshold."""
