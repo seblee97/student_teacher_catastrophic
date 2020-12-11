@@ -95,10 +95,16 @@ class BothRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             teachers[1].layers[0].weight.data = second_teacher_rotated_weights.T
 
             # rotate hidden -> output weights by specified amount.
+
+            # keep current norms
+            current_norm = np.mean(
+                [torch.norm(teacher.head.weight) for teacher in teachers]
+            )
+
             rotated_weight_vectors = custom_functions.generate_rotated_vectors(
                 dimension=self._hidden_dimensions[0],
                 theta=self._readout_rotation_magnitude,
-                normalisation=1,
+                normalisation=current_norm,
             )
 
             teacher_0_rotated_weight_tensor = torch.Tensor(
