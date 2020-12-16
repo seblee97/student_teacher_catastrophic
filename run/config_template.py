@@ -326,9 +326,9 @@ class ConfigTemplate:
     _both_rotation_template = config_template.Template(
         fields=[
             config_field.Field(
-                name=constants.Constants.ROTATION_MAGNITUDE,
-                key=constants.Constants.READOUT_ROTATION_MAGNITUDE,
+                name=constants.Constants.READOUT_ROTATION_ALPHA,
                 types=[float, int],
+                requirements=[lambda x: x >= 0 and x <= 1],
             ),
             config_field.Field(
                 name=constants.Constants.FEATURE_ROTATION_ALPHA,
