@@ -30,7 +30,7 @@ class ContinualStudent(base_student.BaseStudent):
 
     def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
         """Pass tensor through relevant head of student (depending on current teacher)."""
-        y = self.heads[self._current_teacher](x)
+        y = self._heads[self._current_teacher](x)
         if self._apply_nonlinearity_on_output:
             y = self._nonlinear_function(y)
         if self._classification_output:
