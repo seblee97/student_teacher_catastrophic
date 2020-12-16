@@ -160,6 +160,7 @@ class Constants:
 
     BOTH_ROTATION = "both_rotation"
     FEATURE_ROTATION_ALPHA = "feature_rotation_alpha"
+    READOUT_ROTATION_ALPHA = "readout_rotation_alpha"
     SCALE_FORWARD_BY_HIDDEN = "scale_forward_by_hidden"
     SCALE_TEACHER_FORWARD_BY_HIDDEN = "scale_teacher_forward_by_hidden"
     SCALE_STUDENT_FORWARD_BY_HIDDEN = "scale_student_forward_by_hidden"
@@ -167,6 +168,9 @@ class Constants:
 
     SAVE_TEACHER_WEIGHTS = "save_teacher_weights"
     TEACHER_WEIGHT_SAVE_PATH = "teacher_weights"
+
+    LEFT = "left"
+    RIGHT = "right"
 
     APPLY_NONLINEARITY_ON_OUTPUT = "apply_nonlinearity_on_output"
 
