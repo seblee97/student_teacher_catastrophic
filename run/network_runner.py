@@ -147,7 +147,7 @@ class NetworkRunner:
             teachers_class = both_rotation_ensemble.BothRotationTeacherEnsemble
             additional_arguments = {
                 Constants.FEATURE_ROTATION_ALPHA: config.feature_rotation_alpha,
-                Constants.READOUT_ROTATION_MAGNITUDE: config.readout_rotation_magnitude,
+                Constants.READOUT_ROTATION_ALPHA: config.readout_rotation_alpha,
             }
         else:
             raise ValueError(
