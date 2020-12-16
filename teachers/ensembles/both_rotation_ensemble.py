@@ -1,6 +1,6 @@
 import copy
 from typing import Dict
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import torch
@@ -28,10 +28,10 @@ class BothRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
         num_teachers: int,
         initialisation_std: float,
         feature_rotation_alpha: float,
-        readout_rotation_magnitude: float,
+        readout_rotation_alpha: float,
     ):
         self._feature_rotation_alpha = feature_rotation_alpha
-        self._readout_rotation_magnitude = readout_rotation_magnitude
+        self._readout_rotation_alpha = readout_rotation_alpha
         super().__init__(
             input_dimension=input_dimension,
             hidden_dimensions=hidden_dimensions,
@@ -73,49 +73,94 @@ class BothRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
         teachers = [self._init_teacher() for _ in range(self._num_teachers)]
 
         with torch.no_grad():
-            # orthonormalise input to hidden weights of first teacher
-            first_teacher_feature_weights = teachers[0].layers[0].weight.data.T
-            self_overlap = (
-                torch.mm(first_teacher_feature_weights, first_teacher_feature_weights.T)
-                / self._hidden_dimensions[0]
-            )
-            L = torch.cholesky(self_overlap)
-            orthonormal_weights = torch.mm(
-                torch.inverse(L), first_teacher_feature_weights
-            )
 
-            # construct input to hidden weights of second teacher
-            second_teacher_rotated_weights = (
-                self._feature_rotation_alpha * orthonormal_weights
-                + np.sqrt(1 - self._feature_rotation_alpha ** 2)
-                * torch.randn(orthonormal_weights.shape)
+            (
+                teacher_0_feature_weights,
+                teacher_1_feature_weights,
+            ) = self._get_rotated_weights(
+                unrotated_weights=teachers[0].layers[0].weight.data.T,
+                alpha=self._feature_rotation_alpha,
+                normalisation=self._hidden_dimensions[0],
             )
 
-            teachers[0].layers[0].weight.data = orthonormal_weights.T
-            teachers[1].layers[0].weight.data = second_teacher_rotated_weights.T
+            teachers[0].layers[0].weight.data = teacher_0_feature_weights.T
+            teachers[1].layers[0].weight.data = teacher_1_feature_weights.T
 
-            # rotate hidden -> output weights by specified amount.
+            # (
+            #     teacher_0_readout_weights,
+            #     teacher_1_readout_weights,
+            # ) = self._get_rotated_weights(
+            #     unrotated_weights=teachers[0].head.weight.data.T,
+            #     alpha=self._readout_rotation_alpha,
+            #     normalisation=None,
+            # )
 
-            # keep current norms
-            current_norm = np.mean(
-                [torch.norm(teacher.head.weight) for teacher in teachers]
-            )
+            (
+                teacher_0_readout_weights,
+                teacher_1_readout_weights,
+            ) = self._get_rotated_readout_weights(teachers=teachers)
 
-            rotated_weight_vectors = custom_functions.generate_rotated_vectors(
-                dimension=self._hidden_dimensions[0],
-                theta=self._readout_rotation_magnitude,
-                normalisation=current_norm,
-            )
-
-            teacher_0_rotated_weight_tensor = torch.Tensor(
-                rotated_weight_vectors[0]
-            ).reshape(teachers[0].head.weight.data.shape)
-
-            teacher_1_rotated_weight_tensor = torch.Tensor(
-                rotated_weight_vectors[1]
-            ).reshape(teachers[1].head.weight.data.shape)
-
-            teachers[0].head.weight.data = teacher_0_rotated_weight_tensor
-            teachers[1].head.weight.data = teacher_1_rotated_weight_tensor
+            teachers[0].head.weight.data = teacher_0_readout_weights
+            teachers[1].head.weight.data = teacher_1_readout_weights
 
         return teachers
+
+    def _feature_overlap(self, feature_1: torch.Tensor, feature_2: torch.Tensor):
+        alpha_matrix = torch.mm(feature_1, feature_2.T) / self._hidden_dimensions[0]
+        alpha = torch.mean(alpha_matrix.diagonal())
+
+        return alpha
+
+    def _readout_overlap(self, feature_1: torch.Tensor, feature_2: torch.Tensor):
+        alpha = torch.mm(feature_1, feature_2.T) / (
+            torch.norm(feature_1) * torch.norm(feature_2)
+        )
+        return alpha
+
+    def _get_rotated_weights(
+        self,
+        unrotated_weights: torch.Tensor,
+        alpha: float,
+        normalisation: Union[None, int],
+    ):
+        if normalisation is not None:
+            # orthonormalise input to hidden weights of first teacher
+            self_overlap = (
+                torch.mm(unrotated_weights, unrotated_weights.T) / normalisation
+            )
+            L = torch.cholesky(self_overlap)
+            orthonormal_weights = torch.mm(torch.inverse(L), unrotated_weights)
+        else:
+            orthonormal_weights = unrotated_weights
+
+        # construct input to hidden weights of second teacher
+        second_teacher_rotated_weights = alpha * orthonormal_weights + np.sqrt(
+            1 - alpha ** 2
+        ) * torch.randn(orthonormal_weights.shape)
+
+        return orthonormal_weights, second_teacher_rotated_weights
+
+    def _get_rotated_readout_weights(self, teachers: List):
+
+        theta = np.arccos(self._readout_rotation_alpha)
+
+        # keep current norms
+        current_norm = np.mean(
+            [torch.norm(teacher.head.weight) for teacher in teachers]
+        )
+
+        rotated_weight_vectors = custom_functions.generate_rotated_vectors(
+            dimension=self._hidden_dimensions[0],
+            theta=theta,
+            normalisation=current_norm,
+        )
+
+        teacher_0_rotated_weight_tensor = torch.Tensor(
+            rotated_weight_vectors[0]
+        ).reshape(teachers[0].head.weight.data.shape)
+
+        teacher_1_rotated_weight_tensor = torch.Tensor(
+            rotated_weight_vectors[1]
+        ).reshape(teachers[1].head.weight.data.shape)
+
+        return teacher_0_rotated_weight_tensor, teacher_1_rotated_weight_tensor
