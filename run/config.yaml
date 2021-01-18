@@ -45,6 +45,7 @@ logging:
   log_to_df:                        True
   merge_at_checkpoint:              True
   save_weights_at_switch:           True
+  save_weight_frequency:            500
   save_initial_weights:             True
   save_teacher_weights:             True
   log_overlaps:                     True
