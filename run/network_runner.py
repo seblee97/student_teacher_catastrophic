@@ -39,9 +39,8 @@ class NetworkRunner:
     Class for orchestrating student teacher framework including training
     and test loops.
     """
-
     def __init__(
-        self, config: student_teacher_config.StudentTeacherConfiguration
+            self, config: student_teacher_config.StudentTeacherConfiguration
     ) -> None:
         """
         Class constructor.
@@ -54,6 +53,8 @@ class NetworkRunner:
         self._device = config.experiment_device
         self._input_dimension = config.input_dimension
         self._checkpoint_frequency = config.checkpoint_frequency
+        self._checkpoint_path = config.checkpoint_path
+        self._save_weight_frequency = config.save_weight_frequency
         self._total_training_steps = config.total_training_steps
         self._log_frequency = config.log_frequency
         self._test_frequency = config.test_frequency
@@ -72,14 +73,16 @@ class NetworkRunner:
 
         self._manage_network_devices()
 
-    def get_network_configuration(self) -> network_configuration.NetworkConfiguration:
+    def get_network_configuration(
+            self) -> network_configuration.NetworkConfiguration:
         """Get macroscopic configuration of networks in terms of order parameters.
 
         Used for both logging purposes and as input to ODE runner.
         """
         with torch.no_grad():
             student_head_weights = [
-                head.weight.data.cpu().numpy().flatten() for head in self._student.heads
+                head.weight.data.cpu().numpy().flatten()
+                for head in self._student.heads
             ]
             teacher_head_weights = [
                 teacher.head.weight.data.cpu().numpy().flatten()
@@ -95,9 +98,9 @@ class NetworkRunner:
             ]
             student_layer = self._student.layers[0].weight.data
             student_teacher_overlaps = [
-                student_layer.mm(teacher.layers[0].weight.data.t()).cpu().numpy()
-                / self._input_dimension
-                for teacher in self._teachers.teachers
+                student_layer.mm(
+                    teacher.layers[0].weight.data.t()).cpu().numpy() /
+                self._input_dimension for teacher in self._teachers.teachers
             ]
 
         return network_configuration.NetworkConfiguration(
@@ -114,11 +117,8 @@ class NetworkRunner:
         self, config: student_teacher_config.StudentTeacherConfiguration
     ) -> base_teacher_ensemble.BaseTeacherEnsemble:
         """Initialise teacher object containing teacher networks."""
-        forward_scaling = (
-            1 / np.sqrt(config.teacher_hidden_layers[0])
-            if config.scale_teacher_forward_by_hidden
-            else 1.0
-        )
+        forward_scaling = (1 / np.sqrt(config.teacher_hidden_layers[0])
+                           if config.scale_teacher_forward_by_hidden else 1.0)
         base_arguments = {
             Constants.INPUT_DIMENSION: config.input_dimension,
             Constants.HIDDEN_DIMENSIONS: config.teacher_hidden_layers,
@@ -140,14 +140,18 @@ class NetworkRunner:
         elif config.teacher_configuration == Constants.READOUT_ROTATION:
             teachers_class = readout_rotation_ensemble.ReadoutRotationTeacherEnsemble
             additional_arguments = {
-                Constants.ROTATION_MAGNITUDE: config.readout_rotation_magnitude,
-                Constants.FEATURE_COPY_PERCENTAGE: config.feature_copy_percentage,
+                Constants.ROTATION_MAGNITUDE:
+                config.readout_rotation_magnitude,
+                Constants.FEATURE_COPY_PERCENTAGE:
+                config.feature_copy_percentage,
             }
         elif config.teacher_configuration == Constants.BOTH_ROTATION:
             teachers_class = both_rotation_ensemble.BothRotationTeacherEnsemble
             additional_arguments = {
-                Constants.FEATURE_ROTATION_ALPHA: config.feature_rotation_alpha,
-                Constants.READOUT_ROTATION_ALPHA: config.readout_rotation_alpha,
+                Constants.FEATURE_ROTATION_ALPHA:
+                config.feature_rotation_alpha,
+                Constants.READOUT_ROTATION_ALPHA:
+                config.readout_rotation_alpha,
             }
         else:
             raise ValueError(
@@ -157,9 +161,8 @@ class NetworkRunner:
         teachers = teachers_class(**base_arguments, **additional_arguments)
 
         if config.save_teacher_weights:
-            save_path = os.path.join(
-                config.checkpoint_path, Constants.TEACHER_WEIGHT_SAVE_PATH
-            )
+            save_path = os.path.join(config.checkpoint_path,
+                                     Constants.TEACHER_WEIGHT_SAVE_PATH)
             teachers.save_all_teacher_weights(save_path=save_path)
 
         return teachers
@@ -179,12 +182,8 @@ class NetworkRunner:
             )
 
         teacher_features_copy = (
-            None
-            if config.teacher_features_copy is None
-            else copy.deepcopy(
-                self._teachers.teachers[config.teacher_features_copy].layers
-            )
-        )
+            None if config.teacher_features_copy is None else copy.deepcopy(
+                self._teachers.teachers[config.teacher_features_copy].layers))
 
         return student_class(
             input_dimension=config.input_dimension,
@@ -257,8 +256,7 @@ class NetworkRunner:
             loss_function = nn.BCELoss()
         else:
             raise NotImplementedError(
-                f"Loss function {config.loss_function} not recognised."
-            )
+                f"Loss function {config.loss_function} not recognised.")
         return loss_function
 
     @decorators.timer
@@ -274,9 +272,11 @@ class NetworkRunner:
         if config.stopping_condition == Constants.FIXED_PERIOD:
             curriculum = periodic_curriculum.PeriodicCurriculum(config=config)
         elif config.stopping_condition == Constants.LOSS_THRESHOLDS:
-            curriculum = threshold_curriculum.ThresholdCurriculum(config=config)
+            curriculum = threshold_curriculum.ThresholdCurriculum(
+                config=config)
         elif config.stopping_condition == Constants.SWITCH_STEPS:
-            curriculum = hard_steps_curriculum.HardStepsCurriculum(config=config)
+            curriculum = hard_steps_curriculum.HardStepsCurriculum(
+                config=config)
         else:
             raise ValueError(
                 f"Stopping condition {config.stopping_condition} not recognised."
@@ -298,9 +298,8 @@ class NetworkRunner:
         for teacher in self._teachers.teachers:
             teacher.to(device=self._device)
 
-    def _compute_loss(
-        self, prediction: torch.Tensor, target: torch.Tensor
-    ) -> torch.Tensor:
+    def _compute_loss(self, prediction: torch.Tensor,
+                      target: torch.Tensor) -> torch.Tensor:
         """Calculate loss of prediction of student vs. target from teacher
 
         Args:
@@ -322,10 +321,10 @@ class NetworkRunner:
         # reset seeds before training to ensure data is the same.
         experiment_utils.set_random_seeds(self._seed)
 
-        self._test_data_inputs = self._data_module.get_test_data()[Constants.X].to(
-            self._device
-        )
-        self._test_teacher_outputs = self._teachers.forward_all(self._test_data_inputs)
+        self._test_data_inputs = self._data_module.get_test_data()[
+            Constants.X].to(self._device)
+        self._test_teacher_outputs = self._teachers.forward_all(
+            self._test_data_inputs)
 
     def train(self):
         """Training orchestration."""
@@ -348,10 +347,8 @@ class NetworkRunner:
 
         while self._total_step_count < self._total_training_steps:
 
-            if (
-                self._total_step_count % self._checkpoint_frequency == 0
-                and self._total_step_count != 0
-            ):
+            if (self._total_step_count % self._checkpoint_frequency == 0
+                    and self._total_step_count != 0):
                 self._logger.checkpoint_df()
 
             if self._total_step_count % self._test_frequency == 0:
@@ -377,19 +374,27 @@ class NetworkRunner:
                 for i, error in enumerate(generalisation_errors):
                     print(f"    Teacher {i}: {error}\n")
 
-            latest_task_generalisation_error = generalisation_errors[teacher_index]
+            latest_task_generalisation_error = generalisation_errors[
+                teacher_index]
 
             self._training_step(teacher_index=teacher_index)
 
             task_step_count += 1
 
             if self._curriculum.to_switch(
-                task_step=task_step_count, error=latest_task_generalisation_error
-            ):
+                    task_step=task_step_count,
+                    error=latest_task_generalisation_error):
                 break
 
     def _training_step(self, teacher_index: int):
         """Perform single training step."""
+
+        if self._total_step_count % self._save_weight_frequency == 0:
+            self._student.save_weights(save_path=os.path.join(
+                self._checkpoint_path,
+                f"{Constants.STUDENT_WEIGHTS}_{self._total_step_count}"
+            ))
+
         batch = self._data_module.get_batch()
         batch_input = batch[Constants.X].to(self._device)
 
@@ -419,8 +424,7 @@ class NetworkRunner:
             student_outputs = self._student.forward_all(self._test_data_inputs)
 
             for student_output, teacher_output in zip(
-                student_outputs, self._test_teacher_outputs
-            ):
+                    student_outputs, self._test_teacher_outputs):
                 loss = self._compute_loss(student_output, teacher_output)
                 generalisation_errors.append(loss.item())
 
