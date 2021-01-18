@@ -140,6 +140,8 @@ class Constants:
     GPU_ID = "gpu_id"
     SWITCH_STEPS = "switch_steps"
     SPLIT_LOGGING = "split_logging"
+    STUDENT_WEIGHTS = "student_weights"
+    SAVE_WEIGHT_FREQUENCY = "save_weight_frequency"
 
     CHECKPOINT_PATH = "checkpoint_path"
     EXPERIMENT_TIMESTAMP = "experiment_timestamp"
