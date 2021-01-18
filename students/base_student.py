@@ -90,6 +90,10 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
     def frozen(self):
         return self._frozen
 
+    def save_weights(self, save_path: str) -> None:
+        """Save weights of student."""
+        torch.save(self.state_dict(), save_path)
+
     @abc.abstractmethod
     def _construct_output_layers(self):
         """Instantiate the output layer."""
