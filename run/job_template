@@ -1,0 +1,20 @@
+#PBS -lselect=1:ncpus=8:mpiprocs=8:mem=60gb
+#PBS -lwalltime=24:0:0
+
+# initialise conda env
+
+module load anaconda3/personal
+source activate cata
+
+# change to dir where job was submitted from
+
+cd $PBS_O_WORKDIR
+
+# job script
+
+# python $HOME/sl_projects/student_teacher_catastrophic/run/run_pipeline.py --config $HOME/sl_projects/student_teacher_catastrophic/run/config.yaml -seed 
+
+# move files back to permanent
+
+# mkdir $WORK/$PBS_JOBID
+# cp * $WORK/$PBS_JOBID

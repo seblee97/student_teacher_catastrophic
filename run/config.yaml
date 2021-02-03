@@ -18,7 +18,7 @@ task:
   loss_type:                        regression                # classification or regression
 
 training:
-  total_training_steps:             5000
+  total_training_steps:             3000000
   train_batch_size:                 1                         
   learning_rate:                    5                                             
   loss_function:                    mse                       # mse, bce
