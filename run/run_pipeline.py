@@ -24,6 +24,27 @@ def get_args() -> argparse.Namespace:
         default="config.yaml",
     )
 
+    parser.add_argument(
+        "-seed",
+        type=int,
+        help="seed to be used",
+        default=0,
+    )
+
+    parser.add_argument(
+        "-fa",
+        type=float,
+        help="feature rotation alpha",
+        default=0.0,
+    )
+
+    parser.add_argument(
+        "-ra",
+        type=float,
+        help="readout rotation alpha",
+        default=0.0,
+    )
+
     args = parser.parse_args()
 
     return args
@@ -44,6 +65,11 @@ def get_config_object(
     configuration = student_teacher_config.StudentTeacherConfiguration(
         config=full_config_path, template=ConfigTemplate.base_config_template
     )
+
+    configuration.amend_property(property_name="seed", new_property_value=args.seed)
+    configuration.amend_property(property_name="feature_rotation_alpha", new_property_value=args.fa)
+    configuration.amend_property(property_name="readout_rotation_alpha", new_property_value=args.ra)
+
     return configuration
 
 
