@@ -52,7 +52,7 @@ logging:
   
 testing:
   test_batch_size:                  50000                     # generalisation error
-  test_frequency:                   1                         # how often during training to perform generalisation error test loop
+  test_frequency:                   10                         # how often during training to perform generalisation error test loop
   overlap_frequency:                100                       # how often during training to compute / visualise overlap matrices
 
 model:
