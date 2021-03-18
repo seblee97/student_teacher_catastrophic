@@ -80,7 +80,7 @@ def get_config_object(
     if args.ra is not None:
         configuration.amend_property(property_name="readout_rotation_alpha", new_property_value=args.ra)
     if args.name is not None:
-        configuration.amend_property(property_name="name", new_property_value=args.name)
+        configuration.amend_property(property_name="experiment_name", new_property_value=args.name)
 
     return configuration
 
