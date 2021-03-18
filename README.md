@@ -21,7 +21,7 @@ by running
 
 from the root of the repository. Alternatively you can run
 
-```PYTHONPATH="${PYTHONPATH}:$PATH_TO_ROOT"```
+```PYTHONPATH="${PYTHONPATH}:$PATH_TO_REPOS"```
 
 or place this line in your bash profile.
 
