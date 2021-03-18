@@ -4,8 +4,8 @@ pandas==1.0.1
 PyYAML==5.1.2
 scikit-learn==0.22.1
 scipy==1.4.1
-torch
-torchvision
+torch==1.6.0
+torchvision==0.7.0
 tensorboardX==1.9
 
 -e git://github.com/seblee97/config_package.git#egg=config-manager-seblee97
