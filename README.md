@@ -9,7 +9,7 @@ where different tasks are represented by different teachers.
 
 # Prerequisites
 
-To run this code you will need Python 3.8+ (other versions may work but have not been explicitly tested); it is written in PyTorch. All other requirements are 
+To run this code you will need Python 3.8+ (other versions may work but have not been explicitly tested); it is written in PyTorch. All python package requirements are 
 specified in the requirements file (requirements.txt) and can be satisfied by running (preferably in a virtual environment)
 
 ```pip3 install -r requirements.txt```
