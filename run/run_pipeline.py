@@ -18,10 +18,38 @@ def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "-config",
+        "--config",
         type=str,
         help="path to configuration file for student teacher experiment",
         default="config.yaml",
+    )
+
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help="seed to be used",
+        default=None,
+    )
+
+    parser.add_argument(
+        "--fa",
+        type=float,
+        help="feature rotation alpha",
+        default=None,
+    )
+
+    parser.add_argument(
+        "--ra",
+        type=float,
+        help="readout rotation alpha",
+        default=None,
+    )
+
+    parser.add_argument(
+        "--name",
+        type=str,
+        help="name of experiment",
+        default=None,
     )
 
     args = parser.parse_args()
@@ -44,6 +72,16 @@ def get_config_object(
     configuration = student_teacher_config.StudentTeacherConfiguration(
         config=full_config_path, template=ConfigTemplate.base_config_template
     )
+
+    if args.seed is not None:
+        configuration.amend_property(property_name="seed", new_property_value=args.seed)
+    if args.fa is not None:
+        configuration.amend_property(property_name="feature_rotation_alpha", new_property_value=args.fa)
+    if args.ra is not None:
+        configuration.amend_property(property_name="readout_rotation_alpha", new_property_value=args.ra)
+    if args.name is not None:
+        configuration.amend_property(property_name="name", new_property_value=args.name)
+
     return configuration
 
 
