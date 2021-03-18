@@ -389,11 +389,12 @@ class NetworkRunner:
     def _training_step(self, teacher_index: int):
         """Perform single training step."""
 
-        if self._total_step_count % self._save_weight_frequency == 0:
-            self._student.save_weights(save_path=os.path.join(
-                self._checkpoint_path,
-                f"{Constants.STUDENT_WEIGHTS}_{self._total_step_count}"
-            ))
+        if self._save_weight_frequency is not None:
+            if self._total_step_count % self._save_weight_frequency == 0:
+                self._student.save_weights(save_path=os.path.join(
+                    self._checkpoint_path,
+                    f"{Constants.STUDENT_WEIGHTS}_{self._total_step_count}"
+                ))
 
         batch = self._data_module.get_batch()
         batch_input = batch[Constants.X].to(self._device)
