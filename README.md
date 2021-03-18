@@ -14,16 +14,17 @@ specified in the requirements file (requirements.txt) and can be satisfied by ru
 
 ```pip3 install -r requirements.txt```
 
-# Teacher Configurations
+You will further need to add the root of this project to your python path variable. This can most easily be done 
+by running 
 
-noisy: each teacher has same initialisation, each with different levels of noise added
-independent: all randomly initialised
-drifting: all randomly initialised but drifting over time
-overlapping: structured similarity in teacher weights
+```PYTHONPATH="${PYTHONPATH}:$PATH_TO_ROOT"```
 
-trained_mnist: teachers trained as classifiers
+or placing this line in your bash profile.
 
-# Input Sources
+# Configurations
 
-iid_gaussian: drawn independently from Gaussian
-mnist: inputs are flattened MNIST images
+Experiment configurations can be found in the ```experiments/base_config.yaml``` file. 
+
+# Experiments
+
+Experiments are run with the ```python experiments/main.py``` command.

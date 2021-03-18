@@ -1,7 +1,9 @@
 import os
 import matplotlib.pyplot as plt
+import matplotlib
 import pandas as pd
 import numpy as np
+from scipy.interpolate import interp1d
 
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -23,10 +25,11 @@ class TeacherTeacherPlotter:
         dfs = {}
         indices = os.listdir(folder)
         for index in indices:
-            try:
-                dfs[int(index)] = pd.read_csv(f"{folder}/{index}/{df_name}")
-            except FileNotFoundError:
-                print(f"df with name {df_name} not found at index {index}")
+            if index != ".DS_Store" and os.path.isdir(os.path.join(folder, index)):
+                try:
+                    dfs[int(index)] = pd.read_csv(f"{folder}/{index}/{df_name}")
+                except FileNotFoundError:
+                    print(f"df with name {df_name} not found at index {index}")
         return dfs
 
     def plot_vs_step(self,
@@ -61,7 +64,7 @@ class TeacherTeacherPlotter:
 
         fig = plt.figure(figsize=figsize)
         for attribute, label, color_map in zip(attributes, labels, color_maps):
-            for i in range(len(dfs)):
+            for i in sorted(list(dfs.keys())):
                 dfs[i][attribute].plot(
                     label=f"V: {round(self._overlaps[i], 4)}; {label}",
                     color=color_map(i / len(self._overlaps)),
@@ -96,7 +99,7 @@ class TeacherTeacherPlotter:
                         data_origin: str,
                         attribute: str,
                         steps: Union[List[int], int],
-                        color: str,
+                        color: Union[str, matplotlib.colors.ListedColormap],
                         alpha: float = 1,
                         linewidth: Union[float, int] = 5,
                         show_axis_labels: bool = True,
@@ -130,8 +133,20 @@ class TeacherTeacherPlotter:
                 for i in range(len(self._overlaps))
             ]
         fig = plt.figure()
-        plt.plot(
-            self._overlaps, attribute_values_at_step, linewidth=linewidth, alpha=alpha, color=color)
+        if isinstance(color, str):
+            plt.plot(
+                self._overlaps,
+                attribute_values_at_step,
+                linewidth=linewidth,
+                alpha=alpha,
+                color=color)
+        elif isinstance(color, matplotlib.colors.ListedColormap):
+            f = interp1d(self._overlaps, attribute_values_at_step)
+            x = np.linspace(0, 1, 10000)
+            y = f(x)
+            colors = [color(i) for i in x]
+            for overlap, attribute_value, color in zip(x, y, colors):
+                plt.scatter(overlap, attribute_value, color=color)
         if show_axis_labels:
             plt.xlabel("Teacher-Teacher Overlap")
         if xlims is not None:

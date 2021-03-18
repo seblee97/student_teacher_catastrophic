@@ -179,7 +179,6 @@ class StudentTeacherODE:
         i_range, k_range = derivative.shape
         for i in range(i_range):
             for k in range(i, k_range):
-                # for (i, k), _ in np.ndenumerate(derivative):
                 ik_derivative = 0
 
                 sum_1 = 0
@@ -342,6 +341,20 @@ class StudentTeacherODE:
                     [i, self._teacher_2_offset + p]
                 )
                 error -= head_unit_i * teacher_head_unit_p * self._i2_fn(cov)
+        if error < 0:
+            warnings.warn(
+                "Latest error calculation is negative. This could be due to the learning rate being too high, "
+                "especially close to convergence. Run 'self.error_1_log' or self.error_2_log' to view error logs to this point."
+                "Run self.make_plot(SAVE_PATH) to create plot of errors and overlaps to this point."
+            )
+            import pdb
+            pdb.set_trace()
+        if np.isnan(error):
+            warnings.warn(
+                "Latest error calculation is NaN. "
+                "Run 'self.error_1_log' or self.error_2_log' to view error logs to this point.")
+            import pdb
+            pdb.set_trace()
         return error
 
     @property

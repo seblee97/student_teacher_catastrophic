@@ -27,7 +27,7 @@ class _MNISTData(_BaseData, ABC):
 
         self._pca_input: int = config.get(["mnist_data", "pca_input"])
         self._standardise: bool = config.get(["mnist_data", "standardise"])
-        self._noise: bool = config.get(["mnist_data", "noise"])
+        # self._noise: bool = config.get(["mnist_data", "noise"])
 
         self._load_mnist_data()
 

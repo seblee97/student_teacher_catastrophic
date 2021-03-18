@@ -28,11 +28,17 @@ class PlotConfigGenerator:
 
         attribute_config = {
             **PlotConfigGenerator._get_log_genealisation_error_config(num_teachers),
-            **PlotConfigGenerator._get_linear_genealisation_error_config(num_teachers),
-            **PlotConfigGenerator._get_student_teacher_overlap_config(num_teachers, student_hidden_layers, teacher_hidden_layers),
-            **PlotConfigGenerator._get_student_heads_config(num_teachers, student_hidden_layers),
-            **PlotConfigGenerator._get_student_self_overlap_config(student_hidden_layers)
+            **PlotConfigGenerator._get_linear_genealisation_error_config(num_teachers)
         }
+
+        if config.get(["logging", "log_overlaps"]):
+            attribute_config = {
+                **attribute_config,
+                **PlotConfigGenerator._get_student_teacher_overlap_config(
+                    num_teachers, student_hidden_layers, teacher_hidden_layers),
+                **PlotConfigGenerator._get_student_heads_config(num_teachers, student_hidden_layers),
+                **PlotConfigGenerator._get_student_self_overlap_config(student_hidden_layers)
+            }
 
         if gradient_overlaps:
             attribute_config = {

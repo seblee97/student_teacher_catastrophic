@@ -1,0 +1,22 @@
+name: "Cata Second 0"
+description: "Bolt Cata"
+
+permissions:
+  owners: 'sebastian_lee2'
+  viewers: 'sebastian_lee2'
+
+command: 'source /mnt/miniconda/etc/profile.d/conda.sh && conda activate PY3 &&
+export PYTHONPATH="${PYTHONPATH}:$PWD" && python bolt/bolt_jobs.py'
+setup_command: 'bash bolt/cata_bolt_setup.sh'
+
+is_parent: True
+
+resources:
+  num_cpus: 16
+  num_gpus: 0
+  cluster: apc_usmsc39
+  timeout: 4d
+  memory_gb: 24
+
+environment_variables:
+  USE_BOLT_EXPERIMENTAL_CONDA: "1"
