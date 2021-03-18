@@ -12,7 +12,7 @@ where different tasks are represented by different teachers.
 To run this code you will need Python 3.8+ (other versions may work but have not been explicitly tested); it is written in PyTorch. All python package requirements are 
 specified in the requirements file (requirements.txt) and can be satisfied by running (preferably in a virtual environment)
 
-```pip3 install -r requirements.txt```
+```pip install -r requirements.txt```
 
 You will further need to add the root of this project to your python path variable. This can most easily be done by simply installing the repository as a package in your virtual environment
 by running 
