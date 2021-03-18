@@ -18,16 +18,15 @@ task:
   loss_type:                        regression                # classification or regression
 
 training:
-  total_training_steps:             5000
+  total_training_steps:             10000
   train_batch_size:                 1                         
   learning_rate:                    5                                             
   loss_function:                    mse                       # mse, bce
   scale_head_lr:                    True                      # whether to add 1/N factor in lr of output layer  
   scale_hidden_lr:                  True                      # whether to add 1/\sqrt{N} factor in forward of hidden layer(s)
-  scale_forward_by_hidden:          True                      # whether to scale forward of network by 1/K (hidden dim)--for mean-field regime
   train_hidden_layers:              True
   train_head_layer:                 True
-  freeze_features:                  [0]                      # hidden layers frozen / unfrozen at these steps.
+  freeze_features:                  []                        # hidden layers frozen / unfrozen at these steps.
 
 data:
   input_source:                     iid_gaussian              # iid_gaussian, mnist_stream, mnist_digits, even_greater (see README)
@@ -57,17 +56,18 @@ testing:
   overlap_frequency:                100                       # how often during training to compute / visualise overlap matrices
 
 model:
-  input_dimension:                  1000                 
+  input_dimension:                  10000                 
   output_dimension:                 1
 
   student:
-    teacher_features_copy:            0                         # emtpy/None = indpendent of teachers, integer = index of teacher to copy
-    student_hidden_layers:            [20]                       
+    teacher_features_copy:                                      # emtpy/None = indpendent of teachers, integer = index of teacher to copy
+    student_hidden_layers:            [2]                       
     student_nonlinearity:             scaled_erf                      
     apply_nonlinearity_on_output:     False
     student_initialisation_std:       0.001                     # std of normal initialisation for student network
     initialise_student_outputs:       True                      # whether or not to initialise hidden -> output weights of student
     soft_committee:                   False                     # whether or not to fix output layer of student to 1 (scm)
+    scale_student_forward_by_hidden:  False
     student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
     symmetric_student_initialisation: False                     # identically initialised student hidden units
 
@@ -77,6 +77,7 @@ model:
     normalise_teachers:               True
     teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
     unit_norm_teacher_head:           True                      # choose head weight from 1, -1 or initialise using normal
+    scale_teacher_forward_by_hidden:  False
     teacher_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (teacher)
     teacher_noises:                   [0, 0]
     feature_rotation:
@@ -91,6 +92,6 @@ model:
 
 curriculum:
   stopping_condition:               switch_steps              # condition on which to switch task (fixed_period, switch_steps, or threshold)
-  switch_steps:                     [10000, 500000]
+  switch_steps:                     [5000, 500000]
   fixed_period:                     2500                      # period for changing tasks 
   loss_thresholds:                  [0.0001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001, 0.000000001, 0.0000000001]                    # loss threshold under which teacher is changed
