@@ -91,7 +91,7 @@ model:
     
 
 curriculum:
-  stopping_condition:               switch_steps              # condition on which to switch task (fixed_period, switch_steps, or threshold)
+  stopping_condition:               loss_thresholds              # condition on which to switch task (fixed_period, switch_steps, or loss_thresholds)
   switch_steps:                     [1500000]
   fixed_period:                     2500                      # period for changing tasks 
-  loss_thresholds:                  [0.0001, 0.0001, 0.00001, 0.000001, 0.0000001, 0.00000001, 0.000000001, 0.0000000001]                    # loss threshold under which teacher is changed
+  loss_thresholds:                  [0.0001]                    # loss threshold under which teacher is changed
