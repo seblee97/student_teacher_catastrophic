@@ -5,7 +5,7 @@ import numpy as np
 from scipy import stats
 
 
-def generate_rotated_vectors_ortho_group(
+def generate_rotated_vectors(
     dimension: int, theta: float, normalisation: Union[float, int] = 1
 ) -> Tuple[np.ndarray]:
     """
@@ -34,7 +34,7 @@ def generate_rotated_vectors_ortho_group(
     return y_1, y_2
 
 
-def generate_rotated_vectors(
+def _generate_rotated_vectors(
     dimension: int, theta: float, normalisation: Union[float, int] = 1
 ) -> Tuple[np.ndarray]:
     """
