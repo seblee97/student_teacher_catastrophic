@@ -428,7 +428,7 @@ class ConfigTemplate:
                     lambda x: x
                     in [
                         constants.Constants.FIXED_PERIOD,
-                        constants.Constants.THRESHOLD,
+                        constants.Constants.LOSS_THRESHOLDS,
                         constants.Constants.SWITCH_STEPS,
                     ]
                 ],
