@@ -2,6 +2,7 @@ experiment_name:
 use_gpu:                            True
 gpu_id:                             0                    
 seed:                               0
+results_path:                       # if None given, will default to 'results' folder under run.
 
 network_simulation: True
 ode_simulation: False
