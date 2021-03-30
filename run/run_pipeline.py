@@ -52,6 +52,12 @@ def get_args() -> argparse.Namespace:
         help="name of experiment",
         default=None,
     )
+    parser.add_argument(
+        "--gpu_id",
+        type=int,
+        help="id of GPU to use",
+        default=None,
+    )
 
     args = parser.parse_args()
 
@@ -82,6 +88,8 @@ def get_config_object(
         configuration.amend_property(property_name="readout_rotation_alpha", new_property_value=args.ra)
     if args.name is not None:
         configuration.amend_property(property_name="experiment_name", new_property_value=args.name)
+    if args.gpu_id is not None:
+        configuration.amend_property(property_name="gpu_id", new_property_value=args.gpu_id)
 
     return configuration
 
