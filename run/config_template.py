@@ -441,7 +441,7 @@ class ConfigTemplate:
             config_field.Field(
                 name=constants.Constants.SWITCH_STEPS,
                 types=[list],
-                requirements=[lambda x: all(isinstance(y, int) and y > 0 for y in x)],
+                requirements=[lambda x: all(isinstance(y, int) and y >= 0 for y in x)],
             ),
             config_field.Field(
                 name=constants.Constants.LOSS_THRESHOLDS,
@@ -475,6 +475,10 @@ class ConfigTemplate:
                 name=constants.Constants.SEED,
                 types=[int],
                 requirements=[lambda x: x >= 0],
+            ),
+            config_field.Field(
+                name=constants.Constants.RESULTS_PATH,
+                types=[str],
             ),
             config_field.Field(
                 name=constants.Constants.NETWORK_SIMULATION,
