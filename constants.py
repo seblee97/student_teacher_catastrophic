@@ -146,6 +146,7 @@ class Constants:
     CHECKPOINT_PATH = "checkpoint_path"
     EXPERIMENT_TIMESTAMP = "experiment_timestamp"
     RESULTS = "results"
+    RESULTS_PATH = "results_path"
     PARALLEL = "parallel"
     SERIAL = "serial"
     FORGETTING_PLOT = "forgetting_plot.pdf"
