@@ -9,6 +9,7 @@ import constants
 from run import core_runner
 from run import student_teacher_config
 from run.config_template import ConfigTemplate
+from utils import experiment_utils
 
 MAIN_FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -106,12 +107,11 @@ def set_experiment_metadata(
     exp_timestamp = raw_datetime.strftime("%Y-%m-%d-%H-%M-%S")
     experiment_name = config.experiment_name or ""
 
-    results_folder_base = constants.Constants.RESULTS
-
-    checkpoint_path = (
-        f"{MAIN_FILE_PATH}/{results_folder_base}/{exp_timestamp}/{experiment_name}/"
-    )
-
+    results_folder_base = config.results_path or MAIN_FILE_PATH
+    results_folder_base = os.path.join(results_folder_base, constants.Constants.RESULTS)
+    
+    checkpoint_path = experiment_utils.get_checkpoint_path(folder=results_folder_base, timestamp=exp_timestamp, experiment_name=experiment_name)
+        
     os.makedirs(checkpoint_path, exist_ok=True)
 
     config.add_property(constants.Constants.CHECKPOINT_PATH, checkpoint_path)
