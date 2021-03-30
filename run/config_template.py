@@ -478,7 +478,7 @@ class ConfigTemplate:
             ),
             config_field.Field(
                 name=constants.Constants.RESULTS_PATH,
-                types=[str, None],
+                types=[str, type(None)],
             ),
             config_field.Field(
                 name=constants.Constants.NETWORK_SIMULATION,
