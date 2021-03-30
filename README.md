@@ -7,6 +7,8 @@ of Oxford, and was supervised by Andrew Saxe and Sebastian Goldt.
 This code allows specification of a continual learning framework for a student
 where different tasks are represented by different teachers.
 
+This project is licensed under the terms of the MIT license.
+
 # Prerequisites
 
 To run this code you will need Python 3.8+ (other versions may work but have not been explicitly tested); it is written in PyTorch. All python package requirements are 
