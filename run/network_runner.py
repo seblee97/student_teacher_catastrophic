@@ -342,7 +342,11 @@ class NetworkRunner:
         """One phase of training (wrt one teacher)."""
         self._student.signal_task_boundary(new_task=teacher_index)
         task_step_count = 0
-        latest_task_generalisation_error = np.inf
+        generalisation_errors = self._compute_generalisation_errors()
+        self._logger.log_generalisation_errors(
+            step=self._total_step_count,
+            generalisation_errors=generalisation_errors,
+        )
         timer = time.time()
 
         while self._total_step_count < self._total_training_steps:
