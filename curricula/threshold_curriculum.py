@@ -39,7 +39,8 @@ class ThresholdCurriculum(base_curriculum.BaseCurriculum):
                 self._current_loss_threshold = next(self._curriculum_loss_thresholds)
                 return True
             except StopIteration:
-                print("Sequence of thresholds exhausted. Run complete...")
+                print("Sequence of thresholds exhausted...")
+                self._current_loss_threshold = 0
                 return None
         else:
             return False
