@@ -5,7 +5,7 @@ import numpy as np
 from scipy import stats
 
 
-def generate_rotated_vectors(
+def _generate_rotated_vectors(
     dimension: int, theta: float, normalisation: Union[float, int] = 1
 ) -> Tuple[np.ndarray]:
     """
@@ -34,7 +34,7 @@ def generate_rotated_vectors(
     return y_1, y_2
 
 
-def _generate_rotated_vectors(
+def generate_rotated_vectors(
     dimension: int, theta: float, normalisation: Union[float, int] = 1
 ) -> Tuple[np.ndarray]:
     """
@@ -51,8 +51,8 @@ def _generate_rotated_vectors(
     """
     v_1 = np.random.normal(size=(dimension))
     v_2 = np.random.normal(size=(dimension))
-    normal_1 = v_1 / np.linalg.norm(v_1)
-    normal_2 = v_2 / np.linalg.norm(v_2)
+    normal_1 = normalisation * v_1 / np.linalg.norm(v_1)
+    normal_2 = normalisation * v_2 / np.linalg.norm(v_2)
 
     stacked_orthonormal = np.stack((normal_1, normal_2)).T
 
