@@ -14,20 +14,25 @@ ode_run:
 task:
   label_task_boundaries:            True                      
   learner_configuration:            continual                 # meta or continual - specifies whether student has separate heads for each teacher (continual) or not (meta)
-  teacher_configuration:            both_rotation               # feature_rotation, readout_rotation,, noisy, independent, overlapping, drifting, trained_mnist (see README)
+  teacher_configuration:            feature_rotation               # feature_rotation, readout_rotation,, noisy, independent, overlapping, drifting, trained_mnist (see README)
   num_teachers:                     2                         
   loss_type:                        regression                # classification or regression
 
 training:
-  total_training_steps:             3000000
+  total_training_steps:             1000000
   train_batch_size:                 1                         
-  learning_rate:                    5                                             
+  learning_rate:                    1                                             
   loss_function:                    mse                       # mse, bce
-  scale_head_lr:                    False                      # whether to add 1/N factor in lr of output layer  
+  scale_head_lr:                    True                      # whether to add 1/N factor in lr of output layer  
   scale_hidden_lr:                  True                      # whether to add 1/\sqrt{N} factor in forward of hidden layer(s)
   train_hidden_layers:              True
   train_head_layer:                 True
   freeze_features:                  []                        # hidden layers frozen / unfrozen at these steps.
+  
+  consolidation:                    
+
+    type:                           ewc                       # empty for no consolidation
+    importance:                     0.1
 
 data:
   input_source:                     iid_gaussian              # iid_gaussian, mnist_stream, mnist_digits, even_greater (see README)
@@ -57,28 +62,28 @@ testing:
   overlap_frequency:                100                       # how often during training to compute / visualise overlap matrices
 
 model:
-  input_dimension:                  15                
+  input_dimension:                  1000                
   output_dimension:                 1
 
   student:
     teacher_features_copy:                                      # emtpy/None = indpendent of teachers, integer = index of teacher to copy
-    student_hidden_layers:            [1000]                       
+    student_hidden_layers:            [2]                       
     student_nonlinearity:             scaled_erf                      
     apply_nonlinearity_on_output:     False
     student_initialisation_std:       0.001                     # std of normal initialisation for student network
     initialise_student_outputs:       True                      # whether or not to initialise hidden -> output weights of student
     soft_committee:                   False                     # whether or not to fix output layer of student to 1 (scm)
-    scale_student_forward_by_hidden:  True
+    scale_student_forward_by_hidden:  False
     student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
     symmetric_student_initialisation: False                     # identically initialised student hidden units
 
   teachers:
-    teacher_hidden_layers:            [250]                                                
+    teacher_hidden_layers:            [1]                                                
     teacher_nonlinearities:           [scaled_erf, scaled_erf]              # per teacher
     normalise_teachers:               True
     teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
-    unit_norm_teacher_head:           False                      # choose head weight from 1, -1 or initialise using normal
-    scale_teacher_forward_by_hidden:  True
+    unit_norm_teacher_head:           True                      # choose head weight from 1, -1 or initialise using normal
+    scale_teacher_forward_by_hidden:  False
     teacher_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (teacher)
     teacher_noises:                   [0, 0]
     feature_rotation:
@@ -92,7 +97,7 @@ model:
     
 
 curriculum:
-  stopping_condition:               loss_thresholds              # condition on which to switch task (fixed_period, switch_steps, or loss_thresholds)
-  switch_steps:                     [1500000]
+  stopping_condition:               switch_steps              # condition on which to switch task (fixed_period, switch_steps, or loss_thresholds)
+  switch_steps:                     [500000]
   fixed_period:                     2500                      # period for changing tasks 
   loss_thresholds:                  [0.0001]                    # loss threshold under which teacher is changed
