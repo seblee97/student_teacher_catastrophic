@@ -71,6 +71,22 @@ class ConfigTemplate:
         level=[constants.Constants.TASK],
     )
 
+    _consolidation_template = config_template.Template(
+        fields=[
+            config_field.Field(
+                name=constants.Constants.TYPE,
+                key=constants.Constants.CONSOLIDATION_TYPE,
+                types=[type(None), str],
+                requirements=[lambda x: x is None or x in [constants.Constants.EWC]],
+            ),
+            config_field.Field(
+                name=constants.Constants.IMPORTANCE,
+                types=[int, float],
+            ),
+        ],
+        level=[constants.Constants.TRAINING, constants.Constants.CONSOLIDATION],
+    )
+
     _training_template = config_template.Template(
         fields=[
             config_field.Field(
@@ -117,6 +133,7 @@ class ConfigTemplate:
                 requirements=[lambda x: all(isinstance(y, int) for y in x)],
             ),
         ],
+        nested_templates=[_consolidation_template],
         level=[constants.Constants.TRAINING],
     )
 
