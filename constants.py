@@ -142,7 +142,6 @@ class Constants:
     SPLIT_LOGGING = "split_logging"
     STUDENT_WEIGHTS = "student_weights"
     SAVE_WEIGHT_FREQUENCY = "save_weight_frequency"
-
     CHECKPOINT_PATH = "checkpoint_path"
     EXPERIMENT_TIMESTAMP = "experiment_timestamp"
     RESULTS = "results"
@@ -157,10 +156,8 @@ class Constants:
     TRANSFER_VS_V_PLOT = "transfer_vs_v.pdf"
     FORGETTING_RATE_PLOT = "forgetting_rate.pdf"
     TRANSFER_RATE_PLOT = "transfer_rate.pdf"
-
     WEIGHT = "weight"
     OVERLAP = "overlap"
-
     BOTH_ROTATION = "both_rotation"
     FEATURE_ROTATION_ALPHA = "feature_rotation_alpha"
     READOUT_ROTATION_ALPHA = "readout_rotation_alpha"
@@ -168,14 +165,17 @@ class Constants:
     SCALE_TEACHER_FORWARD_BY_HIDDEN = "scale_teacher_forward_by_hidden"
     SCALE_STUDENT_FORWARD_BY_HIDDEN = "scale_student_forward_by_hidden"
     FORWARD_SCALING = "forward_scaling"
-
     SAVE_TEACHER_WEIGHTS = "save_teacher_weights"
     TEACHER_WEIGHT_SAVE_PATH = "teacher_weights"
-
     LEFT = "left"
     RIGHT = "right"
-
     APPLY_NONLINEARITY_ON_OUTPUT = "apply_nonlinearity_on_output"
+    CONSOLIDATE = "consolidate"
+    CONSOLIDATION = "consolidation"
+    CONSOLIDATION_TYPE = "consolidation_type"
+    EWC = "ewc"
+    IMPORTANCE = "importance"
+    TYPE = "type"
 
     EVEN_ODD_MAPPING = {0: 0, 1: 1, 2: 0, 3: 1, 4: 0, 5: 1, 6: 0, 7: 1, 8: 0, 9: 1}
 
