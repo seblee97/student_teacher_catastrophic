@@ -5,6 +5,7 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Union
 
 import numpy as np
 import torch
@@ -31,6 +32,7 @@ from teachers.ensembles import readout_rotation_ensemble
 from utils import decorators
 from utils import experiment_utils
 from utils import network_configuration
+from regularisers import ewc
 
 
 class NetworkRunner:
@@ -60,6 +62,7 @@ class NetworkRunner:
         self._test_frequency = config.test_frequency
         self._total_step_count = 0
         self._log_overlaps = config.log_overlaps
+        self._consolidation = config.consolidation_type
 
         # initialise student, teachers, logger_module,
         # data_module, loss_module, torch optimiser, and curriculum object
@@ -331,14 +334,20 @@ class NetworkRunner:
 
         self._setup_training()
 
+        first_task = True
+
         while self._total_step_count < self._total_training_steps:
             teacher_index = next(self._curriculum)
+            
+            consolidation = (self._consolidation is not None) and (not first_task)
 
-            self._train_on_teacher(teacher_index=teacher_index)
+            self._train_on_teacher(teacher_index=teacher_index, consolidation=consolidation)
+
+            first_task = False
 
         self._logger.checkpoint_df()
 
-    def _train_on_teacher(self, teacher_index: int):
+    def _train_on_teacher(self, teacher_index: int, consolidation: Union[None, str]):
         """One phase of training (wrt one teacher)."""
         self._student.signal_task_boundary(new_task=teacher_index)
         task_step_count = 0
@@ -348,6 +357,13 @@ class NetworkRunner:
             generalisation_errors=generalisation_errors,
         )
         timer = time.time()
+
+        if consolidation == Constants.EWC:
+            previous_teacher_index = self._curriculum.history[-2]
+            previous_teacher = self._teachers.teachers[previous_teacher_index]
+            consolidation_module = ewc.EWC(student=self._student, previous_teacher_index=previous_teacher_index, previous_teacher=previous_teacher, loss_function=self._compute_loss, data_module=self._data_module, device=self._device)
+        else:
+            consolidation_module = None
 
         while self._total_step_count < self._total_training_steps:
 
@@ -381,7 +397,7 @@ class NetworkRunner:
             latest_task_generalisation_error = generalisation_errors[
                 teacher_index]
 
-            self._training_step(teacher_index=teacher_index)
+            self._training_step(teacher_index=teacher_index, consolidation_module=consolidation_module)
 
             task_step_count += 1
 
@@ -390,7 +406,7 @@ class NetworkRunner:
                     error=latest_task_generalisation_error):
                 break
 
-    def _training_step(self, teacher_index: int):
+    def _training_step(self, teacher_index: int, consolidation_module: Union[None, ewc.EWC]):
         """Perform single training step."""
 
         if self._save_weight_frequency is not None:
@@ -412,6 +428,10 @@ class NetworkRunner:
         # training iteration
         self._optimiser.zero_grad()
         loss = self._compute_loss(student_output, teacher_output)
+
+        if consolidation_module is not None:
+            loss += consolidation_module.penalty(self._student)
+
         loss.backward()
         self._optimiser.step()
 
