@@ -11,10 +11,17 @@ class BaseCurriculum(abc.ABC):
         self, config: student_teacher_config.StudentTeacherConfiguration
     ) -> None:
         self._curriculum = itertools.cycle(list(range(config.num_teachers)))
+        self._history = []
+
+    @property
+    def history(self):
+        return self._history
 
     def __next__(self):
         """Get next index from curriculum."""
-        return next(self._curriculum)
+        next_index = next(self._curriculum)
+        self._history.append(next_index)
+        return next_index
 
     @abc.abstractmethod
     def to_switch(self, task_step: int, error: float) -> bool:
