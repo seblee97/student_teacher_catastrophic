@@ -339,7 +339,10 @@ class NetworkRunner:
         while self._total_step_count < self._total_training_steps:
             teacher_index = next(self._curriculum)
             
-            consolidation = (self._consolidation is not None) and (not first_task)
+            if not first_task:
+                consolidation = self._consolidation
+            else:
+                consolidation = None
 
             self._train_on_teacher(teacher_index=teacher_index, consolidation=consolidation)
 
