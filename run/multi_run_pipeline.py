@@ -455,7 +455,7 @@ def summary_plot(
         switch_step = int(config.switch_steps[0] / config.input_dimension / config.timestep)
     else:
         num_ode_steps = num_steps
-        switch_step = int(config.switch_steps[0]
+        switch_step = int(config.switch_steps[0])
 
 
     dfs = get_dfs(folder=experiment_path, seeds=seeds)
