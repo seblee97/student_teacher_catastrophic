@@ -13,7 +13,7 @@ import itertools
 
 class ConfigChange:
 
-    config_changes = {f"ewc_{i}": ["importance", i] for i in [0, 0.01, 0.1, 1, 10]}
+    config_changes = {f"ewc_{i}": [("importance", i)] for i in [0, 0.01, 0.1, 1, 10]}
 
     # feature_rotation_space = np.linspace(0, 1, 50)
     # readout_rotation_space = [np.arccos(i) for i in np.linspace(0, 1, 50)]
