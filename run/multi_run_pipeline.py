@@ -446,11 +446,17 @@ def summary_plot(
     seeds: List[int],
 ):
     num_steps = config.total_training_steps
-    num_ode_steps = (
-        config.total_training_steps / config.input_dimension / config.timestep
-    )
-    # scale step for ODE time
-    switch_step = int(config.switch_steps[0] / config.input_dimension / config.timestep)
+
+    if config.ode_simulation:
+        num_ode_steps = (
+            config.total_training_steps / config.input_dimension / config.timestep
+        )
+        # scale step for ODE time
+        switch_step = int(config.switch_steps[0] / config.input_dimension / config.timestep)
+    else:
+        num_ode_steps = num_steps
+        switch_step = int(config.switch_steps[0]
+
 
     dfs = get_dfs(folder=experiment_path, seeds=seeds)
     indices = sorted(dfs.keys(), key=lambda x: float(x.split("_")[1]))
