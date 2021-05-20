@@ -197,7 +197,7 @@ def generalisation_error_figs(
     seeds: List[int]
 ) -> None:
     """Plot generalisation error over time for each overlap."""
-    
+
     def _plot_data(attribute_name: str, ode: bool, colormap):
 
         if ode:
@@ -234,13 +234,15 @@ def generalisation_error_figs(
                 label=f"{index}_{legend_label}",
                 linestyle=linestyle
             )
-            plt.fill_between(
-                scaling * np.arange(len(mean_attribute)),
-                mean_attribute - std_attribute,
-                mean_attribute + std_attribute,
-                color=colormap(i / len(dfs)),
-                alpha=0.3,
-            )
+
+            if len(seeds) > 1:
+                plt.fill_between(
+                    scaling * np.arange(len(mean_attribute)),
+                    mean_attribute - std_attribute,
+                    mean_attribute + std_attribute,
+                    color=colormap(i / len(dfs)),
+                    alpha=0.3,
+                )
 
     teacher_1_fig = plt.figure()
     teacher_1_colormap = cm.get_cmap(constants.Constants.VIRIDIS)
