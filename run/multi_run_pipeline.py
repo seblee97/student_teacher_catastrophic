@@ -177,54 +177,84 @@ def single_run(
     r.post_process()
 
 
-def get_dfs(folder: str, seeds: List[int]) -> Dict[str, List[pd.DataFrame]]:
+def get_dfs(folder: str, seeds: List[int], file_name: str) -> Dict[str, List[pd.DataFrame]]:
     dfs = {}
     indices = [index for index in os.listdir(folder) if not index.startswith(".")]
     for index in indices:
         index_dfs = []
         for seed in seeds:
-            index_dfs.append(pd.read_csv(f"{folder}/{index}/{seed}/ode_log.csv"))
+            df_path = os.path.join(folder, index, str(seed), file_name)
+            index_dfs.append(pd.read_csv(df_path))
         dfs[index] = index_dfs
     return dfs
 
 
 def generalisation_error_figs(
-    dfs: List[pd.DataFrame], indices: List[str], num_steps: int, seeds: List[int]
+    ode_dfs: List[pd.DataFrame], 
+    network_dfs: List[pd.DataFrame], 
+    indices: List[str], 
+    num_steps: int, 
+    seeds: List[int]
 ) -> None:
     """Plot generalisation error over time for each overlap."""
+    
+    def _plot_data(attribute_name: str, ode: bool, colormap):
+
+        if ode:
+            linestyle = "solid"
+            to_scale = True
+            dfs = ode_dfs
+            legend_label = "ode"
+        else:
+            linestyle = "dashed"
+            to_scale = False
+            dfs = network_dfs
+            legend_label = "network"
+
+        for i, index in enumerate(indices):
+
+            all_seeds_attribute = []
+
+            for seed in seeds:
+                attribute = dfs[index][seed][attribute_name].to_numpy()
+                all_seeds_attribute.append(attribute)
+
+            if to_scale:
+                scaling = num_steps / len(ode_log_generalisation_error_0)
+            else:
+                scaling = 1
+
+            mean_attribute = np.mean(all_seeds_attribute, axis=0)
+            std_attribute = np.std(all_seeds_attribute, axis=0)
+
+            plt.plot(
+                scaling * np.arange(len(mean_attribute)),
+                mean_attribute,
+                color=colormap(i / len(dfs)),
+                label=f"{index}_{legend_label}",
+                linestyle=linestyle
+            )
+            plt.fill_between(
+                scaling * np.arange(len(mean_attribute)),
+                mean_attribute - std_attribute,
+                mean_attribute + std_attribute,
+                color=colormap(i / len(dfs)),
+                alpha=0.3,
+            )
+
     teacher_1_fig = plt.figure()
     teacher_1_colormap = cm.get_cmap(constants.Constants.VIRIDIS)
 
-    for i, index in enumerate(indices):
-        log_generalisation_error_0s = []
-        for seed in seeds:
-            log_generalisation_error_0 = dfs[index][seed][
-                f"{constants.Constants.LOG_GENERALISATION_ERROR}_0"
-            ].to_numpy()
-            log_generalisation_error_0s.append(log_generalisation_error_0)
-
-        scaling = num_steps / len(log_generalisation_error_0)
-        mean_log_generalisation_error_0 = np.mean(log_generalisation_error_0s, axis=0)
-        std_log_generalisation_error_0 = np.std(log_generalisation_error_0s, axis=0)
-        plt.plot(
-            scaling * np.arange(len(mean_log_generalisation_error_0)),
-            mean_log_generalisation_error_0,
-            color=teacher_1_colormap(i / len(dfs)),
-            label=index,
-        )
-        plt.fill_between(
-            scaling * np.arange(len(mean_log_generalisation_error_0)),
-            mean_log_generalisation_error_0 - std_log_generalisation_error_0,
-            mean_log_generalisation_error_0 + std_log_generalisation_error_0,
-            color=teacher_1_colormap(i / len(dfs)),
-            alpha=0.3,
-            label=index,
-        )
+    if ode_dfs is not None:
+        _plot_data(attribute_name=f"{constants.Constants.LOG_GENERALISATION_ERROR}_0", ode=True, colormap=teacher_1_colormap)
+    if network_dfs is not None:
+        _plot_data(attribute_name=f"{constants.Constants.LOG_GENERALISATION_ERROR}_0", ode=False, colormap=teacher_1_colormap)
 
     if len(indices) > 5:
         pass
     else:
         plt.legend()
+
     save_name = os.path.join(experiment_path, constants.Constants.FORGETTING_PLOT)
     teacher_1_fig.savefig(save_name, dpi=100)
     plt.close()
@@ -232,37 +262,16 @@ def generalisation_error_figs(
     teacher_2_fig = plt.figure()
     teacher_2_colormap = cm.get_cmap(constants.Constants.PLASMA)
 
-    for i, index in enumerate(indices):
-        log_generalisation_error_1s = []
-        for seed in seeds:
-            log_generalisation_error_1 = dfs[index][seed][
-                f"{constants.Constants.LOG_GENERALISATION_ERROR}_1"
-            ].to_numpy()
-            log_generalisation_error_1s.append(log_generalisation_error_1)
-
-        scaling = num_steps / len(log_generalisation_error_1)
-        mean_log_generalisation_error_1 = np.mean(log_generalisation_error_1s, axis=0)
-        std_log_generalisation_error_1 = np.std(log_generalisation_error_1s, axis=0)
-        plt.plot(
-            scaling * np.arange(len(mean_log_generalisation_error_1)),
-            mean_log_generalisation_error_1,
-            color=teacher_2_colormap(i / len(dfs)),
-            label=index,
-            alpha=0.3,
-        )
-        plt.fill_between(
-            scaling * np.arange(len(mean_log_generalisation_error_1)),
-            mean_log_generalisation_error_1 - std_log_generalisation_error_1,
-            mean_log_generalisation_error_1 + std_log_generalisation_error_1,
-            color=teacher_2_colormap(i / len(dfs)),
-            label=index,
-            alpha=0.3,
-        )
+    if ode_dfs is not None:
+        _plot_data(attribute_name=f"{constants.Constants.LOG_GENERALISATION_ERROR}_1", ode=True, colormap=teacher_1_colormap)
+    if network_dfs is not None:
+        _plot_data(attribute_name=f"{constants.Constants.LOG_GENERALISATION_ERROR}_1", ode=False, colormap=teacher_1_colormap)
 
     if len(indices) > 5:
         pass
     else:
         plt.legend()
+
     save_name = os.path.join(experiment_path, constants.Constants.TRANSFER_PLOT)
     teacher_2_fig.savefig(save_name, dpi=100)
     plt.close()
@@ -457,15 +466,32 @@ def summary_plot(
         num_ode_steps = num_steps
         switch_step = int(config.switch_steps[0])
 
+    if config.ode_simulation:
+        ode_dfs = get_dfs(folder=experiment_path, seeds=seeds, file_name="ode_log.csv")
+        ode_indices = sorted(ode_dfs.keys(), key=lambda x: float(x.split("_")[1]))
+        indices = ode_indices
+    else:
+        ode_dfs = None
+    if config.network_simulation:
+        network_dfs = get_dfs(folder=experiment_path, seeds=seeds, file_name="network_log.csv")
+        network_indices = sorted(network_dfs.keys(), key=lambda x: float(x.split("_")[1]))
+        indices = network_indices
+    else:
+        network_dfs = None
 
-    dfs = get_dfs(folder=experiment_path, seeds=seeds)
-    indices = sorted(dfs.keys(), key=lambda x: float(x.split("_")[1]))
+    if config.ode_simulation and config.network_simulation:
+        assert all(ode_indices == network_indices), "ODE and Network indices should match."
+
+    if not config.ode_simulation and not config.network_simulation:
+        return
 
     generalisation_error_figs(
-        dfs=dfs, indices=indices, num_steps=num_steps, seeds=seeds
+        ode_dfs=ode_dfs, network_dfs=network_dfs, indices=indices, num_steps=num_steps, seeds=seeds
     )
+
     cross_section_figs(
-        dfs=dfs,
+        ode_dfs=ode_dfs,
+        network_dfs=network_dfs,
         indices=indices,
         switch_step=switch_step,
         num_ode_steps=num_ode_steps,
