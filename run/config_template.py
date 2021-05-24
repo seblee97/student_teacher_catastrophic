@@ -77,7 +77,7 @@ class ConfigTemplate:
                 name=constants.Constants.TYPE,
                 key=constants.Constants.CONSOLIDATION_TYPE,
                 types=[type(None), str],
-                requirements=[lambda x: x is None or x in [constants.Constants.EWC]],
+                requirements=[lambda x: x is None or x in [constants.Constants.EWC, constants.Constants.QUADRATIC, constants.Constants.SYNAPTIC_INTELLIGENCE]],
             ),
             config_field.Field(
                 name=constants.Constants.IMPORTANCE,
