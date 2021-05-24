@@ -33,6 +33,8 @@ from utils import decorators
 from utils import experiment_utils
 from utils import network_configuration
 from regularisers import ewc
+from regularisers import quadratic_penalty
+from regularisers import synaptic_intelligence  
 
 
 class NetworkRunner:
@@ -62,7 +64,6 @@ class NetworkRunner:
         self._test_frequency = config.test_frequency
         self._total_step_count = 0
         self._log_overlaps = config.log_overlaps
-        self._consolidation = config.consolidation_type
 
         # initialise student, teachers, logger_module,
         # data_module, loss_module, torch optimiser, and curriculum object
@@ -73,6 +74,7 @@ class NetworkRunner:
         self._loss_function = self._setup_loss(config=config)
         self._optimiser = self._setup_optimiser(config=config)
         self._curriculum = self._setup_curriculum(config=config)
+        self._consolidation_module = self._setup_consolidation(config=config)
 
         self._manage_network_devices()
 
@@ -287,6 +289,22 @@ class NetworkRunner:
         return curriculum
 
     @decorators.timer
+    def _setup_consolidation(
+        self, config: student_teacher_config.StudentTeacherConfiguration
+    ) -> Union[None]:
+        if config.consolidation_type is None:
+            consolidation_module = None
+        elif config.consolidation_type == Constants.EWC:
+            consolidation_module = ewc.EWC(importance=config.importance, device=self._device)
+        elif config.consolidation_type == Constants.QUADRATIC:
+            consolidation_module = quadratic_penalty.QuadraticPenalty(importance=config.importance, device=self._device)
+        elif config.consolidation_type == Constants.SYNAPTIC_INTELLIGENCE:
+            consolidation_module = synaptic_intelligence.SynapticIntelligence(importance=config.importance, device=self._device)
+        else:
+            raise ValueError(f"Consolidation type {config.consolidation_type} not recognised.")
+        return consolidation_module
+
+    @decorators.timer
     def _setup_optimiser(
         self, config: student_teacher_config.StudentTeacherConfiguration
     ) -> torch.optim.SGD:
@@ -334,23 +352,16 @@ class NetworkRunner:
 
         self._setup_training()
 
-        first_task = True
-
         while self._total_step_count < self._total_training_steps:
             teacher_index = next(self._curriculum)
-            
-            if not first_task:
-                consolidation = self._consolidation
-            else:
-                consolidation = None
 
-            self._train_on_teacher(teacher_index=teacher_index, consolidation=consolidation)
+            self._train_on_teacher(teacher_index=teacher_index)
 
             first_task = False
 
         self._logger.checkpoint_df()
 
-    def _train_on_teacher(self, teacher_index: int, consolidation: Union[None, str]):
+    def _train_on_teacher(self, teacher_index: int):
         """One phase of training (wrt one teacher)."""
         self._student.signal_task_boundary(new_task=teacher_index)
         task_step_count = 0
@@ -361,10 +372,11 @@ class NetworkRunner:
         )
         timer = time.time()
 
-        if consolidation == Constants.EWC:
+        if self._consolidation_module is not None and len(self._curriculum.history) > 1:
             previous_teacher_index = self._curriculum.history[-2]
             previous_teacher = self._teachers.teachers[previous_teacher_index]
-            consolidation_module = ewc.EWC(student=self._student, previous_teacher_index=previous_teacher_index, previous_teacher=previous_teacher, loss_function=self._compute_loss, data_module=self._data_module, device=self._device)
+            self._consolidation_module.compute_first_task_importance(student=self._student, previous_teacher_index=previous_teacher_index, previous_teacher=previous_teacher, loss_function=self._compute_loss, data_module=self._data_module)
+            consolidation_module = self._consolidation_module
         else:
             consolidation_module = None
 
@@ -441,6 +453,7 @@ class NetworkRunner:
         self._total_step_count += 1
 
         self._student.signal_step(step=self._total_step_count)
+        self._student.append_to_path_integral_contributions()
 
     def _compute_generalisation_errors(self) -> List[float]:
         """Compute test errors for student with respect to all teachers."""
