@@ -4,6 +4,8 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+import copy
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -82,6 +84,14 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         if teacher_features_copy is not None:
             self._manually_initialise_student(teacher_features_copy)
 
+        # for synaptic intelligence
+        self._pre_update_shared_parameters = {n: copy.deepcopy(param) for n, param in self.named_parameters() if "head" not in n}
+        self._path_integral_contributions = []
+
+    @property
+    def current_teacher(self) -> int:
+        return self._current_teacher
+
     @property
     def heads(self):
         return self._heads
@@ -89,6 +99,10 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
     @property
     def frozen(self):
         return self._frozen
+
+    @property
+    def previous_task_path_integral_contributions(self):
+        return self._path_integral_contributions[self._num_switches - 1]
 
     def save_weights(self, save_path: str) -> None:
         """Save weights of student."""
@@ -112,6 +126,7 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
     def signal_task_boundary(self, new_task: int) -> None:
         """Alert student to teacher change."""
         self._num_switches += 1
+        self._path_integral_contributions.append({n: torch.zeros_like(param) for n, param in self.named_parameters()  if "head" not in n})
         self._signal_task_boundary(new_task=new_task)
 
     def _get_next_freeze_feature_toggle(self) -> Union[int, float]:
@@ -194,3 +209,12 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
             self._layers[0].weight.data[
                 i * weights_dim : (i + 1) * weights_dim
             ] = weights[0].weight.data
+
+    def append_to_path_integral_contributions(self):        
+        grads = {n: p.grad for n, p in self.named_parameters() if "head" not in n}
+        diffs = {n: (p - self._pre_update_shared_parameters[n]).detach() for n, p in self.named_parameters() if "head" not in n}
+
+        for n in self._path_integral_contributions[self._num_switches].keys():  
+            self._path_integral_contributions[self._num_switches][n] += diffs[n] * grads[n]
+
+        self._pre_update_shared_parameters = {n: copy.deepcopy(param) for n, param in self.named_parameters() if "head" not in n}
