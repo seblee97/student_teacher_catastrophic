@@ -176,6 +176,8 @@ class Constants:
     EWC = "ewc"
     IMPORTANCE = "importance"
     TYPE = "type"
+    QUADRATIC = "quadratic"
+    SYNAPTIC_INTELLIGENCE = "synaptic_intelligence"
 
     EVEN_ODD_MAPPING = {0: 0, 1: 1, 2: 0, 3: 1, 4: 0, 5: 1, 6: 0, 7: 1, 8: 0, 9: 1}
 
