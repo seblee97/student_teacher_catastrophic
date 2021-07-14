@@ -1,7 +1,6 @@
+import constants
 from config_manager import config_field
 from config_manager import config_template
-
-import constants
 
 
 class ConfigTemplate:
@@ -77,7 +76,15 @@ class ConfigTemplate:
                 name=constants.Constants.TYPE,
                 key=constants.Constants.CONSOLIDATION_TYPE,
                 types=[type(None), str],
-                requirements=[lambda x: x is None or x in [constants.Constants.EWC, constants.Constants.QUADRATIC, constants.Constants.SYNAPTIC_INTELLIGENCE]],
+                requirements=[
+                    lambda x: x is None
+                    or x
+                    in [
+                        constants.Constants.EWC,
+                        constants.Constants.QUADRATIC,
+                        constants.Constants.SYNAPTIC_INTELLIGENCE,
+                    ]
+                ],
             ),
             config_field.Field(
                 name=constants.Constants.IMPORTANCE,
@@ -469,6 +476,12 @@ class ConfigTemplate:
                         for y in x
                     )
                 ],
+            ),
+            config_field.Field(
+                name=constants.Constants.INTERLEAVE_PERIOD, types=[int, type(None)]
+            ),
+            config_field.Field(
+                name=constants.Constants.INTERLEAVE_DURATION, types=[int, type(None)]
             ),
         ],
         level=[constants.Constants.CURRICULUM],
