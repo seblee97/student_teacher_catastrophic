@@ -1,0 +1,26 @@
+{
+	"build_systems":
+	[
+		{
+			"file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
+			"name": "Anaconda Python Builder",
+			"selector": "source.python",
+			"shell_cmd": "\"/Users/sebastianlee/opt/anaconda3/envs/cata/bin/python\" -u \"$file\""
+		}
+	],
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	],
+	"settings":
+	{
+		"SublimeLinter.linters.flake8.disable": false,
+		"SublimeLinter.linters.flake8.lint_mode": "background",
+		"SublimeLinter.linters.flake8.python": "/Users/sebastianlee/opt/anaconda3/envs/cata/bin/python",
+		"python_interpreter": "/Users/sebastianlee/opt/anaconda3/envs/cata/bin/python",
+		"sublack.black_command": "/Users/sebastianlee/opt/anaconda3/envs/cata/bin/black",
+		"sublack.black_on_save": true,
+	}
+}
