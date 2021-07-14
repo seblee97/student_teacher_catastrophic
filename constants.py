@@ -178,6 +178,9 @@ class Constants:
     TYPE = "type"
     QUADRATIC = "quadratic"
     SYNAPTIC_INTELLIGENCE = "synaptic_intelligence"
+    INTERLEAVE = "interleave"
+    INTERLEAVE_PERIOD = "interleave_period"
+    INTERLEAVE_DURATION = "interleave_duration"
 
     EVEN_ODD_MAPPING = {0: 0, 1: 1, 2: 0, 3: 1, 4: 0, 5: 1, 6: 0, 7: 1, 8: 0, 9: 1}
 
