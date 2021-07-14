@@ -1,3 +1,5 @@
+import itertools
+from typing import List
 from typing import Tuple
 from typing import Union
 
@@ -65,3 +67,24 @@ def generate_rotated_vectors(
     y_2 = np.dot(stacked_orthonormal, x_2)
 
     return y_1, y_2
+
+
+def create_iterator(offset: int, increments: List[int]):
+    class CustomIterator:
+
+        def __init__(self):
+            self._increments = increments
+            self._increment_index_cycle = itertools.cycle(range(len(increments)))
+            self._current_increment = next(self._increment_index_cycle)
+
+        def __iter__(self):
+            self.a = offset
+            return self
+
+        def __next__(self):
+            x = self.a
+            self.a += self._increments[self._current_increment]
+            self._current_increment = next(self._increment_index_cycle)
+            return x
+
+    return iter(CustomIterator())
