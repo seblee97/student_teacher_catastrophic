@@ -404,6 +404,12 @@ class NetworkRunner:
             ):
                 self._logger.checkpoint_df()
 
+            self._logger.write_scalar_df(
+                tag=constants.Constants.TEACHER_INDEX,
+                step=self._total_step_count,
+                scalar=teacher_index,
+            )
+
             if self._total_step_count % self._test_frequency == 0:
                 generalisation_errors = self._compute_generalisation_errors()
                 self._logger.log_generalisation_errors(
