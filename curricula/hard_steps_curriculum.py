@@ -52,5 +52,9 @@ class HardStepsCurriculum(base_curriculum.BaseCurriculum):
             except StopIteration:
                 self._next_switch_step = np.inf
             return True
+        elif task_step > self._next_switch_step:
+            raise ValueError(
+                "Task step has overshot next switch steps. Are you solving ODEs with too large a timestep?"
+            )
         else:
             return False
