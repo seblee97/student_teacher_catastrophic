@@ -6,7 +6,6 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-
 from ode.configuration import StudentTwoTeacherConfiguration
 from ode.integrals import Integrals
 from ode.plotter import Plotter
@@ -75,6 +74,10 @@ class StudentTeacherODE:
         self._teacher_2_offset = (
             self._configuration.R.shape[1] + self._configuration.R.shape[0]
         )
+
+    @property
+    def active_teacher(self):
+        return self._active_teacher
 
     @property
     def configuration(self) -> StudentTwoTeacherConfiguration:
