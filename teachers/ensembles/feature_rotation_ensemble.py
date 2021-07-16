@@ -61,7 +61,7 @@ class FeatureRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
 
         with torch.no_grad():
 
-            if self._hidden_dimensions == 1:
+            if self._hidden_dimensions[0] == 1:
                 rotated_weight_vectors = custom_functions.generate_rotated_vectors(
                     dimension=self._input_dimension,
                     theta=self._rotation_magnitude,
