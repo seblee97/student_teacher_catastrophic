@@ -129,12 +129,6 @@ class ODERunner:
                 ode.switch_teacher()
                 task_steps = 0
 
-            self._logger.write_scalar_df(
-                tag=constants.Constants.TEACHER_INDEX,
-                step=steps,
-                scalar=ode.active_teacher,
-            )
-
             ode.step()
             self._logger.log_generalisation_errors(
                 step=steps, generalisation_errors=[ode.error_1, ode.error_2]
@@ -143,6 +137,13 @@ class ODERunner:
                 self._logger.log_network_configuration(
                     step=steps, network_config=ode.configuration
                 )
+
+            self._logger.write_scalar_df(
+                tag=constants.Constants.TEACHER_INDEX,
+                step=steps,
+                scalar=ode.active_teacher,
+            )
+
             steps += (timestep / time) * self._config.total_training_steps
             task_steps += (timestep / time) * self._config.total_training_steps
 
