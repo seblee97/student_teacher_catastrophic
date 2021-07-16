@@ -48,7 +48,8 @@ class HardStepsCurriculum(base_curriculum.BaseCurriculum):
         """
         if task_step == self._next_switch_step:
             try:
-                self._next_switch_step = next(self._curriculum_switch_steps)
+                next_switch_total_step = next(self._curriculum_switch_steps)
+                self._next_switch_step = next_switch_total_step - self._next_switch_step
             except StopIteration:
                 self._next_switch_step = np.inf
             return True
