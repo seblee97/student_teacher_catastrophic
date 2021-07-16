@@ -2,10 +2,9 @@ import copy
 from typing import Dict
 from typing import List
 
+import constants
 import numpy as np
 import torch
-
-import constants
 from teachers.ensembles import base_teacher_ensemble
 from utils import custom_functions
 
@@ -54,18 +53,26 @@ class FeatureRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             len(self._hidden_dimensions) == 1
         ), "Feature rotation teachers currently implemented for 1 hidden layer only."
 
-        assert (
-            self._hidden_dimensions[0] == 1
-        ), "Feature rotation teachers implemented for hidden dimension 1 only."
+        # assert (
+        #     self._hidden_dimensions[0] == 1
+        # ), "Feature rotation teachers implemented for hidden dimension 1 only."
 
         teachers = [self._init_teacher() for _ in range(self._num_teachers)]
 
         with torch.no_grad():
-            rotated_weight_vectors = custom_functions.generate_rotated_vectors(
-                dimension=self._input_dimension,
-                theta=self._rotation_magnitude,
-                normalisation=np.sqrt(self._input_dimension),
-            )
+
+            if self._hidden_dimensions == 1:
+                rotated_weight_vectors = custom_functions.generate_rotated_vectors(
+                    dimension=self._input_dimension,
+                    theta=self._rotation_magnitude,
+                    normalisation=np.sqrt(self._input_dimension),
+                )
+            else:
+                rotated_weight_vectors = custom_functions.generate_rotated_matrices(
+                    unrotated_weights=teachers[0].layers[0].weight.data,
+                    alpha=np.cos(self._rotation_magnitude),
+                    normalisation=None,
+                )
 
             teacher_0_rotated_weight_tensor = torch.Tensor(
                 rotated_weight_vectors[0]
