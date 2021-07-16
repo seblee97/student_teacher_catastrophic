@@ -31,6 +31,7 @@ class HardStepsCurriculum(base_curriculum.BaseCurriculum):
             )
 
         self._next_switch_step = next(self._curriculum_switch_steps)
+        self._steps_to_next_switch = self._next_switch_step
         super().__init__(config=config)
 
     def to_switch(self, task_step: int, error: float) -> bool:
@@ -46,14 +47,15 @@ class HardStepsCurriculum(base_curriculum.BaseCurriculum):
         Returns:
             bool indicating whether or not to switch.
         """
-        if task_step == self._next_switch_step:
+        if task_step == self._steps_to_next_switch:
             try:
-                next_switch_total_step = next(self._curriculum_switch_steps)
-                self._next_switch_step = next_switch_total_step - self._next_switch_step
+                next_switch_step = next(self._curriculum_switch_steps)
+                self._steps_to_next_switch = next_switch_step - self._next_switch_step
+                self._next_switch_step = next_switch_step
             except StopIteration:
-                self._next_switch_step = np.inf
+                self._steps_to_next_switch = np.inf
             return True
-        elif task_step > self._next_switch_step:
+        elif task_step > self._steps_to_next_switch:
             raise ValueError(
                 "Task step has overshot next switch steps. Are you solving ODEs with too large a timestep?"
             )
