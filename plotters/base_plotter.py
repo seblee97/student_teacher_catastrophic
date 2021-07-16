@@ -7,13 +7,12 @@ from typing import Optional
 from typing import Tuple
 from typing import Union
 
+import constants
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib import colors as mcolors
-
-import constants
 
 
 class BasePlotter(abc.ABC):
@@ -31,7 +30,11 @@ class BasePlotter(abc.ABC):
         constants.Constants.STUDENT_TEACHER_1: constants.Constants.STUDENT_TEACHER_1_LABEL,
     }
 
-    IDENTIFIERS = {**ERROR_IDENTIFIERS, **OVERLAP_IDENTIFIERS}
+    OTHER_IDENTIFIERS = {
+        constants.Constants.TEACHER_INDEX: constants.Constants.TEACHER_INDEX 
+    }
+
+    IDENTIFIERS = {**ERROR_IDENTIFIERS, **OVERLAP_IDENTIFIERS, **OTHER_IDENTIFIERS}
 
     GRAPH_LAYOUT = (3, 3)
 
@@ -98,13 +101,14 @@ class BasePlotter(abc.ABC):
         """
         tag_groups = {}
 
-        identifiers = list(self.ERROR_IDENTIFIERS.keys())
-        if self._log_overlaps:
-            identifiers.extend(list(self.OVERLAP_IDENTIFIERS.keys()))
+        # identifiers = list(self.ERROR_IDENTIFIERS.keys())
+        # if self._log_overlaps:
+        #     identifiers.extend(list(self.OVERLAP_IDENTIFIERS.keys()))
 
-        for identifier in identifiers:
+        for identifier in self.IDENTIFIERS.keys():
             id_tags = [tag for tag in tags if tag.startswith(identifier)]
-            tag_groups[identifier] = id_tags
+            if id_tags:
+                tag_groups[identifier] = id_tags
 
         return tag_groups
 
