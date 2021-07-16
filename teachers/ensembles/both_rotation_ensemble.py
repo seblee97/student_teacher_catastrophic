@@ -1,12 +1,12 @@
 import copy
 from typing import Dict
-from typing import List, Union
+from typing import List
+from typing import Union
 
 import numpy as np
 import torch
-
-from utils import custom_functions
 from teachers.ensembles import base_teacher_ensemble
+from utils import custom_functions
 
 
 class BothRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
