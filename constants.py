@@ -181,6 +181,7 @@ class Constants:
     INTERLEAVE = "interleave"
     INTERLEAVE_PERIOD = "interleave_period"
     INTERLEAVE_DURATION = "interleave_duration"
+    TEACHER_INDEX = "teacher_index"
 
     EVEN_ODD_MAPPING = {0: 0, 1: 1, 2: 0, 3: 1, 4: 0, 5: 1, 6: 0, 7: 1, 8: 0, 9: 1}
 
