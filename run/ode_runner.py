@@ -1,9 +1,8 @@
 from typing import Any
 from typing import Dict
 
-import numpy as np
-
 import constants
+import numpy as np
 from curricula import base_curriculum
 from curricula import hard_steps_curriculum
 from curricula import periodic_curriculum
@@ -67,6 +66,7 @@ class ODERunner:
         return curriculum
 
     def run(self):
+        print("Beginning ODE solution...")
         if self._config.implementation == constants.Constants.CPP:
             self._run_cpp_ode()
         elif self._config.implementation == constants.Constants.PYTHON:
@@ -128,6 +128,12 @@ class ODERunner:
             ):
                 ode.switch_teacher()
                 task_steps = 0
+
+            self._logger.write_scalar_df(
+                tag=constants.Constants.TEACHER_INDEX,
+                step=steps,
+                scalar=ode.active_teacher,
+            )
 
             ode.step()
             self._logger.log_generalisation_errors(
