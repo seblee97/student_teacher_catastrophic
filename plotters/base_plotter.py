@@ -101,10 +101,6 @@ class BasePlotter(abc.ABC):
         """
         tag_groups = {}
 
-        # identifiers = list(self.ERROR_IDENTIFIERS.keys())
-        # if self._log_overlaps:
-        #     identifiers.extend(list(self.OVERLAP_IDENTIFIERS.keys()))
-
         for identifier in self.IDENTIFIERS.keys():
             id_tags = [tag for tag in tags if tag.startswith(identifier)]
             if id_tags:
