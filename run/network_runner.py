@@ -398,12 +398,6 @@ class NetworkRunner:
 
         while self._total_step_count < self._total_training_steps:
 
-            self._logger.write_scalar_df(
-                tag=Constants.TEACHER_INDEX,
-                step=self._total_step_count,
-                scalar=teacher_index,
-            )
-
             if (
                 self._total_step_count % self._checkpoint_frequency == 0
                 and self._total_step_count != 0
@@ -421,6 +415,12 @@ class NetworkRunner:
                     step=self._total_step_count,
                     network_config=self.get_network_configuration(),
                 )
+
+            self._logger.write_scalar_df(
+                tag=Constants.TEACHER_INDEX,
+                step=self._total_step_count,
+                scalar=teacher_index,
+            )
 
             if self._total_step_count % 500 == 0:
                 print(
