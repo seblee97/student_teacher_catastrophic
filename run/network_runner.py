@@ -398,17 +398,17 @@ class NetworkRunner:
 
         while self._total_step_count < self._total_training_steps:
 
-            if (
-                self._total_step_count % self._checkpoint_frequency == 0
-                and self._total_step_count != 0
-            ):
-                self._logger.checkpoint_df()
-
             self._logger.write_scalar_df(
                 tag=Constants.TEACHER_INDEX,
                 step=self._total_step_count,
                 scalar=teacher_index,
             )
+
+            if (
+                self._total_step_count % self._checkpoint_frequency == 0
+                and self._total_step_count != 0
+            ):
+                self._logger.checkpoint_df()
 
             if self._total_step_count % self._test_frequency == 0:
                 generalisation_errors = self._compute_generalisation_errors()
