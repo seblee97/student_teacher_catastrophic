@@ -1,15 +1,15 @@
 import abc
-import math
 import copy
+import math
 from typing import Callable
 from typing import List
 from typing import Optional
 
+import constants
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-import constants
 from utils import custom_activations
 
 
@@ -26,6 +26,7 @@ class BaseNetwork(nn.Module, abc.ABC):
         forward_scaling: float,
         symmetric_initialisation: Optional[bool] = False,
         initialisation_std: Optional[float] = None,
+        weight_normalisation: Optional[bool] = False,
     ) -> None:
         super().__init__()
 
@@ -37,6 +38,7 @@ class BaseNetwork(nn.Module, abc.ABC):
         self._classification_output = loss_type == constants.Constants.CLASSIFICATION
         self._nonlinearity = nonlinearity
         self._initialisation_std = initialisation_std
+        self._weight_normalisation = weight_normalisation
         self._symmetric_initialisation = symmetric_initialisation
         self._forward_hidden_scaling = forward_hidden_scaling
         self._forward_scaling = forward_scaling
@@ -89,6 +91,13 @@ class BaseNetwork(nn.Module, abc.ABC):
         ):
             layer = nn.Linear(layer_size, next_layer_size, bias=self._bias)
             self._initialise_weights(layer)
+            if self._weight_normalisation:
+                with torch.no_grad():
+                    for node_index, node in enumerate(layer.weight):
+                        node_magnitude = torch.norm(node)
+                        layer.weight[node_index] = (
+                            np.sqrt(layer.weight.shape[1]) * node / node_magnitude
+                        )
             self._layers.append(layer)
 
         self._construct_output_layers()

@@ -4,9 +4,8 @@ from typing import List
 
 import numpy as np
 import torch
-
-from utils import custom_functions
 from teachers.ensembles import base_teacher_ensemble
+from utils import custom_functions
 
 
 class ReadoutRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
@@ -24,6 +23,7 @@ class ReadoutRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
         scale_hidden_lr: bool,
         forward_scaling: float,
         unit_norm_teacher_head: bool,
+        normalise_teachers: bool,
         num_teachers: int,
         initialisation_std: float,
         feature_copy_percentage: int,
@@ -41,6 +41,7 @@ class ReadoutRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             scale_hidden_lr=scale_hidden_lr,
             forward_scaling=forward_scaling,
             unit_norm_teacher_head=unit_norm_teacher_head,
+            weight_normalisation=weight_normalisation,
             num_teachers=num_teachers,
             initialisation_std=initialisation_std,
         )

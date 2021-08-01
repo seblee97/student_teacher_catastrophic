@@ -1,10 +1,8 @@
 from typing import List
 
-import torch
-
-from teachers import base_teacher
-
 import constants
+import torch
+from teachers import base_teacher
 
 
 class RegressionTeacher(base_teacher.BaseTeacher):
@@ -20,6 +18,7 @@ class RegressionTeacher(base_teacher.BaseTeacher):
         forward_hidden_scaling: float,
         forward_scaling: float,
         unit_norm_teacher_head: bool,
+        weight_normalisation: bool,
         initialisation_std: float,
     ):
         super().__init__(
@@ -32,6 +31,7 @@ class RegressionTeacher(base_teacher.BaseTeacher):
             forward_hidden_scaling=forward_hidden_scaling,
             forward_scaling=forward_scaling,
             unit_norm_teacher_head=unit_norm_teacher_head,
+            weight_normalisation=weight_normalisation,
             initialisation_std=initialisation_std,
         )
 
