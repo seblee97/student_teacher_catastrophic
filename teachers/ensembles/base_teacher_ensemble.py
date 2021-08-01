@@ -3,9 +3,8 @@ import math
 from typing import Dict
 from typing import List
 
-import torch
-
 import constants
+import torch
 from teachers import classification_teacher
 from teachers import regression_teacher
 
@@ -25,6 +24,7 @@ class BaseTeacherEnsemble(abc.ABC):
         scale_hidden_lr: bool,
         forward_scaling: float,
         unit_norm_teacher_head: bool,
+        weight_normalisation: bool,
         num_teachers: int,
         initialisation_std: float,
     ) -> None:
@@ -36,6 +36,7 @@ class BaseTeacherEnsemble(abc.ABC):
         self._nonlinearity = nonlinearity
         self._forward_scaling = forward_scaling
         self._unit_norm_teacher_head = unit_norm_teacher_head
+        self._weight_normalisation = weight_normalisation
         self._num_teachers = num_teachers
         self._initialisation_std = initialisation_std
 
@@ -94,6 +95,7 @@ class BaseTeacherEnsemble(abc.ABC):
             forward_hidden_scaling=self._forward_hidden_scaling,
             forward_scaling=self._forward_scaling,
             unit_norm_teacher_head=self._unit_norm_teacher_head,
+            weight_normalisation=self._weight_normalisation,
             initialisation_std=self._initialisation_std,
         )
 

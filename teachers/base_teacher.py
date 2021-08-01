@@ -6,12 +6,11 @@ from typing import Callable
 from typing import List
 from typing import Optional
 
+import constants
 import torch
 import torch.distributions as tdist
 import torch.nn as nn
 import torch.nn.functional as F
-
-import constants
 from utils import base_network
 from utils import custom_activations
 
@@ -28,6 +27,7 @@ class BaseTeacher(base_network.BaseNetwork, abc.ABC):
         forward_scaling: float,
         nonlinearity: str,
         unit_norm_teacher_head: bool,
+        weight_normalisation: bool,
         initialisation_std: Optional[float] = None,
     ) -> None:
         self._unit_norm_teacher_head = unit_norm_teacher_head
@@ -41,6 +41,7 @@ class BaseTeacher(base_network.BaseNetwork, abc.ABC):
             forward_hidden_scaling=forward_hidden_scaling,
             forward_scaling=forward_scaling,
             nonlinearity=nonlinearity,
+            weight_normalisation=weight_normalisation,
             initialisation_std=initialisation_std,
         )
 
