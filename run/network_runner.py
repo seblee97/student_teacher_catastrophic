@@ -136,6 +136,7 @@ class NetworkRunner:
             Constants.SCALE_HIDDEN_LR: config.scale_hidden_lr,
             Constants.FORWARD_SCALING: forward_scaling,
             Constants.UNIT_NORM_TEACHER_HEAD: config.unit_norm_teacher_head,
+            Constants.WEIGHT_NORMALISATION: config.normalise_teachers,
             Constants.INITIALISATION_STD: config.teacher_initialisation_std,
         }
         if config.teacher_configuration == Constants.FEATURE_ROTATION:
