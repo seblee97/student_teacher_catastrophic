@@ -31,7 +31,7 @@ class BasePlotter(abc.ABC):
     }
 
     OTHER_IDENTIFIERS = {
-        constants.Constants.TEACHER_INDEX: constants.Constants.TEACHER_INDEX 
+        constants.Constants.TEACHER_INDEX: constants.Constants.TEACHER_INDEX
     }
 
     IDENTIFIERS = {**ERROR_IDENTIFIERS, **OVERLAP_IDENTIFIERS, **OTHER_IDENTIFIERS}
@@ -151,7 +151,7 @@ class BasePlotter(abc.ABC):
         row: int,
         col: int,
         tag_group_name: str,
-        data_collection: Dict[str, Dict[str, np.ndarray]],
+        data_collection: Dict[str, Dict[str, pd.Series]],
     ) -> plt.figure:
         """Add a sub plot to the figure.
 
@@ -179,13 +179,13 @@ class BasePlotter(abc.ABC):
             elif data_type == constants.Constants.SIM:
                 linestyle = constants.Constants.DASHED
             for key, plot_data in data.items():
+
                 data_indexing = "-".join(
                     [s for s in key.split(tag_group_name)[1].split("_") if s.isdigit()]
                 )
-                scaling = self._num_steps / len(plot_data)
-                fig_sub.plot(
-                    scaling * np.arange(len(plot_data)),
-                    plot_data,
+
+                plot_data.plot(
+                    ax=fig_sub,
                     label=f"{self.IDENTIFIERS[tag_group_name]} {data_indexing} {data_type}",
                     color=color_dict[key],
                     linestyle=linestyle,
