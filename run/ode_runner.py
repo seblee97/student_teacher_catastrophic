@@ -119,17 +119,13 @@ class ODERunner:
 
         steps = 0
         task_steps = 0
+
+        step_increment = (timestep / time) * self._config.total_training_steps
+
         while ode.time < time:
             if steps % self._config.checkpoint_frequency == 0 and steps != 0:
                 self._logger.checkpoint_df()
 
-            if self._curriculum.to_switch(
-                task_step=task_steps, error=ode.current_teacher_error
-            ):
-                ode.switch_teacher()
-                task_steps = 0
-
-            ode.step()
             self._logger.log_generalisation_errors(
                 step=steps, generalisation_errors=[ode.error_1, ode.error_2]
             )
@@ -143,8 +139,15 @@ class ODERunner:
                     step=steps, network_config=ode.configuration
                 )
 
-            steps += (timestep / time) * self._config.total_training_steps
-            task_steps += (timestep / time) * self._config.total_training_steps
+            if self._curriculum.to_switch(
+                task_step=task_steps, error=ode.current_teacher_error
+            ):
+                ode.switch_teacher()
+                task_steps = 0
+
+            ode.step()
+            steps += step_increment
+            task_steps += step_increment
 
         self._logger.checkpoint_df()
 
