@@ -2,9 +2,8 @@ import os
 from typing import Dict
 from typing import Union
 
-import pandas as pd
-
 import constants
+import pandas as pd
 from plotters import base_plotter
 
 
@@ -121,7 +120,7 @@ class UnifiedPlotter(base_plotter.BasePlotter):
 
                     data_collection = {
                         data_type: {
-                            key: data[data_type][key].dropna().to_numpy()
+                            key: data[data_type][key].dropna()
                             for key in keys
                         }
                         for data_type in data.keys()
