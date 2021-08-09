@@ -1,6 +1,10 @@
+import os
+from typing import Dict
+from typing import Tuple
+from typing import Union
+
 import numpy as np
 import pandas as pd
-import os
 
 try:
     import matplotlib.pyplot as plt
@@ -8,7 +12,6 @@ try:
     from matplotlib import cm
 except:
     pass
-from typing import Tuple, Union, Dict
 
 
 class OverlayPlotter:
