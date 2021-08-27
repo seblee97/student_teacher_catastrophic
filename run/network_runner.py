@@ -21,6 +21,7 @@ from loggers import base_logger
 from loggers import split_logger
 from loggers import unified_logger
 from regularisers import ewc
+from regularisers import node_consolidation
 from regularisers import quadratic_penalty
 from regularisers import synaptic_intelligence
 from run import student_teacher_config
@@ -308,6 +309,10 @@ class NetworkRunner:
             consolidation_module = synaptic_intelligence.SynapticIntelligence(
                 importance=config.importance, device=self._device
             )
+        elif config.consolidation_type == Constants.NODE_CONSOLIDATION:
+            consolidation_module = node_consolidation.NodeConsolidation(
+                importance=config.importance, device=self._device
+            )
         else:
             raise ValueError(
                 f"Consolidation type {config.consolidation_type} not recognised."
@@ -394,6 +399,8 @@ class NetworkRunner:
                 data_module=self._data_module,
             )
             consolidation_module = self._consolidation_module
+            for params, matrix in consolidation_module.precision_matrices.items():
+                torch.save(matrix, os.path.join(self._checkpoint_path, f"precision_matrix_{params}"))
         else:
             consolidation_module = None
 
@@ -475,7 +482,8 @@ class NetworkRunner:
         loss = self._compute_loss(student_output, teacher_output)
 
         if consolidation_module is not None:
-            loss += consolidation_module.penalty(self._student)
+            regularisation_term = consolidation_module.penalty(self._student)
+            loss += regularisation_term
 
         loss.backward()
         self._optimiser.step()
