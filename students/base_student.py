@@ -1,15 +1,13 @@
 import abc
+import copy
 import math
 from typing import List
 from typing import Optional
 from typing import Union
 
-import copy
-
 import numpy as np
 import torch
 import torch.nn as nn
-
 from utils import base_network
 
 
@@ -23,6 +21,7 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         loss_type: str,
         nonlinearity: str,
         initialise_outputs: bool,
+        copy_head_at_switch: bool,
         apply_nonlinearity_on_output: bool,
         soft_committee: bool,
         train_hidden_layers: bool,
@@ -44,6 +43,7 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
         self._next_freeze_feature_toggle = self._get_next_freeze_feature_toggle()
         self._frozen = False
         self._initialise_outputs = initialise_outputs
+        self._copy_head_at_switch = copy_head_at_switch
         self._apply_nonlinearity_on_output = apply_nonlinearity_on_output
 
         if scale_hidden_lr:
