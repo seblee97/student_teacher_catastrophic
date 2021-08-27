@@ -211,6 +211,7 @@ class NetworkRunner:
             train_hidden_layers=config.train_hidden_layers,
             train_head_layer=config.train_head_layer,
             initialise_outputs=config.initialise_student_outputs,
+            copy_head_at_switch=config.copy_head_at_switch,
             apply_nonlinearity_on_output=config.apply_nonlinearity_on_output,
             symmetric_initialisation=config.symmetric_student_initialisation,
             initialisation_std=config.student_initialisation_std,
