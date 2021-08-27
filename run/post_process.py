@@ -31,6 +31,16 @@ parser.add_argument(
     type=str,
     help="list of values the attribute takes in results. In format '[x, y, z]'",
 )
+parser.add_argument(
+    "--sim_type",
+    type=str,
+    help="ode or network"
+)
+parser.add_argument(
+    "--legend",
+    action="store_true",
+    help="whether to include legends on plots"
+)
 
 
 def plot_cross_section(dfs, switch_step: int, T: int, varying_attribute: str, save_path: str, save_name: str):
@@ -61,7 +71,7 @@ def plot_cross_section(dfs, switch_step: int, T: int, varying_attribute: str, sa
     fig.savefig(os.path.join(save_path, f"{save_name}_{T}_transfer_cross.pdf"))
 
 
-def plot_error_trajectories(dfs, varying_attribute: str, save_path: str, save_name: str):
+def plot_error_trajectories(dfs, varying_attribute: str, save_path: str, save_name: str, show_legend: bool):
     color_map_1 = cm.get_cmap("viridis")
     sorted_paths = sorted(
         dfs.keys(),
@@ -69,27 +79,29 @@ def plot_error_trajectories(dfs, varying_attribute: str, save_path: str, save_na
     )
     fig = plt.figure()
     for i, feature in enumerate(sorted_paths):
-        dfs[feature].log_generalisation_error_0.plot(
+        dfs[feature].log_generalisation_error_0.dropna().plot(
             color=color_map_1(i / len(sorted_paths)),
             label=feature.split("feature_")[1].split(f"_{varying_attribute}")[0],
         )
     plt.title("First Error")
-    plt.legend()
+    if show_legend:
+        plt.legend()
     fig.savefig(os.path.join(save_path, f"{save_name}_first_error.pdf"))
 
     color_map_2 = cm.get_cmap("plasma")
     fig = plt.figure()
     for i, feature in enumerate(sorted_paths):
-        dfs[feature].log_generalisation_error_1.plot(
+        dfs[feature].log_generalisation_error_1.dropna().plot(
             color=color_map_2(i / len(sorted_paths)),
             label=feature.split("feature_")[1].split(f"_{varying_attribute}")[0],
         )
     plt.title("Second Error")
-    plt.legend()
+    if show_legend:
+        plt.legend()
     fig.savefig(os.path.join(save_path, f"{save_name}_second_error.pdf"))
 
 
-def plot_overlap_trajectories(dfs, varying_attribute: str, save_path: str, save_name: str):
+def plot_overlap_trajectories(dfs, varying_attribute: str, save_path: str, save_name: str, show_legend: bool):
     color_map_1 = cm.get_cmap("viridis")
     sorted_paths = sorted(
         dfs.keys(),
@@ -121,7 +133,8 @@ def plot_overlap_trajectories(dfs, varying_attribute: str, save_path: str, save_
             linestyle="solid"
         )
     plt.title("Self-Overlap")
-    # plt.legend()
+    if show_legend:
+        plt.legend()
     fig.savefig(os.path.join(save_path, f"{save_name}_self_overlap.pdf"))
 
     # student-teacher0 overlap, R
@@ -139,7 +152,8 @@ def plot_overlap_trajectories(dfs, varying_attribute: str, save_path: str, save_
             linestyle="dotted"
         )
     plt.title("Student-Teacher-0-Overlap")
-    # plt.legend()
+    if show_legend:
+        plt.legend()
     fig.savefig(os.path.join(save_path, f"{save_name}_student_0_overlap.pdf"))
 
     # student-teacher1 overlap, T
@@ -157,7 +171,8 @@ def plot_overlap_trajectories(dfs, varying_attribute: str, save_path: str, save_
             linestyle="dotted"
         )
     plt.title("Student-Teacher-1-Overlap")
-    # plt.legend()
+    if show_legend:
+        plt.legend()
     fig.savefig(os.path.join(save_path, f"{save_name}_student_1_overlap.pdf"))
 
 
@@ -180,23 +195,30 @@ if __name__ == "__main__":
         for attribute_value in attribute_values
     }
 
+    if args.sim_type == "ode":
+        filename = "ode_log.csv"
+    elif args.sim_type == "network":
+        filename = "network_log.csv"
+
     split_dfs = {
         split: {
-            f: pd.read_csv(os.path.join(args.results_folder, f, "0", "ode_log.csv"))
+            f: pd.read_csv(os.path.join(args.results_folder, f, "0", filename))
             for f in paths
         }
         for split, paths in split_paths.items()
     }
 
+    show_legend = args.legend
+
     for attribute_value, dfs in split_dfs.items():
-        # plot_error_trajectories(
-        #     dfs, args.varying_attribute, args.results_folder, attribute_value
-        # )
-        # plot_overlap_trajectories(
-        #     dfs, args.varying_attribute, args.results_folder, attribute_value
-        # )
+        plot_error_trajectories(
+            dfs, args.varying_attribute, args.results_folder, attribute_value, show_legend
+        )
+        plot_overlap_trajectories(
+            dfs, args.varying_attribute, args.results_folder, attribute_value, show_legend
+        )
         SWITCH_STEP = 1500000
-        for t in [1600000, 1800000]:
+        for t in [1600001, 1800001]:
             plot_cross_section(
                 dfs, SWITCH_STEP, t, args.varying_attribute, args.results_folder, attribute_value
             )
