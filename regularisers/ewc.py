@@ -5,12 +5,10 @@ https://github.com/moskomule/ewc.pytorch
 import copy
 
 import constants
-
 import torch
+from regularisers import base_regulariser
 from torch import nn
 from torch.nn import functional as F
-
-from regularisers import base_regulariser
 
 
 class EWC(base_regulariser.BaseRegulariser):
@@ -38,6 +36,11 @@ class EWC(base_regulariser.BaseRegulariser):
         self._store_previous_task_parameters()
 
         self._precision_matrices = self._diag_fisher()
+
+    @property
+    def precision_matrices(self):
+        return self._precision_matrices
+    
 
     def _diag_fisher(self):
         # to compute Fischer on previous task, switch heads
