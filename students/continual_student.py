@@ -1,7 +1,6 @@
+import constants
 import torch
 import torch.nn as nn
-
-import constants
 from students import base_student
 
 
@@ -42,6 +41,12 @@ class ContinualStudent(base_student.BaseStudent):
         # freeze weights of head for previous task
         self._freeze_head(self._current_teacher)
         self._unfreeze_head(new_task)
+        if self._copy_head_at_switch:
+            # copy weights from old task head to new task head
+            with torch.no_grad():
+                self._heads[new_task].weight = self._heads[
+                    self._current_teacher
+                ].weight
         self._current_teacher = new_task
 
     def _freeze_head(self, head_index: int) -> None:
