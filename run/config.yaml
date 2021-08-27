@@ -72,6 +72,7 @@ model:
     apply_nonlinearity_on_output:     False
     student_initialisation_std:       0.001                     # std of normal initialisation for student network
     initialise_student_outputs:       True                      # whether or not to initialise hidden -> output weights of student
+    copy_head_at_switch:              True                      # at task switch, copy over head weights from previous task
     soft_committee:                   False                     # whether or not to fix output layer of student to 1 (scm)
     scale_student_forward_by_hidden:  False
     student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
