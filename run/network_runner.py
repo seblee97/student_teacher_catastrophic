@@ -133,11 +133,12 @@ class NetworkRunner:
             Constants.BIAS: config.teacher_bias_parameters,
             Constants.NUM_TEACHERS: config.num_teachers,
             Constants.LOSS_TYPE: config.loss_type,
-            Constants.NONLINEARITY: config.student_nonlinearity,
+            Constants.NONLINEARITIES: config.teacher_nonlinearities,
             Constants.SCALE_HIDDEN_LR: config.scale_hidden_lr,
             Constants.FORWARD_SCALING: forward_scaling,
             Constants.UNIT_NORM_TEACHER_HEAD: config.unit_norm_teacher_head,
             Constants.WEIGHT_NORMALISATION: config.normalise_teachers,
+            Constants.NOISE_STDS: config.teacher_noises,
             Constants.INITIALISATION_STD: config.teacher_initialisation_std,
         }
         if config.teacher_configuration == Constants.FEATURE_ROTATION:
