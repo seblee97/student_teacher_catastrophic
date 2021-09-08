@@ -1,4 +1,5 @@
 from typing import List
+from typing import Union
 
 import constants
 import torch
@@ -19,6 +20,7 @@ class RegressionTeacher(base_teacher.BaseTeacher):
         forward_scaling: float,
         unit_norm_teacher_head: bool,
         weight_normalisation: bool,
+        noise_std: Union[float, int],
         initialisation_std: float,
     ):
         super().__init__(
@@ -32,10 +34,16 @@ class RegressionTeacher(base_teacher.BaseTeacher):
             forward_scaling=forward_scaling,
             unit_norm_teacher_head=unit_norm_teacher_head,
             weight_normalisation=weight_normalisation,
+            noise_std=noise_std,
             initialisation_std=initialisation_std,
+        )
+        self._noise_module = torch.distributions.normal.Normal(
+            loc=0, scale=self._noise_std
         )
 
     def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
         """Pass tensor through head."""
-        y = self._head(x)
+        noiseless_y = self._head(x)
+        noise = self._noise_module.sample(noiseless_y.shape)
+        y = noiseless_y + noise
         return y
