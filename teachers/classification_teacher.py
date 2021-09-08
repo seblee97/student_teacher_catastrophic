@@ -1,5 +1,6 @@
 from typing import Callable
 from typing import List
+from typing import Union
 
 import constants
 import torch
@@ -21,6 +22,7 @@ class ClassificationTeacher(base_teacher.BaseTeacher):
         forward_scaling: float,
         unit_norm_teacher_head: bool,
         weight_normalisation: bool,
+        noise_std: Union[float, int],
         initialisation_std: float,
     ):
         super().__init__(
@@ -34,6 +36,7 @@ class ClassificationTeacher(base_teacher.BaseTeacher):
             forward_scaling=forward_scaling,
             unit_norm_teacher_head=unit_norm_teacher_head,
             weight_normalisation=weight_normalisation,
+            noise_std=noise_std,
             initialisation_std=initialisation_std,
         )
         self._threshold_fn = self._setup_threshold()
