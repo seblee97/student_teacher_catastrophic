@@ -2,6 +2,7 @@ import abc
 import math
 from typing import Dict
 from typing import List
+from typing import Union
 
 import constants
 import torch
@@ -20,11 +21,12 @@ class BaseTeacherEnsemble(abc.ABC):
         output_dimension: int,
         bias: bool,
         loss_type: str,
-        nonlinearity: str,
+        nonlinearities: List[str],
         scale_hidden_lr: bool,
         forward_scaling: float,
         unit_norm_teacher_head: bool,
         weight_normalisation: bool,
+        noise_stds: List[Union[int, float]],
         num_teachers: int,
         initialisation_std: float,
     ) -> None:
@@ -33,10 +35,11 @@ class BaseTeacherEnsemble(abc.ABC):
         self._output_dimension = output_dimension
         self._bias = bias
         self._loss_type = loss_type
-        self._nonlinearity = nonlinearity
+        self._nonlinearities = nonlinearities
         self._forward_scaling = forward_scaling
         self._unit_norm_teacher_head = unit_norm_teacher_head
         self._weight_normalisation = weight_normalisation
+        self._noise_stds = noise_stds
         self._num_teachers = num_teachers
         self._initialisation_std = initialisation_std
 
@@ -79,7 +82,7 @@ class BaseTeacherEnsemble(abc.ABC):
         output = self._teachers[teacher_index](batch)
         return output
 
-    def _init_teacher(self):
+    def _init_teacher(self, nonlinearity: str, noise_std: Union[float, int]):
         if self._loss_type == constants.Constants.CLASSIFICATION:
             teacher = classification_teacher.ClassificationTeacher
         elif self._loss_type == constants.Constants.REGRESSION:
@@ -91,11 +94,12 @@ class BaseTeacherEnsemble(abc.ABC):
             hidden_dimensions=self._hidden_dimensions,
             output_dimension=self._output_dimension,
             bias=self._bias,
-            nonlinearity=self._nonlinearity,
+            nonlinearity=nonlinearity,
             forward_hidden_scaling=self._forward_hidden_scaling,
             forward_scaling=self._forward_scaling,
             unit_norm_teacher_head=self._unit_norm_teacher_head,
             weight_normalisation=self._weight_normalisation,
+            noise_std=noise_std,
             initialisation_std=self._initialisation_std,
         )
 
