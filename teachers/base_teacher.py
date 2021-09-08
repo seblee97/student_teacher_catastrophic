@@ -5,6 +5,7 @@ import random
 from typing import Callable
 from typing import List
 from typing import Optional
+from typing import Union
 
 import constants
 import torch
@@ -28,9 +29,11 @@ class BaseTeacher(base_network.BaseNetwork, abc.ABC):
         nonlinearity: str,
         unit_norm_teacher_head: bool,
         weight_normalisation: bool,
+        noise_std: Union[float, int],
         initialisation_std: Optional[float] = None,
     ) -> None:
         self._unit_norm_teacher_head = unit_norm_teacher_head
+        self._noise_std = noise_std
 
         super().__init__(
             input_dimension=input_dimension,
