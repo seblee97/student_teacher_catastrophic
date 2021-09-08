@@ -23,6 +23,8 @@ class StudentTeacherODE:
         train_first_layer: bool,
         train_head_layer: bool,
         frozen_feature: bool,
+        noise_stds: List[Union[float, int]],
+        copy_head_at_switch: bool
     ):
 
         self._configuration = overlap_configuration
@@ -34,6 +36,8 @@ class StudentTeacherODE:
         self._train_first_layer = train_first_layer
         self._train_head_layer = train_head_layer
         self._frozen_feature = frozen_feature
+        self._noise_stds = noise_stds
+        self._copy_head_at_switch = copy_head_at_switch
 
         self._frozen = False
         self._num_switches = 0
@@ -57,6 +61,8 @@ class StudentTeacherODE:
             self._i2_fn = Integrals.sigmoid_i2
             self._i3_fn = Integrals.sigmoid_i3
             self._i4_fn = Integrals.sigmoid_i4
+
+        self._j2_fn = Integrals.j2
 
         self._setup_log_data_structures()
 
@@ -221,6 +227,10 @@ class StudentTeacherODE:
                             [i, k, j, offset + m]
                         )
                         sum_3 -= 2 * head_unit_m * head_unit_j * self._i4_fn(cov)
+
+                # noise term
+                cov = self._configuration.generate_covariance_matrix([i, k])
+                sum_3 += self._noise_stds[self._active_teacher] ** 2 * self._j2_fn(cov)
 
                 ik_derivative += (
                     self._dt
@@ -402,7 +412,13 @@ class StudentTeacherODE:
         self._configuration.step_h2(h2_delta)
 
     def switch_teacher(self):
-        self._active_teacher = int(not self._active_teacher)
+        new_teacher = int(not self._active_teacher)
+        if self._copy_head_at_switch:
+            if new_teacher == 0:
+                self._configuration.h1 = self._configuration.h2
+            elif new_teacher == 1:
+                self._configuration.h2 = self._configuration.h1
+        self._active_teacher = new_teacher
         # try:
         #     self._next_switch_step = next(self._curriculum)
         # except StopIteration:
