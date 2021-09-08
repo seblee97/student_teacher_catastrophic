@@ -1,5 +1,4 @@
 import numpy as np
-
 from ode.covariance import CovarianceMatrix
 
 
@@ -90,3 +89,8 @@ class Integrals:
     @staticmethod
     def relu_i4(covariance: CovarianceMatrix):
         raise NotImplementedError
+
+    @staticmethod
+    def j2(covariance: CovarianceMatrix):
+        base_term = 1 + covariance[0, 0] + covariance[1, 1] + covariance[0, 0] * covariance[1, 1] - covariance[0, 1] ** 2
+        return (2 * base_term ** -0.5) / np.pi
