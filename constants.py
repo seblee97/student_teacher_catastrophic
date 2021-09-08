@@ -185,6 +185,8 @@ class Constants:
     WEIGHT_NORMALISATION = "weight_normalisation"
     NODE_CONSOLIDATION = "node_consolidation"
     COPY_HEAD_AT_SWITCH = "copy_head_at_switch"
+    NONLINEARITIES = "nonlinearities"
+    NOISE_STDS = "noise_stds"
 
     EVEN_ODD_MAPPING = {0: 0, 1: 1, 2: 0, 3: 1, 4: 0, 5: 1, 6: 0, 7: 1, 8: 0, 9: 1}
 
