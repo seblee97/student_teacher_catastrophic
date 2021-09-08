@@ -57,6 +57,10 @@ class BaseNetwork(nn.Module, abc.ABC):
             overlap = layer.mm(layer.t()) / self._input_dimension
         return overlap
 
+    @property 
+    def nonlinear_function(self):
+        return self._nonlinear_function
+
     def _get_nonlinear_function(self) -> Callable:
         """Makes the nonlinearity function specified by the config.
 
