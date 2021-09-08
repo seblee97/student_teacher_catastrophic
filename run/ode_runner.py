@@ -115,6 +115,8 @@ class ODERunner:
             train_first_layer=self._config.train_hidden_layers,
             train_head_layer=self._config.train_head_layer,
             frozen_feature=False,
+            noise_stds=self._config.teacher_noises,
+            copy_head_at_switch=self._config.copy_head_at_switch
         )
 
         steps = 0
