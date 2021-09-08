@@ -21,11 +21,12 @@ class BothRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
         output_dimension: int,
         bias: bool,
         loss_type: str,
-        nonlinearity: str,
+        nonlinearities: str,
         scale_hidden_lr: bool,
         forward_scaling: float,
         unit_norm_teacher_head: bool,
         weight_normalisation: bool,
+        noise_stds: Union[int, float],
         num_teachers: int,
         initialisation_std: float,
         feature_rotation_alpha: float,
@@ -39,11 +40,12 @@ class BothRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             output_dimension=output_dimension,
             bias=bias,
             loss_type=loss_type,
-            nonlinearity=nonlinearity,
+            nonlinearities=nonlinearities,
             scale_hidden_lr=scale_hidden_lr,
             forward_scaling=forward_scaling,
             unit_norm_teacher_head=unit_norm_teacher_head,
             weight_normalisation=weight_normalisation,
+            noise_stds=noise_stds,
             num_teachers=num_teachers,
             initialisation_std=initialisation_std,
         )
@@ -72,7 +74,12 @@ class BothRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             self._hidden_dimensions[0] > 1
         ), "Both rotation teachers only valid for hidden dimensions > 1."
 
-        teachers = [self._init_teacher() for _ in range(self._num_teachers)]
+        teachers = [
+            self._init_teacher(
+                nonlinearity=self._nonlinearities[i], noise_std=self._noise_stds[i]
+            )
+            for i in range(self._num_teachers)
+        ]
 
         with torch.no_grad():
 
