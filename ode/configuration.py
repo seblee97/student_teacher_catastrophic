@@ -5,11 +5,9 @@ from typing import List
 from typing import Tuple
 
 import numpy as np
-
 from ode.covariance import CovarianceMatrix
 from ode.overlaps import CrossOverlap
 from ode.overlaps import SelfOverlap
-
 from utils import network_configuration
 
 
@@ -175,6 +173,11 @@ class StudentTwoTeacherConfiguration:
     def h1(self):
         return self._h1
 
+    @h1.setter
+    def h1(self, head):
+        self._h1 = head
+
+
     def step_h1(self, delta_h1: np.ndarray) -> None:
         self._h1 += delta_h1
         # current_h1 = copy.deepcopy(self._h1)
@@ -187,6 +190,10 @@ class StudentTwoTeacherConfiguration:
     @property
     def h2(self):
         return self._h2
+
+    @h2.setter
+    def h2(self, head):
+        self._h2 = head
 
     def step_h2(self, delta_h2: np.ndarray) -> None:
         self._h2 += delta_h2
