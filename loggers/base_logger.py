@@ -2,9 +2,8 @@ import abc
 import os
 from typing import List
 
-import numpy as np
-
 import constants
+import numpy as np
 from run import student_teacher_config
 from utils import decorators
 from utils import network_configuration
