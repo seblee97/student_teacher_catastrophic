@@ -1,3 +1,4 @@
+import copy
 import os
 import warnings
 from typing import List
@@ -378,9 +379,9 @@ class StudentTeacherODE:
     def time(self):
         return self._time
 
-    def step(self):
+    def step(self, n_steps: int = 1):
         self._time += self._dt
-        self._step_count += 1
+        self._step_count += n_steps
 
         self._configuration.step_C()
 
@@ -415,9 +416,9 @@ class StudentTeacherODE:
         new_teacher = int(not self._active_teacher)
         if self._copy_head_at_switch:
             if new_teacher == 0:
-                self._configuration.h1 = self._configuration.h2
+                self._configuration.h1 = copy.deepcopy(self._configuration.h2)
             elif new_teacher == 1:
-                self._configuration.h2 = self._configuration.h1
+                self._configuration.h2 = copy.deepcopy(self._configuration.h1)
         self._active_teacher = new_teacher
         # try:
         #     self._next_switch_step = next(self._curriculum)
