@@ -122,7 +122,8 @@ class ODERunner:
         steps = 0
         task_steps = 0
 
-        step_increment = (timestep / time) * self._config.total_training_steps
+        # step_increment = (timestep / time) * self._config.total_training_steps
+        step_increment = timestep * self._config.input_dimension
 
         while ode.time < time:
             if steps % self._config.checkpoint_frequency == 0 and steps != 0:
@@ -147,7 +148,7 @@ class ODERunner:
                 ode.switch_teacher()
                 task_steps = 0
 
-            ode.step()
+            ode.step(n_steps=step_increment)
             steps += step_increment
             task_steps += step_increment
 
