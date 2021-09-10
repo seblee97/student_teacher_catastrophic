@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 
 import pandas as pd
 from loggers import base_logger
@@ -12,6 +13,8 @@ class UnifiedLogger(base_logger.BaseLogger):
         run_type: str,
     ):
         self._logger_df: pd.DataFrame
+        self._df_columns: List = []
+        self._logger_data: Dict = {}
         self._logfile_path: str
 
         super().__init__(config=config, run_type=run_type)
@@ -32,7 +35,11 @@ class UnifiedLogger(base_logger.BaseLogger):
         Raises:
             AssertionError: if tag provided is not previously defined as a column.
         """
-        self._logger_df.at[step, tag] = scalar
+        if tag not in self._logger_data:
+            self._logger_data[tag] = {}
+            self._df_columns.append(tag)
+
+        self._logger_data[tag][step] = scalar
 
     def checkpoint_df(self) -> None:
         """Merge dataframe with previously saved checkpoint.
@@ -41,9 +48,25 @@ class UnifiedLogger(base_logger.BaseLogger):
             AssertionError: if columns of dataframe to be appended do
             not match previous checkpoints.
         """
+        assert (
+            list(self._logger_data.keys()) == self._df_columns
+        ), "Incorrect dataframe columns for merging"
+
         # only append header on first checkpoint/save.
         header = not os.path.exists(self._logfile_path)
-        self._logger_df.to_csv(self._logfile_path, mode="a", header=header, index=False)
+        series_data = {k: pd.Series(v) for k, v in self._logger_data.items()}
+
+        df = pd.DataFrame(series_data)
+
+        for i in range(int(list(df.index)[0]), int(list(df.index)[-1])):
+            if i not in list(df.index):
+                df.loc[i] = pd.Series()
+        df = df.sort_index()
+
+        df.to_csv(
+            self._logfile_path, mode="a", header=header, index=False
+        )
 
         # reset logger in memory to empty.
-        self._logger_df = pd.DataFrame()
+        self._df_columns = []
+        self._logger_data = {}
