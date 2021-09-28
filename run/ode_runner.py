@@ -27,6 +27,19 @@ class ODERunner:
         self._config = config
         self._network_configuration = network_configuration
 
+        if config.consolidation_type is not None:
+            if (
+                config.consolidation_type
+                == constants.Constants.NODE_CONSOLIDATION_HESSIAN
+            ):
+                self._importance = config.importance
+            else:
+                raise NotImplementedError(
+                    "Only node-based consolidation with Hessian implemented in ODE"
+                )
+        else:
+            self._importance = None
+
         self._curriculum = self._setup_curriculum()
 
         if self._config.implementation == constants.Constants.PYTHON:
@@ -116,7 +129,8 @@ class ODERunner:
             train_head_layer=self._config.train_head_layer,
             frozen_feature=False,
             noise_stds=self._config.teacher_noises,
-            copy_head_at_switch=self._config.copy_head_at_switch
+            copy_head_at_switch=self._config.copy_head_at_switch,
+            importance=self._importance,
         )
 
         steps = 0
