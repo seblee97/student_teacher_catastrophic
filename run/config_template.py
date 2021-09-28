@@ -83,7 +83,8 @@ class ConfigTemplate:
                         constants.Constants.EWC,
                         constants.Constants.QUADRATIC,
                         constants.Constants.SYNAPTIC_INTELLIGENCE,
-                        constants.Constants.NODE_CONSOLIDATION
+                        constants.Constants.NODE_CONSOLIDATION,
+                        constants.Constants.NODE_CONSOLIDATION_HESSIAN,
                     ]
                 ],
             ),
@@ -295,8 +296,7 @@ class ConfigTemplate:
                 types=[bool],
             ),
             config_field.Field(
-                name=constants.Constants.COPY_HEAD_AT_SWITCH,
-                types=[bool]
+                name=constants.Constants.COPY_HEAD_AT_SWITCH, types=[bool]
             ),
             config_field.Field(
                 name=constants.Constants.SOFT_COMMITTEE,
