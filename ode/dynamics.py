@@ -292,6 +292,129 @@ class StudentTeacherODE:
 
                 derivative[i][k] = ik_derivative
 
+                if self._importance is not None and self._num_switches == 1:
+                    # q_ik terms
+                    derivative[i][k] += self._configuration.Q.values[i][k] * (
+                        self._dt
+                        * self._w_learning_rate ** 2
+                        * self._importance ** 2
+                        * inactive_student_head[i] ** 2
+                        * inactive_student_head[k] ** 2
+                        - self._dt
+                        * self._w_learning_rate
+                        * self._importance
+                        * inactive_student_head[i] ** 2
+                        - self._dt
+                        * self._w_learning_rate
+                        * self._importance
+                        * inactive_student_head[k] ** 2
+                    )
+                    # q_ik* terms
+                    derivative[i][k] += self._configuration.Q_.values[i][k] * (
+                        -2
+                        * self._dt
+                        * self._w_learning_rate ** 2
+                        * self._importance ** 2
+                        * inactive_student_head[i] ** 2
+                        * inactive_student_head[k] ** 2
+                        + self._dt
+                        * self._w_learning_rate
+                        * self._importance
+                        * inactive_student_head[i] ** 2
+                        + self._dt
+                        * self._w_learning_rate
+                        * self._importance
+                        * inactive_student_head[k] ** 2
+                    )
+                    # q_ik** terms
+                    derivative[i][k] += self._configuration.Q__.values[i][k] * (
+                        self._dt
+                        * self._w_learning_rate ** 2
+                        * self._importance ** 2
+                        * inactive_student_head[i] ** 2
+                        * inactive_student_head[k] ** 2
+                    )
+                    # extra integral terms
+                    sum_4 = 0
+                    for j, head_unit_j in enumerate(student_head):
+                        cov = self._configuration.generate_covariance_matrix([i, j, k])
+                        sum_4 += head_unit_j * self._i3_fn(cov)
+                    for m, head_unit_m in enumerate(teacher_head):
+                        cov = self._configuration.generate_covariance_matrix(
+                            [i, offset + m, k]
+                        )
+                        sum_4 -= head_unit_m * self._i3_fn(cov)
+
+                    ik_derivative += (
+                        self._dt
+                        * self._w_learning_rate ** 2
+                        * self._importance
+                        * student_head[i]
+                        * inactive_student_head[k] ** 2
+                        * sum_4
+                    )
+
+                    sum_5 = 0
+                    for j, head_unit_j in enumerate(student_head):
+                        cov = self._configuration.generate_covariance_matrix(
+                            [i, j, self._consolidation_offset + k]
+                        )
+                        sum_5 += head_unit_j * self._i3_fn(cov)
+                    for m, head_unit_m in enumerate(teacher_head):
+                        cov = self._configuration.generate_covariance_matrix(
+                            [i, offset + m, self._consolidation_offset + k]
+                        )
+                        sum_5 -= head_unit_m * self._i3_fn(cov)
+
+                    ik_derivative -= (
+                        self._dt
+                        * self._w_learning_rate ** 2
+                        * self._importance
+                        * student_head[i]
+                        * inactive_student_head[k] ** 2
+                        * sum_5
+                    )
+
+                    sum_6 = 0
+                    for j, head_unit_j in enumerate(student_head):
+                        cov = self._configuration.generate_covariance_matrix([k, j, i])
+                        sum_6 += head_unit_j * self._i3_fn(cov)
+                    for m, head_unit_m in enumerate(teacher_head):
+                        cov = self._configuration.generate_covariance_matrix(
+                            [k, offset + m, i]
+                        )
+                        sum_6 -= head_unit_m * self._i3_fn(cov)
+
+                    ik_derivative += (
+                        self._dt
+                        * self._w_learning_rate ** 2
+                        * self._importance
+                        * student_head[k]
+                        * inactive_student_head[i] ** 2
+                        * sum_6
+                    )
+
+                    sum_7 = 0
+                    for j, head_unit_j in enumerate(student_head):
+                        cov = self._configuration.generate_covariance_matrix(
+                            [k, j, self._consolidation_offset + i]
+                        )
+                        sum_7 += head_unit_j * self._i3_fn(cov)
+                    for m, head_unit_m in enumerate(teacher_head):
+                        cov = self._configuration.generate_covariance_matrix(
+                            [k, offset + m, self._consolidation_offset + i]
+                        )
+                        sum_7 -= head_unit_m * self._i3_fn(cov)
+
+                    ik_derivative -= (
+                        self._dt
+                        * self._w_learning_rate ** 2
+                        * self._importance
+                        * student_head[k]
+                        * inactive_student_head[i] ** 2
+                        * sum_7
+                    )
+
         i_lower = np.tril_indices(len(derivative), -1)
         derivative[i_lower] = derivative.T[i_lower]
 
