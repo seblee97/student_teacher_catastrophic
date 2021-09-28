@@ -205,6 +205,19 @@ class StudentTeacherODE:
                 self._dt * self._w_learning_rate * student_head[i] * ip_derivative
             )
 
+        if self._importance is not None and self._num_switches == 1:
+            for (i, p), _ in np.ndenumerate(derivative):
+                derivative[i][p] -= (
+                    self._dt
+                    * self._w_learning_rate
+                    * self._importance
+                    * inactive_student_head[i] ** 2
+                    * (
+                        self._configuration.U.values[i][p]
+                        - self._configuration_log[-1].U.values[i][p]
+                    )
+                )
+
         return derivative
 
     @property
