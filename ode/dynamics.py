@@ -81,9 +81,16 @@ class StudentTeacherODE:
         self._task_switch_error_1_log = {}
         self._task_switch_error_2_log = {}
 
+        # self._configuration.Q.shape[0]
         self._teacher_1_offset = self._configuration.R.shape[0]
+        # self._configuration.Q.shape[0] + self._configuration.R.shape[1]
         self._teacher_2_offset = (
             self._configuration.R.shape[1] + self._configuration.R.shape[0]
+        )
+        self._consolidation_offset = (
+            self._configuration.Q.shape[0]
+            + self._configuration.R.shape[1]
+            + self._configuration.U.shape[1]
         )
 
     @property
