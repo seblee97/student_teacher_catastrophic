@@ -132,10 +132,14 @@ class StudentTeacherODE:
             teacher_head = self._configuration.th1
             student_head = self._configuration.h1
             offset = self._teacher_1_offset
+            if self._importance is not None:
+                inactive_student_head = self._configuration.h2
         else:
             teacher_head = self._configuration.th2
             student_head = self._configuration.h2
             offset = self._teacher_2_offset
+            if self._importance is not None:
+                inactive_student_head = self._configuration.h1
         derivative = np.zeros(self._configuration.R.shape).astype(float)
         for (i, n), _ in np.ndenumerate(derivative):
             in_derivative = 0
