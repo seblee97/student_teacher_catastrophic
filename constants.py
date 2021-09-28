@@ -187,6 +187,7 @@ class Constants:
     COPY_HEAD_AT_SWITCH = "copy_head_at_switch"
     NONLINEARITIES = "nonlinearities"
     NOISE_STDS = "noise_stds"
+    NODE_CONSOLIDATION_HESSIAN = "node_consolidation_hessian"
 
     EVEN_ODD_MAPPING = {0: 0, 1: 1, 2: 0, 3: 1, 4: 0, 5: 1, 6: 0, 7: 1, 8: 0, 9: 1}
 
