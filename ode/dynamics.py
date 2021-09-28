@@ -158,6 +158,19 @@ class StudentTeacherODE:
                 self._dt * self._w_learning_rate * student_head[i] * in_derivative
             )
 
+        if self._importance is not None and self._num_switches == 1:
+            for (i, n), _ in np.ndenumerate(derivative):
+                derivative[i][n] -= (
+                    self._dt
+                    * self._w_learning_rate
+                    * self._importance
+                    * inactive_student_head[i] ** 2
+                    * (
+                        self._configuration.R.values[i][n]
+                        - self._configuration_log[-1].R.values[i][n]
+                    )
+                )
+
         return derivative
 
     @property
@@ -166,10 +179,14 @@ class StudentTeacherODE:
             teacher_head = self._configuration.th1
             student_head = self._configuration.h1
             offset = self._teacher_1_offset
+            if self._importance is not None:
+                inactive_student_head = self._configuration.h2
         else:
             teacher_head = self._configuration.th2
             student_head = self._configuration.h2
             offset = self._teacher_2_offset
+            if self._importance is not None:
+                inactive_student_head = self._configuration.h1
         derivative = np.zeros(self._configuration.U.shape).astype(float)
         for (i, p), _ in np.ndenumerate(derivative):
             ip_derivative = 0
@@ -196,10 +213,14 @@ class StudentTeacherODE:
             teacher_head = self._configuration.th1
             student_head = self._configuration.h1
             offset = self._teacher_1_offset
+            if self._importance is not None:
+                inactive_student_head = self._configuration.h2
         else:
             teacher_head = self._configuration.th2
             student_head = self._configuration.h2
             offset = self._teacher_2_offset
+            if self._importance is not None:
+                inactive_student_head = self._configuration.h1
         derivative = np.zeros(self._configuration.Q.shape).astype(float)
         i_range, k_range = derivative.shape
         for i in range(i_range):
