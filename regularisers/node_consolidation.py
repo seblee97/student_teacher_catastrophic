@@ -12,6 +12,12 @@ from torch.nn import functional as F
 
 
 class NodeConsolidation(base_regulariser.BaseRegulariser):
+    def __init__(self, importance: float, device: str, hessian: bool):
+
+        self._hessian = hessian
+
+        super().__init__(importance=importance, device=device)
+
     def compute_first_task_importance(
         self,
         student: nn.Module,
@@ -65,13 +71,32 @@ class NodeConsolidation(base_regulariser.BaseRegulariser):
             label = self._previous_teacher(data)
             loss = self._loss_function(output, label)
 
-            # get derivative of loss wrt post-activation
-            derivative = torch.autograd.grad(loss, post_activation)[0]
+            if self._hessian:
+                # get derivative of loss wrt post-activation
+                derivative = torch.autograd.grad(
+                    loss, post_activation, create_graph=True
+                )[0]
+                # second derivative, need to iterate through since torch only allows derivatives of scalars
+                second_derivative = [
+                    torch.autograd.grad(d, post_activation, create_graph=True)[0][
+                        d_index
+                    ]
+                    for d_index, d in enumerate(derivative)
+                ]
 
-            for node_index, node_derivative in enumerate(derivative):
-                node_fischer[first_layer_name][
-                    node_index
-                ] += node_derivative ** 2 / len(self._dataset)
+                for node_index, node_derivative in enumerate(second_derivative):
+                    node_fischer[first_layer_name][
+                        node_index
+                    ] += node_derivative.detach() / len(self._dataset)
+            else:
+                derivative = torch.autograd.grad(loss, post_activation)[0]
+
+                for node_index, node_derivative in enumerate(derivative):
+                    node_fischer[first_layer_name][
+                        node_index
+                    ] += node_derivative ** 2 / len(self._dataset)
+
+        self._student.train()
 
         # return back head
         self._student.signal_task_boundary(new_task=self._new_teacher_index)
@@ -86,10 +111,10 @@ class NodeConsolidation(base_regulariser.BaseRegulariser):
                 squared_parameter_difference = (
                     param - self._previous_task_parameters[0][n]
                 ) ** 2
-                
+
                 for m in range(len(self._precision_matrices[n])):
                     loss += (
                         self._precision_matrices[n][m] * squared_parameter_difference[m]
                     ).sum()
 
-        return self._importance * loss
+        return 0.5 * self._importance * loss
