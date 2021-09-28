@@ -2,6 +2,7 @@ import copy
 import itertools
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 import numpy as np
@@ -24,6 +25,11 @@ class StudentTwoTeacherConfiguration:
         h2: np.ndarray,
         th1: np.ndarray,
         th2: np.ndarray,
+        # for use with consolidation
+        Q_: Optional[np.ndarray] = None,
+        R_: Optional[np.ndarray] = None,
+        U_: Optional[np.ndarray] = None,
+        Q__: Optional[np.ndarray] = None,
     ):
         self._Q = SelfOverlap(Q, final=False)
         self._R = CrossOverlap(R, final=False)
@@ -37,6 +43,20 @@ class StudentTwoTeacherConfiguration:
 
         self._th1 = th1
         self._th2 = th2
+
+        if Q_ is None:
+            Q_ = np.empty((Q.shape[1], 0))
+        if R_ is None:
+            R_ = np.empty((R.shape[1], 0))
+        if U_ is None:
+            U_ = np.empty((U.shape[1], 0))
+        if Q__ is None:
+            Q__ = np.empty((0, 0))
+
+        self._Q_ = CrossOverlap(Q_, final=False)
+        self._R_ = CrossOverlap(R_, final=True)
+        self._U_ = CrossOverlap(U_, final=True)
+        self._Q__ = CrossOverlap(Q__, final=True)
 
         # print(f"Teacher-Teacher overlap: {self._V.values}")
         # print(f"Student-Teacher 2 overlap: {self._U.values}")
@@ -72,7 +92,7 @@ class StudentTwoTeacherConfiguration:
         covariance = np.zeros((len(indices), len(indices)))
         for i, index_i in enumerate(indices):
             for j, index_j in enumerate(indices):
-                covariance[i][j] = self.C[index_i][index_j]
+                covariance[i][j] = self._C[index_i][index_j]
 
         return CovarianceMatrix(covariance, indices=indices)
 
@@ -91,9 +111,10 @@ class StudentTwoTeacherConfiguration:
     def step_C(self):
         self._C = np.vstack(
             (
-                np.hstack((self._Q.values, self._R.values, self._U.values)),
-                np.hstack((self._R.values.T, self._T.values, self._V.values)),
-                np.hstack((self._U.values.T, self._V.values, self._S.values)),
+                np.hstack((self._Q.values, self._R.values, self._U.values, self._Q_.values)),
+                np.hstack((self._R.values.T, self._T.values, self._V.values, self._R_.values)),
+                np.hstack((self._U.values.T, self._V.values, self._S.values, self. _U_.values)),
+                np.hstack((self._Q_.values.T, self._R_.values.T, self._U_.values.T, self. _Q__.values)),
             )
         )
 
@@ -211,6 +232,50 @@ class StudentTwoTeacherConfiguration:
     @property
     def th2(self):
         return self._th2
+
+    @property
+    def Q_(self) -> SelfOverlap:
+        return self._Q_
+
+    @Q_.setter
+    def Q_(self, Q_):
+        self._Q_ = CrossOverlap(Q_, final=False)
+
+    def step_Q_(self, delta_Q_: np.ndarray) -> None:
+        self._Q_.step(delta_Q_)
+
+    @property
+    def R_(self) -> SelfOverlap:
+        return self._R_
+
+    @R_.setter
+    def R_(self, R_):
+        self._R_ = CrossOverlap(R_, final=True)
+
+    def step_R_(self, delta_R_: np.ndarray) -> None:
+        self._R_.step(delta_R_)
+
+    @property
+    def U_(self) -> SelfOverlap:
+        return self._U_
+
+    @U_.setter
+    def U_(self, U_):
+        self._U_ = CrossOverlap(U_, final=True)
+
+    def step_U_(self, delta_U_: np.ndarray) -> None:
+        self._U_.step(delta_U_)
+
+    @property
+    def Q__(self) -> SelfOverlap:
+        return self._Q__
+
+    @Q__.setter
+    def Q__(self, Q__):
+        self._Q__ = CrossOverlap(Q__, final=True)
+
+    def step_Q__(self, delta_Q__: np.ndarray) -> None:
+        self._Q__.step(delta_Q__)
 
 
 # class RandomStudentTwoTeacherConfiguration(StudentTwoTeacherConfiguration):
