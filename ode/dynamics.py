@@ -637,7 +637,15 @@ class StudentTeacherODE:
         self._configuration.step_h1(h1_delta)
         self._configuration.step_h2(h2_delta)
 
+        if self._importance is not None and self._num_switches == 1:
+            q_star_delta = self.dq_star_dt
+            self._configuration.step_Q_(q_star_delta)
+
     def switch_teacher(self):
+        # log configuration (useful e.g. for consolidation)
+        configuration_copy = copy.deepcopy(self._configuration)
+        self._configuration_log.append(configuration_copy)
+
         new_teacher = int(not self._active_teacher)
         if self._copy_head_at_switch:
             if new_teacher == 0:
@@ -654,6 +662,12 @@ class StudentTeacherODE:
         self._num_switches += 1
         if self._frozen_feature and self._num_switches == 1:
             self._frozen = True
+
+        if self._importance is not None and self._num_switches == 1:
+            self._configuration.Q_ = copy.deepcopy(self._configuration.Q).values
+            self._configuration.R_ = copy.deepcopy(self._configuration.R).values.T
+            self._configuration.U_ = copy.deepcopy(self._configuration.U).values.T
+            self._configuration.Q__ = copy.deepcopy(self._configuration.Q).values
 
     @staticmethod
     def _get_data_diff(data: Union[List, np.ndarray]) -> np.ndarray:
