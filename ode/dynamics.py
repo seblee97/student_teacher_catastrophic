@@ -25,7 +25,8 @@ class StudentTeacherODE:
         train_head_layer: bool,
         frozen_feature: bool,
         noise_stds: List[Union[float, int]],
-        copy_head_at_switch: bool
+        copy_head_at_switch: bool,
+        importance: Optional[Union[int, float]] = None,
     ):
 
         self._configuration = overlap_configuration
@@ -39,6 +40,9 @@ class StudentTeacherODE:
         self._frozen_feature = frozen_feature
         self._noise_stds = noise_stds
         self._copy_head_at_switch = copy_head_at_switch
+        self._importance = importance
+
+        self._configuration_log = []
 
         self._frozen = False
         self._num_switches = 0
