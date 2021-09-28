@@ -315,6 +315,10 @@ class NetworkRunner:
             consolidation_module = node_consolidation.NodeConsolidation(
                 importance=config.importance, device=self._device
             )
+        elif config.consolidation_type == Constants.NODE_CONSOLIDATION_HESSIAN:
+            consolidation_module = node_consolidation.NodeConsolidation(
+                importance=config.importance, device=self._device, hessian=True
+            )
         else:
             raise ValueError(
                 f"Consolidation type {config.consolidation_type} not recognised."
@@ -402,7 +406,10 @@ class NetworkRunner:
             )
             consolidation_module = self._consolidation_module
             for params, matrix in consolidation_module.precision_matrices.items():
-                torch.save(matrix, os.path.join(self._checkpoint_path, f"precision_matrix_{params}"))
+                torch.save(
+                    matrix,
+                    os.path.join(self._checkpoint_path, f"precision_matrix_{params}"),
+                )
         else:
             consolidation_module = None
 
