@@ -459,6 +459,56 @@ class StudentTeacherODE:
         return derivative
 
     @property
+    def dq_star_dt(self):
+        derivative = np.zeros(self._configuration.Q_.shape).astype(float)
+        if self._active_teacher == 0:
+            teacher_head = self._configuration.th1
+            student_head = self._configuration.h1
+            offset = self._teacher_1_offset
+            if self._importance is not None:
+                inactive_student_head = self._configuration.h2
+        else:
+            teacher_head = self._configuration.th2
+            student_head = self._configuration.h2
+            offset = self._teacher_2_offset
+            if self._importance is not None:
+                inactive_student_head = self._configuration.h1
+        for (i, k), _ in np.ndenumerate(derivative):
+            ik_derivative = 0
+            for m, head_unit in enumerate(teacher_head):
+                cov = self._configuration.generate_covariance_matrix(
+                    [k, m, self._consolidation_offset + i]
+                )
+                ik_derivative -= head_unit * self._i3_fn(cov)
+            for j, head_unit in enumerate(student_head):
+                cov = self._configuration.generate_covariance_matrix(
+                    [k, j, self._consolidation_offset + i]
+                )
+                ik_derivative += head_unit * self._i3_fn(cov)
+
+            derivative[i][k] = (
+                -self._dt * self._w_learning_rate * student_head[k] * ik_derivative
+            )
+
+            derivative[i][k] -= (
+                self._dt
+                * self._w_learning_rate
+                * self._importance
+                * inactive_student_head[i] ** 2
+                * self._configuration.Q_.values[i][k]
+            )
+
+            derivative[i][k] += (
+                self._dt
+                * self._w_learning_rate
+                * self._importance
+                * inactive_student_head[i] ** 2
+                * self._configuration.Q__.values[i][k]
+            )
+
+        return derivative
+
+    @property
     def de_active_dt(self):
         raise NotImplementedError
 
@@ -534,12 +584,15 @@ class StudentTeacherODE:
                 "Run self.make_plot(SAVE_PATH) to create plot of errors and overlaps to this point."
             )
             import pdb
+
             pdb.set_trace()
         if np.isnan(error):
             warnings.warn(
                 "Latest error calculation is NaN. "
-                "Run 'self.error_1_log' or self.error_2_log' to view error logs to this point.")
+                "Run 'self.error_1_log' or self.error_2_log' to view error logs to this point."
+            )
             import pdb
+
             pdb.set_trace()
         return error
 
