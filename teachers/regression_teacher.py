@@ -22,6 +22,7 @@ class RegressionTeacher(base_teacher.BaseTeacher):
         weight_normalisation: bool,
         noise_std: Union[float, int],
         initialisation_std: float,
+        zero_head: bool = False,
     ):
         super().__init__(
             input_dimension=input_dimension,
@@ -36,6 +37,7 @@ class RegressionTeacher(base_teacher.BaseTeacher):
             weight_normalisation=weight_normalisation,
             noise_std=noise_std,
             initialisation_std=initialisation_std,
+            zero_head=zero_head,
         )
         self._noise_module = torch.distributions.normal.Normal(
             loc=0, scale=self._noise_std
