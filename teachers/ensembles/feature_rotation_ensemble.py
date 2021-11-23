@@ -64,7 +64,9 @@ class FeatureRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
 
         teachers = [
             self._init_teacher(
-                nonlinearity=self._nonlinearities[i], noise_std=self._noise_stds[i]
+                nonlinearity=self._nonlinearities[i],
+                noise_std=self._noise_stds[i],
+                zero_head=0,
             )
             for i in range(self._num_teachers)
         ]
@@ -82,7 +84,7 @@ class FeatureRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
                     unrotated_weights=teachers[0].layers[0].weight.data,
                     alpha=np.cos(self._rotation_magnitude),
                     normalisation=self._input_dimension,
-                    orthogonalise=False
+                    orthogonalise=False,
                 )
 
             teacher_0_rotated_weight_tensor = torch.Tensor(
