@@ -96,6 +96,15 @@ class BaseLogger(abc.ABC):
                     step=step,
                     scalar=overlap_value,
                 )
+        # if using node consolidation
+        for (i, j), overlap_value in np.ndenumerate(
+            network_config.student_old_student_overlap
+        ):
+            self.write_scalar_df(
+                tag=f"{constants.Constants.STUDENT_OLD_STUDENT}_{constants.Constants.OVERLAP}_{i}_{j}",
+                step=step,
+                scalar=overlap_value,
+            )
 
     @abc.abstractmethod
     @decorators.timer
