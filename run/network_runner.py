@@ -65,6 +65,7 @@ class NetworkRunner:
         self._test_frequency = config.test_frequency
         self._total_step_count = 0
         self._log_overlaps = config.log_overlaps
+        self._consolidation_type = config.consolidation_type
 
         # initialise student, teachers, logger_module,
         # data_module, loss_module, torch optimiser, and curriculum object
@@ -107,6 +108,24 @@ class NetworkRunner:
                 for teacher in self._teachers.teachers
             ]
 
+            # for use with node consolidation
+            if self._consolidation_type == Constants.NODE_CONSOLIDATION_HESSIAN:
+                if len(self._curriculum.history) > 1:
+                    # TODO: less than ideal needing to index this dictionary
+                    old_student_layer = (
+                        self._consolidation_module.previous_task_parameters[
+                            "_layers.0.weight"
+                        ].data.t()
+                    )
+                    student_old_student_overlap = (
+                        student_layer.mm(old_student_layer).cpu().numpy()
+                        / self._input_dimension
+                    )
+                else:
+                    student_old_student_overlap = student_self_overlap
+            else:
+                student_old_student_overlap = []
+
         return network_configuration.NetworkConfiguration(
             student_head_weights=student_head_weights,
             teacher_head_weights=teacher_head_weights,
@@ -114,6 +133,7 @@ class NetworkRunner:
             teacher_self_overlaps=teacher_self_overlaps,
             teacher_cross_overlaps=teacher_cross_overlaps,
             student_teacher_overlaps=student_teacher_overlaps,
+            student_old_student_overlap=student_old_student_overlap,
         )
 
     @decorators.timer
@@ -461,6 +481,11 @@ class NetworkRunner:
             if self._curriculum.to_switch(
                 task_step=task_step_count, error=latest_task_generalisation_error
             ):
+                if self._log_overlaps:
+                    self._logger.log_network_configuration(
+                        step=self._total_step_count,
+                        network_config=self.get_network_configuration(),
+                    )
                 break
 
     def _training_step(
