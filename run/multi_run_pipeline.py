@@ -8,17 +8,17 @@ from typing import Dict
 from typing import List
 from typing import Tuple
 
+import constants
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
 from matplotlib import cm
-
-import constants
 from run import config_template
 from run import core_runner
 from run import student_teacher_config
 from run.config_changes import ConfigChange
+from utils import cluster_methods
 from utils import experiment_utils
 
 MAIN_FILE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -117,6 +117,34 @@ def parallel_run(
 
     for p in procs:
         p.join()
+
+
+def parallel_cluster_run(
+    base_configuration: student_teacher_config.StudentTeacherConfiguration,
+    seeds: List[int],
+    config_changes: Dict[str, List[Tuple[str, Any]]],
+    experiment_path: str,
+    results_folder: str,
+    timestamp: str,
+):
+    for run_name, changes in config_changes.items():
+        for seed in seeds:
+
+            p = Process(
+                target=single_run,
+                args=(
+                    base_configuration,
+                    run_name,
+                    seed,
+                    results_folder,
+                    experiment_path,
+                    timestamp,
+                    changes,
+                ),
+            )
+            p.start()
+            procs.append(p)
+
 
 
 def serial_run(
