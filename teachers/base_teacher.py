@@ -31,9 +31,11 @@ class BaseTeacher(base_network.BaseNetwork, abc.ABC):
         weight_normalisation: bool,
         noise_std: Union[float, int],
         initialisation_std: Optional[float] = None,
+        zero_head: bool = False,
     ) -> None:
         self._unit_norm_teacher_head = unit_norm_teacher_head
         self._noise_std = noise_std
+        self._zero_head = zero_head
 
         super().__init__(
             input_dimension=input_dimension,
@@ -71,6 +73,10 @@ class BaseTeacher(base_network.BaseNetwork, abc.ABC):
             self._head.weight.data = normalised_head
         else:
             self._initialise_weights(self._head)
+
+        if self._zero_head:
+            self._head.weight.data = torch.zeros_like(self._head.weight.data)
+
         for param in self._head.parameters():
             param.requires_grad = False
 
