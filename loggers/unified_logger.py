@@ -1,6 +1,7 @@
 import os
 from typing import Dict
 
+import numpy as np
 import pandas as pd
 from loggers import base_logger
 from run import student_teacher_config
@@ -54,18 +55,26 @@ class UnifiedLogger(base_logger.BaseLogger):
 
         # only append header on first checkpoint/save.
         header = not os.path.exists(self._logfile_path)
-        series_data = {k: pd.Series(v) for k, v in self._logger_data.items()}
+
+        series_data = {}
+
+        for tag, tag_data in self._logger_data.items():
+            filled_tag_data = {}
+            for row in range(
+                int(list(tag_data.keys())[0]),
+                int(list(tag_data.keys())[-1] + 1),
+            ):
+                if row in tag_data:
+                    filled_tag_data[row] = tag_data[row]
+                else:
+                    filled_tag_data[row] = np.nan
+            series_data[tag] = filled_tag_data
 
         df = pd.DataFrame(series_data)
 
-        for i in range(int(list(df.index)[0]), int(list(df.index)[-1])):
-            if i not in list(df.index):
-                df.loc[i] = pd.Series()
         df = df.sort_index()
 
-        df.to_csv(
-            self._logfile_path, mode="a", header=header, index=False
-        )
+        df.to_csv(self._logfile_path, mode="a", header=header, index=False)
 
         # reset logger in memory to empty.
         self._df_columns = []
