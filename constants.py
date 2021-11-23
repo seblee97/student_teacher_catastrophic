@@ -188,6 +188,8 @@ class Constants:
     NONLINEARITIES = "nonlinearities"
     NOISE_STDS = "noise_stds"
     NODE_CONSOLIDATION_HESSIAN = "node_consolidation_hessian"
+    STUDENT_OLD_STUDENT = "student_old_student"
+    STUDENT_OLD_STUDENT_LABEL = "Q*"
 
     EVEN_ODD_MAPPING = {0: 0, 1: 1, 2: 0, 3: 1, 4: 0, 5: 1, 6: 0, 7: 1, 8: 0, 9: 1}
 
