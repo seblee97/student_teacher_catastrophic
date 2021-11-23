@@ -159,6 +159,10 @@ class ODERunner:
             if self._curriculum.to_switch(
                 task_step=task_steps, error=ode.current_teacher_error
             ):
+                if self._config.log_overlaps:
+                    self._logger.log_network_configuration(
+                        step=steps, network_config=ode.configuration
+                    )
                 ode.switch_teacher()
                 task_steps = 0
 
