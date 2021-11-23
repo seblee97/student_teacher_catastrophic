@@ -43,6 +43,10 @@ class NodeConsolidation(base_regulariser.BaseRegulariser):
 
         self._precision_matrices = self._diag_fisher()
 
+        # import pdb
+
+        # pdb.set_trace()
+
     @property
     def precision_matrices(self):
         return self._precision_matrices
@@ -52,51 +56,76 @@ class NodeConsolidation(base_regulariser.BaseRegulariser):
         self._student.signal_task_boundary(new_task=self._previous_teacher_index)
 
         # limit to two layer networks
-        first_layer_param_copy = list(copy.deepcopy(self._params).values())[0]
-        first_layer_name = list(self._params.keys())[0]
+        # first_layer_param_copy = list(copy.deepcopy(self._params).values())[0]
+        # first_layer_name = list(self._params.keys())[0]
 
-        node_fischer = {first_layer_name: torch.zeros(first_layer_param_copy.shape[0])}
+        self._head_squared = (
+            self._student.state_dict()["_heads.0.weight"][0].numpy() ** 2
+        )
 
-        self._student.eval()
-        for data in self._dataset:
-            self._student.zero_grad()
+        node_fischer = {}
 
-            # get post activations
-            pre_activation = self._student.layers[0](data)
-            post_activation = self._student.nonlinear_function(pre_activation)
-            output = (
-                self._student._forward_scaling
-                * self._student._get_output_from_head(post_activation)
-            )
-            label = self._previous_teacher(data)
-            loss = self._loss_function(output, label)
+        self._student.zero_grad()
+        for n, param in copy.deepcopy(self._params).items():
+            param.data.zero_()
+            node_fischer[n] = param.data.to(self._device)
+            for i in range(len(node_fischer[n])):
+                head_squared = (
+                    copy.deepcopy(
+                        self._student.state_dict()["_heads.0.weight"][0][i]
+                    ).data.detach()
+                    ** 2
+                )
+                for j in range(len(node_fischer[n][i])):
+                    node_fischer[n][i].data += head_squared
 
-            if self._hessian:
-                # get derivative of loss wrt post-activation
-                derivative = torch.autograd.grad(
-                    loss, post_activation, create_graph=True
-                )[0]
-                # second derivative, need to iterate through since torch only allows derivatives of scalars
-                second_derivative = [
-                    torch.autograd.grad(d, post_activation, create_graph=True)[0][
-                        d_index
-                    ]
-                    for d_index, d in enumerate(derivative)
-                ]
+        # self._student.eval()
+        # for data in self._dataset:
+        #     self._student.zero_grad()
 
-                for node_index, node_derivative in enumerate(second_derivative):
-                    node_fischer[first_layer_name][
-                        node_index
-                    ] += node_derivative.detach() / len(self._dataset)
-            else:
-                derivative = torch.autograd.grad(loss, post_activation)[0]
+        #     # get post activations
+        #     pre_activation = self._student.layers[0](data)
+        #     post_activation = self._student.nonlinear_function(pre_activation)
+        #     output = (
+        #         self._student._forward_scaling
+        #         * self._student._get_output_from_head(post_activation)
+        #     )
+        #     label = self._previous_teacher(data)
+        #     loss = self._loss_function(output, label)
 
-                for node_index, node_derivative in enumerate(derivative):
-                    node_fischer[first_layer_name][
-                        node_index
-                    ] += node_derivative ** 2 / len(self._dataset)
+        #     if self._hessian:
+        #         # get derivative of loss wrt post-activation
+        #         derivative = torch.autograd.grad(
+        #             loss, post_activation, create_graph=True
+        #         )[0]
+        #         # second derivative, need to iterate through since torch only allows derivatives of scalars
+        #         second_derivative = [
+        #             torch.autograd.grad(d, post_activation, create_graph=True)[0][
+        #                 d_index
+        #             ]
+        #             for d_index, d in enumerate(derivative)
+        #         ]
 
-        self._student.train()
+        #         for n, param in self._student.named_parameters():
+        #             if "heads" not in n:
+        #                 for m, node in enumerate(param):
+
+        #                     node_fischer[n][m].data += (
+        #                         second_derivative[m].data / len(self._dataset)
+        #                     ) * torch.ones_like(node_fischer[n][m].data)
+        #         # for node_index, node_derivative in enumerate(second_derivative):
+        #         #     node_fischer[first_layer_name][
+        #         #         node_index
+        #         #     ] += node_derivative.detach() / len(self._dataset)
+        #     else:
+        #         derivative = torch.autograd.grad(loss, post_activation)[0]
+
+        #         for node_index, node_derivative in enumerate(derivative):
+        #             node_fischer[first_layer_name][
+        #                 node_index
+        #             ] += node_derivative.detach() ** 2 / len(self._dataset)
+
+        node_fischer = {n: param for n, param in node_fischer.items()}
 
         # return back head
         self._student.signal_task_boundary(new_task=self._new_teacher_index)
@@ -114,7 +143,7 @@ class NodeConsolidation(base_regulariser.BaseRegulariser):
 
                 for m in range(len(self._precision_matrices[n])):
                     loss += (
-                        self._precision_matrices[n][m] * squared_parameter_difference[m]
+                        self._head_squared[m] * squared_parameter_difference[m]
                     ).sum()
 
         return 0.5 * self._importance * loss
