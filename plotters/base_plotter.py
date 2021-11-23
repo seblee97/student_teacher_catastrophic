@@ -28,6 +28,7 @@ class BasePlotter(abc.ABC):
         constants.Constants.STUDENT_SELF: constants.Constants.STUDENT_SELF_LABEL,
         constants.Constants.STUDENT_TEACHER_0: constants.Constants.STUDENT_TEACHER_0_LABEL,
         constants.Constants.STUDENT_TEACHER_1: constants.Constants.STUDENT_TEACHER_1_LABEL,
+        constants.Constants.STUDENT_OLD_STUDENT: constants.Constants.STUDENT_OLD_STUDENT_LABEL,
     }
 
     OTHER_IDENTIFIERS = {
