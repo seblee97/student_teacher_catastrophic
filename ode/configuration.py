@@ -45,13 +45,17 @@ class StudentTwoTeacherConfiguration:
         self._th2 = th2
 
         if Q_ is None:
-            Q_ = np.empty((Q.shape[1], 0))
+            Q_ = np.empty(Q.shape)
+            Q_[:] = np.nan
         if R_ is None:
-            R_ = np.empty((R.shape[1], 0))
+            R_ = np.empty(R.T.shape)
+            R_[:] = np.nan
         if U_ is None:
-            U_ = np.empty((U.shape[1], 0))
+            U_ = np.empty(U.T.shape)
+            U_[:] = np.nan
         if Q__ is None:
-            Q__ = np.empty((0, 0))
+            Q__ = np.empty(Q.shape)
+            Q__[:] = np.nan
 
         self._Q_ = CrossOverlap(Q_, final=False)
         self._R_ = CrossOverlap(R_, final=True)
@@ -84,6 +88,9 @@ class StudentTwoTeacherConfiguration:
             teacher_self_overlaps=[self._T.values, self._S.values],
             teacher_cross_overlaps=[self._V.values],
             student_teacher_overlaps=[self._R.values, self._U.values],
+            old_student_self_overlap=self._Q__.values,
+            student_old_student_overlap=self._Q_.values,
+            teacher_old_student_overlaps=[self._R_.values, self._U_.values],
         )
 
     def generate_covariance_matrix(
@@ -111,10 +118,28 @@ class StudentTwoTeacherConfiguration:
     def step_C(self):
         self._C = np.vstack(
             (
-                np.hstack((self._Q.values, self._R.values, self._U.values, self._Q_.values)),
-                np.hstack((self._R.values.T, self._T.values, self._V.values, self._R_.values)),
-                np.hstack((self._U.values.T, self._V.values, self._S.values, self. _U_.values)),
-                np.hstack((self._Q_.values.T, self._R_.values.T, self._U_.values.T, self. _Q__.values)),
+                np.hstack(
+                    (self._Q.values, self._R.values, self._U.values, self._Q_.values)
+                ),
+                np.hstack(
+                    (self._R.values.T, self._T.values, self._V.values, self._R_.values)
+                ),
+                np.hstack(
+                    (
+                        self._U.values.T,
+                        self._V.values.T,
+                        self._S.values,
+                        self._U_.values,
+                    )
+                ),
+                np.hstack(
+                    (
+                        self._Q_.values.T,
+                        self._R_.values.T,
+                        self._U_.values.T,
+                        self._Q__.values,
+                    )
+                ),
             )
         )
 
@@ -197,7 +222,6 @@ class StudentTwoTeacherConfiguration:
     @h1.setter
     def h1(self, head):
         self._h1 = head
-
 
     def step_h1(self, delta_h1: np.ndarray) -> None:
         self._h1 += delta_h1
