@@ -82,7 +82,9 @@ class BaseTeacherEnsemble(abc.ABC):
         output = self._teachers[teacher_index](batch)
         return output
 
-    def _init_teacher(self, nonlinearity: str, noise_std: Union[float, int]):
+    def _init_teacher(
+        self, nonlinearity: str, noise_std: Union[float, int], zero_head: bool = False
+    ):
         if self._loss_type == constants.Constants.CLASSIFICATION:
             teacher = classification_teacher.ClassificationTeacher
         elif self._loss_type == constants.Constants.REGRESSION:
@@ -101,6 +103,7 @@ class BaseTeacherEnsemble(abc.ABC):
             weight_normalisation=self._weight_normalisation,
             noise_std=noise_std,
             initialisation_std=self._initialisation_std,
+            zero_head=zero_head,
         )
 
     def save_all_teacher_weights(self, save_path: str) -> None:
