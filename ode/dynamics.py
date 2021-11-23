@@ -87,6 +87,7 @@ class StudentTeacherODE:
         self._teacher_2_offset = (
             self._configuration.R.shape[1] + self._configuration.R.shape[0]
         )
+
         self._consolidation_offset = (
             self._configuration.Q.shape[0]
             + self._configuration.R.shape[1]
@@ -464,30 +465,28 @@ class StudentTeacherODE:
         if self._active_teacher == 0:
             teacher_head = self._configuration.th1
             student_head = self._configuration.h1
-            offset = self._teacher_1_offset
             if self._importance is not None:
                 inactive_student_head = self._configuration.h2
         else:
             teacher_head = self._configuration.th2
             student_head = self._configuration.h2
-            offset = self._teacher_2_offset
             if self._importance is not None:
                 inactive_student_head = self._configuration.h1
         for (i, k), _ in np.ndenumerate(derivative):
             ik_derivative = 0
             for m, head_unit in enumerate(teacher_head):
                 cov = self._configuration.generate_covariance_matrix(
-                    [k, m, self._consolidation_offset + i]
+                    [i, self._teacher_2_offset + m, self._consolidation_offset + k]
                 )
                 ik_derivative -= head_unit * self._i3_fn(cov)
             for j, head_unit in enumerate(student_head):
                 cov = self._configuration.generate_covariance_matrix(
-                    [k, j, self._consolidation_offset + i]
+                    [i, j, self._consolidation_offset + k]
                 )
                 ik_derivative += head_unit * self._i3_fn(cov)
 
             derivative[i][k] = (
-                -self._dt * self._w_learning_rate * student_head[k] * ik_derivative
+                -self._dt * self._w_learning_rate * student_head[i] * ik_derivative
             )
 
             derivative[i][k] -= (
@@ -605,6 +604,7 @@ class StudentTeacherODE:
         return self._time
 
     def step(self, n_steps: int = 1):
+
         self._time += self._dt
         self._step_count += n_steps
 
@@ -631,6 +631,9 @@ class StudentTeacherODE:
             h1_delta = np.zeros(self._configuration.h1.shape).astype(float)
             h2_delta = np.zeros(self._configuration.h2.shape).astype(float)
 
+        if self._importance is not None and self._num_switches == 1:
+            q_star_delta = self.dq_star_dt
+
         self._configuration.step_Q(q_delta)
         self._configuration.step_R(r_delta)
         self._configuration.step_U(u_delta)
@@ -638,7 +641,6 @@ class StudentTeacherODE:
         self._configuration.step_h2(h2_delta)
 
         if self._importance is not None and self._num_switches == 1:
-            q_star_delta = self.dq_star_dt
             self._configuration.step_Q_(q_star_delta)
 
     def switch_teacher(self):
