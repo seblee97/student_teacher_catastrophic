@@ -1,7 +1,7 @@
 __pycache__/
 .ipynb_checkpoints/
 experiments/results/
-run/results/
+cata/run/results/
 experiments/*profile.txt
 .DS_Store
 data/
