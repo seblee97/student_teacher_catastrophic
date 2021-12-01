@@ -1,10 +1,9 @@
 import os
 from typing import Dict
 
+import constants
 import numpy as np
 import pandas as pd
-
-import constants
 from loggers import base_logger
 from run import student_teacher_config
 from utils import network_configuration
@@ -31,12 +30,12 @@ class SplitLogger(base_logger.BaseLogger):
 
     def _setup_error_loggers(self):
         for i in range(self._num_teachers):
-            tag = f"{constants.Constants.GENERALISATION_ERROR}_{i}"
+            tag = f"{constants.GENERALISATION_ERROR}_{i}"
             self._loggers[tag] = pd.DataFrame()
             self._logfile_paths[tag] = os.path.join(
                 self._checkpoint_path, self._run_type, f"{tag}_{self._csv_file_name}"
             )
-            log_tag = f"{constants.Constants.LOG_GENERALISATION_ERROR}_{i}"
+            log_tag = f"{constants.LOG_GENERALISATION_ERROR}_{i}"
             self._loggers[log_tag] = pd.DataFrame()
             self._logfile_paths[log_tag] = os.path.join(
                 self._checkpoint_path,
@@ -49,7 +48,7 @@ class SplitLogger(base_logger.BaseLogger):
             self._initialisation_network_config.student_head_weights
         ):
             for j, head in enumerate(head):
-                tag = f"{constants.Constants.STUDENT_HEAD}_{i}_{constants.Constants.WEIGHT}_{j}"
+                tag = f"{constants.STUDENT_HEAD}_{i}_{constants.WEIGHT}_{j}"
                 self._loggers[tag] = pd.DataFrame()
                 self._logfile_paths[tag] = os.path.join(
                     self._checkpoint_path,
@@ -60,7 +59,7 @@ class SplitLogger(base_logger.BaseLogger):
             self._initialisation_network_config.teacher_head_weights
         ):
             for j, weight in enumerate(head):
-                tag = f"{constants.Constants.TEACHER_HEAD}_{i}_{constants.Constants.WEIGHT}_{j}"
+                tag = f"{constants.TEACHER_HEAD}_{i}_{constants.WEIGHT}_{j}"
                 self._loggers[tag] = pd.DataFrame()
                 self._logfile_paths[tag] = os.path.join(
                     self._checkpoint_path,
@@ -70,7 +69,7 @@ class SplitLogger(base_logger.BaseLogger):
         for (i, j), overlap_value in np.ndenumerate(
             self._initialisation_network_config.student_self_overlap
         ):
-            tag = f"{constants.Constants.STUDENT_SELF}_{constants.Constants.OVERLAP}_{i}_{j}"
+            tag = f"{constants.STUDENT_SELF}_{constants.OVERLAP}_{i}_{j}"
             self._loggers[tag] = pd.DataFrame()
             self._logfile_paths[tag] = os.path.join(
                 self._checkpoint_path, self._run_type, f"{tag}_{self._csv_file_name}"
@@ -79,7 +78,7 @@ class SplitLogger(base_logger.BaseLogger):
             self._initialisation_network_config.student_teacher_overlaps
         ):
             for (i, j), overlap_value in np.ndenumerate(student_teacher_overlap):
-                tag = f"{constants.Constants.STUDENT_TEACHER}_{t}_{constants.Constants.OVERLAP}_{i}_{j}"
+                tag = f"{constants.STUDENT_TEACHER}_{t}_{constants.OVERLAP}_{i}_{j}"
                 self._loggers[tag] = pd.DataFrame()
                 self._logfile_paths[tag] = os.path.join(
                     self._checkpoint_path,
