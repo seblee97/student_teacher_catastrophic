@@ -392,10 +392,6 @@ class NetworkRunner(base_runner.BaseRunner):
         loss = 0.5 * self._loss_function(prediction, target)
         return loss
 
-    def _log_step_data(self, step: int, logging_dict: Dict[str, Any]):
-        for tag, scalar in logging_dict.items():
-            self._data_logger.write_scalar(tag=tag, step=step, scalar=scalar)
-
     @decorators.timer
     def _setup_training(self):
         """Prepare runner for training, including constructing a test dataset.
@@ -624,6 +620,10 @@ class NetworkRunner(base_runner.BaseRunner):
         self._student.train()
 
         return generalisation_errors
+
+    def _log_step_data(self, step: int, logging_dict: Dict[str, Any]):
+        for tag, scalar in logging_dict.items():
+            self._data_logger.write_scalar(tag=tag, step=step, scalar=scalar)
 
     def post_process(self):
         self._plotter.load_data()
