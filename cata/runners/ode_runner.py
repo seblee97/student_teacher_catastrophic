@@ -69,20 +69,6 @@ class ODERunner(base_runner.BaseRunner):
             columns.extend(list(sample_network_config.dictionary.keys()))
         return columns
 
-    # def _setup_logger(self) -> base_logger.BaseLogger:
-    #     if self._config.split_logging:
-    #         logger = split_logger.SplitLogger(
-    #             config=self._config,
-    #             run_type=constants.ODE,
-    #             network_config=self._network_configuration,
-    #         )
-    #     else:
-    #         logger = unified_logger.UnifiedLogger(
-    #             config=self._config,
-    #             run_type=constants.ODE,
-    #         )
-    #     return logger
-
     def _setup_curriculum(self) -> base_curriculum.BaseCurriculum:
         """Initialise curriculum object (when to switch teacher,
         how to decide subsequent teacher etc.)
