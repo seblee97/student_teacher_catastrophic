@@ -18,8 +18,9 @@
 	{
 		"SublimeLinter.linters.flake8.disable": false,
 		"SublimeLinter.linters.flake8.lint_mode": "background",
-		"SublimeLinter.linters.flake8.python": "/Users/sebastianlee/opt/anaconda3/envs/cata/bin/python",
-		"python_interpreter": "/Users/sebastianlee/opt/anaconda3/envs/cata/bin/python",
+		"SublimeLinter.linters.flake8.python": "/Users/sebastianlee/opt/anaconda3/envs/cata/bin/python3",
+		"SublimeLinter.linters.flake8.executable": "/Users/sebastianlee/opt/anaconda3/envs/cata/bin/flake8",
+		"python_interpreter": "/Users/sebastianlee/opt/anaconda3/envs/cata/bin/python3",
 		"sublack.black_command": "/Users/sebastianlee/opt/anaconda3/envs/cata/bin/black",
 		"sublack.black_on_save": true,
 	}
