@@ -40,6 +40,7 @@ class CataConfigTemplate:
                         constants.FEATURE_ROTATION,
                         constants.READOUT_ROTATION,
                         constants.BOTH_ROTATION,
+                        constants.NODE_SHARING,
                     ]
                 ],
             ),
@@ -365,6 +366,28 @@ class CataConfigTemplate:
         dependent_variables_required_values=[[constants.BOTH_ROTATION]],
     )
 
+    _node_sharing_template = config_template.Template(
+        fields=[
+            config_field.Field(
+                name=constants.NUM_SHARED_NODES,
+                types=[int],
+                requirements=[lambda x: x > 0],
+            ),
+            config_field.Field(
+                name=constants.ROTATION_MAGNITUDE,
+                key=constants.FEATURE_ROTATION_MAGNITUDE,
+                types=[float, int],
+            ),
+        ],
+        level=[
+            constants.MODEL,
+            constants.TEACHERS,
+            constants.NODE_SHARING,
+        ],
+        dependent_variables=[constants.TEACHER_CONFIGURATION],
+        dependent_variables_required_values=[[constants.NODE_SHARING]],
+    )
+
     _teachers_template = config_template.Template(
         fields=[
             config_field.Field(
@@ -412,6 +435,7 @@ class CataConfigTemplate:
             _feature_rotation_template,
             _readout_rotation_template,
             _both_rotation_template,
+            _node_sharing_template,
         ],
         level=[constants.MODEL, constants.TEACHERS],
     )
