@@ -84,7 +84,7 @@ if __name__ == "__main__":
                 config_class=config_class,
                 config_path=args.config_path,
                 checkpoint_paths=checkpoint_paths,
-                run_methods=["train", "post_process"],
+                run_methods=["run", "post_process"],
                 stochastic_packages=["numpy", "torch", "random"],
             )
 
@@ -95,7 +95,7 @@ if __name__ == "__main__":
                 config_class=config_class,
                 config_path=args.config_path,
                 checkpoint_paths=checkpoint_paths,
-                run_methods=["train", "post_process"],
+                run_methods=["run", "post_process"],
                 stochastic_packages=["numpy", "torch", "random"],
             )
 
@@ -110,7 +110,7 @@ if __name__ == "__main__":
                 config_module_path=config_module_path,
                 config_path=args.config_path,
                 checkpoint_paths=checkpoint_paths,
-                run_methods=["train", "post_process"],
+                run_methods=["run", "post_process"],
                 stochastic_packages=["numpy", "torch", "random"],
                 env_name="cata",
                 scheduler=args.scheduler,
