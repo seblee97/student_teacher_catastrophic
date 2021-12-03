@@ -192,6 +192,7 @@ SINGLE = "single"
 STEP = "step"
 NODE_SHARING = "node_sharing"
 NUM_SHARED_NODES = "num_shared_nodes"
+CLUSTER = "cluster"
 
 
 EVEN_ODD_MAPPING = {0: 0, 1: 1, 2: 0, 3: 1, 4: 0, 5: 1, 6: 0, 7: 1, 8: 0, 9: 1}
