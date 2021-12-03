@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     runner_class_name = "CoreRunner"
     runner_module_name = "core_runner"
-    runner_module_path = os.path.join(MAIN_FILE_PATH, "core_runner.py")
+    runner_module_path = os.path.join(MAIN_FILE_PATH, "..", "runners", "core_runner.py")
     runner_class = core_runner.CoreRunner
 
     if args.mode == constants.SINGLE:
