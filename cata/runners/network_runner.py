@@ -28,6 +28,7 @@ from cata.students import meta_student
 from cata.teachers.ensembles import base_teacher_ensemble
 from cata.teachers.ensembles import both_rotation_ensemble
 from cata.teachers.ensembles import feature_rotation_ensemble
+from cata.teachers.ensembles import node_sharing_ensemble
 from cata.teachers.ensembles import readout_rotation_ensemble
 from cata.utils import decorators
 from cata.utils import network_configuration
@@ -194,6 +195,12 @@ class NetworkRunner(base_runner.BaseRunner):
             additional_arguments = {
                 constants.FEATURE_ROTATION_ALPHA: config.feature_rotation_alpha,
                 constants.READOUT_ROTATION_ALPHA: config.readout_rotation_alpha,
+            }
+        elif config.teacher_configuration == constants.NODE_SHARING:
+            teachers_class = node_sharing_ensemble.NodeSharingTeacherEnsemble
+            additional_arguments = {
+                constants.NUM_SHARED_NODES: config.num_shared_nodes,
+                constants.FEATURE_ROTATION_MAGNITUDE: config.feature_rotation_magnitude,
             }
         else:
             raise ValueError(
