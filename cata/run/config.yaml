@@ -95,6 +95,9 @@ model:
     both_rotation:
       feature_rotation_alpha:         0.5
       readout_rotation_alpha:         0.1
+    node_sharing:
+      num_shared_nodes:               1
+      rotation_magnitude:             1
     
 
 curriculum:
