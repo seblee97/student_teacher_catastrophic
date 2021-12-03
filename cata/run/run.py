@@ -26,6 +26,13 @@ parser.add_argument(
 )
 parser.add_argument("--config_changes", metavar="-CC", default="config_changes.py")
 
+# cluster config
+parser.add_argument("--scheduler", type=str, help="univa or slurm", default="univa")
+parser.add_argument("--num_cpus", type=int, default=4)
+parser.add_argument("--num_gpus", type=int, default=0)
+parser.add_argument("--mem", type=int, default=16)
+parser.add_argument("--timeout", type=str, default="")
+
 
 if __name__ == "__main__":
 
@@ -106,7 +113,11 @@ if __name__ == "__main__":
                 run_methods=["train", "post_process"],
                 stochastic_packages=["numpy", "torch", "random"],
                 env_name="rama",
-                scheduler="univa",
+                scheduler=args.scheduler,
+                num_cpus=args.num_cpus,
+                num_gpus=args.num_gpus,
+                memory=args.mem,
+                walltime=args.timeout,
             )
 
     else:
