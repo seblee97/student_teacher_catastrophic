@@ -512,14 +512,16 @@ class NetworkRunner(base_runner.BaseRunner):
 
             if self._total_step_count % 500 == 0:
                 if self._total_step_count != 0:
-                    print(f"Time for last 500 steps: {time.time() - timer}")
+                    self._logger.info(f"Time for last 500 steps: {time.time() - timer}")
                     timer = time.time()
-                print(
+                self._logger.info(
                     f"Generalisation errors @ (~) step {self._total_step_count} "
                     f"({task_step_count}'th step training on teacher {teacher_index}): "
                 )
                 for i in range(self._num_teachers):
-                    print(f"    Teacher {i}: {latest_generalisation_errors[i]}\n")
+                    self._logger.info(
+                        f"    Teacher {i}: {latest_generalisation_errors[i]}\n"
+                    )
 
             if self._save_weight_frequency is not None:
                 if self._total_step_count % self._save_weight_frequency == 0:
