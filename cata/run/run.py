@@ -25,6 +25,9 @@ parser.add_argument(
     "--seeds", metavar="-S", default="[0]", help="list of seeds to run."
 )
 parser.add_argument("--config_changes", metavar="-CC", default="config_changes.py")
+parser.add_argument(
+    "--results_folder", default=constants.RESULTS, type=str, help="path to all results."
+)
 
 # cluster config
 parser.add_argument("--scheduler", type=str, help="univa or slurm", default="univa")
@@ -38,7 +41,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    results_folder = os.path.join(MAIN_FILE_PATH, constants.RESULTS)
+    results_folder = os.path.join(MAIN_FILE_PATH, args.results_folder)
 
     config_class_name = "StudentTeacherConfig"
     config_module_name = "student_teacher_config"
@@ -53,7 +56,7 @@ if __name__ == "__main__":
 
     if args.mode == constants.SINGLE:
 
-        single_checkpoint_path = utils.setup_experiment(
+        _, single_checkpoint_path = utils.setup_experiment(
             mode="single", results_folder=results_folder, config_path=args.config_path
         )
 
@@ -69,7 +72,7 @@ if __name__ == "__main__":
 
         seeds = utils.process_seed_arguments(args.seeds)
 
-        checkpoint_paths = utils.setup_experiment(
+        experiment_path, checkpoint_paths = utils.setup_experiment(
             mode="multi",
             results_folder=results_folder,
             config_path=args.config_path,
