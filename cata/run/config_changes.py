@@ -15,7 +15,7 @@ CONFIG_CHANGES = {
     f"interleave_{i}_{j}": [
         {"curriculum": {"interleave_period": i, "interleave_duration": j}}
     ]
-    for (i, j) in zip([1, 5, 10, 50, 100], [1, 2, 5, 10])
+    for (i, j) in itertools.product([1, 5, 10, 50, 100], [1, 2, 5, 10])
 }
 
 
