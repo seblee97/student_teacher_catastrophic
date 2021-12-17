@@ -92,9 +92,12 @@ class NetworkRunner(base_runner.BaseRunner):
         ]
         columns.extend(generalisation_error_tags)
         columns.extend(log_generalisation_error_tags)
+        columns.append(constants.LOSS)
         if self._log_overlaps:
             sample_network_config = self.get_network_configuration()
             columns.extend(list(sample_network_config.dictionary.keys()))
+        if self._consolidation_module:
+            columns.append(constants.CONSOLIDATION_PENALTY)
 
         return columns
 
@@ -554,11 +557,9 @@ class NetworkRunner(base_runner.BaseRunner):
     def _train_test_step(
         self, teacher_index: int, consolidation_module
     ) -> Dict[str, Any]:
-        self._training_step(
+        step_logging_dict = self._training_step(
             teacher_index=teacher_index, consolidation_module=consolidation_module
         )
-
-        step_logging_dict = {}
 
         self._student.signal_step(step=self._total_step_count)
         self._student.append_to_path_integral_contributions()
@@ -586,6 +587,8 @@ class NetworkRunner(base_runner.BaseRunner):
     ):
         """Perform single training step."""
 
+        training_step_dict = {}
+
         batch = self._data_module.get_batch()
         batch_input = batch[constants.X].to(self._device)
 
@@ -599,12 +602,20 @@ class NetworkRunner(base_runner.BaseRunner):
         self._optimiser.zero_grad()
         loss = self._compute_loss(student_output, teacher_output)
 
+        training_step_dict[constants.LOSS] = loss.item()
+
         if consolidation_module is not None:
             regularisation_term = consolidation_module.penalty(self._student)
+            training_step_dict[constants.CONSOLIDATION_PENALTY] = regularisation_term
             loss += regularisation_term
+        else:
+            if self._consolidation_module is not None:
+                training_step_dict[constants.CONSOLIDATION_PENALTY] = 0
 
         loss.backward()
         self._optimiser.step()
+
+        return training_step_dict
 
     def _compute_generalisation_errors(self) -> List[float]:
         """Compute test errors for student with respect to all teachers."""
