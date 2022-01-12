@@ -63,6 +63,7 @@ class NetworkRunner(base_runner.BaseRunner):
         self._test_frequency = config.test_frequency
         self._total_step_count = 0
         self._log_overlaps = config.log_overlaps
+        self._overlap_frequency = config.overlap_frequency
         self._consolidation_type = config.consolidation_type
 
         # initialise student, teachers, logger_module,
@@ -540,11 +541,12 @@ class NetworkRunner(base_runner.BaseRunner):
                 error=latest_generalisation_errors[teacher_index],
             ):
                 if self._log_overlaps:
-                    network_config = self.get_network_configuration()
-                    step_logging_dict = {
-                        **step_logging_dict,
-                        **network_config.dictionary,
-                    }
+                    if len(self._curriculum.history) < 2 or (self._total_step_count % self._overlap_frequency == 0):
+                        network_config = self.get_network_configuration()
+                        step_logging_dict = {
+                            **step_logging_dict,
+                            **network_config.dictionary,
+                        }
                     self._log_step_data(
                         step=self._total_step_count, logging_dict=step_logging_dict
                     )
