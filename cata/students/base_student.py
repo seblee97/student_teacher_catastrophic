@@ -130,13 +130,13 @@ class BaseStudent(base_network.BaseNetwork, abc.ABC):
     def signal_task_boundary(self, new_task: int) -> None:
         """Alert student to teacher change."""
         self._num_switches += 1
-        self._path_integral_contributions.append(
-            {
-                n: torch.zeros_like(param)
-                for n, param in self.named_parameters()
-                if "head" not in n
-            }
-        )
+        # self._path_integral_contributions.append(
+        #     {
+        #         n: torch.zeros_like(param)
+        #         for n, param in self.named_parameters()
+        #         if "head" not in n
+        #     }
+        # )
         self._signal_task_boundary(new_task=new_task)
 
     def _get_next_freeze_feature_toggle(self) -> Union[int, float]:
