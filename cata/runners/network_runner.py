@@ -466,7 +466,7 @@ class NetworkRunner(base_runner.BaseRunner):
 
         # pdb.set_trace()
 
-        self._data_logger.checkpoint()
+        # self._data_logger.checkpoint()
 
     def _train_on_teacher(self, teacher_index: int):
         """One phase of training (wrt one teacher)."""
@@ -497,6 +497,12 @@ class NetworkRunner(base_runner.BaseRunner):
             consolidation_module = None
 
         while self._total_step_count <= self._total_training_steps:
+
+            if (
+                self._total_step_count % self._checkpoint_frequency == 0
+                and self._total_step_count != 0
+            ):
+                self._data_logger.checkpoint()
 
             self._total_step_count += 1
             task_step_count += 1
@@ -541,7 +547,7 @@ class NetworkRunner(base_runner.BaseRunner):
                 error=latest_generalisation_errors[teacher_index],
             ):
                 if self._log_overlaps:
-                    if len(self._curriculum.history) < 2 or (self._total_step_count % self._overlap_frequency == 0):
+                    if len(self._curriculum.history) < 2:
                         network_config = self.get_network_configuration()
                         step_logging_dict = {
                             **step_logging_dict,
@@ -564,19 +570,13 @@ class NetworkRunner(base_runner.BaseRunner):
         )
 
         self._student.signal_step(step=self._total_step_count)
-        self._student.append_to_path_integral_contributions()
-
-        if (
-            self._total_step_count % self._checkpoint_frequency == 0
-            and self._total_step_count != 0
-        ):
-            self._data_logger.checkpoint()
+        # self._student.append_to_path_integral_contributions()
 
         if self._total_step_count % self._test_frequency == 0:
             generalisation_errors = self._compute_generalisation_errors()
             step_logging_dict = {**step_logging_dict, **generalisation_errors}
 
-        if self._log_overlaps and self._total_step_count % self._log_frequency == 0:
+        if self._log_overlaps and self._total_step_count % self._overlap_frequency == 0:
             network_config = self.get_network_configuration()
             step_logging_dict = {**step_logging_dict, **network_config.dictionary}
 
