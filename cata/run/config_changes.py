@@ -11,13 +11,30 @@ import itertools
 
 import numpy as np
 
-CONFIG_CHANGES = {
-    f"interleave_{i}_{j}": [
-        {"curriculum": {"interleave_period": i, "interleave_duration": j}}
+CONFIG_CHANGES_INTERLEAVE = {
+    f"interleave_{i}_{j}_{r}": [
+        {"curriculum": {"interleave_period": i, "interleave_duration": j}},
+        {"model": {"teachers": {"feature_rotation": {"rotation_magnitude": np.arccos(r)}}}},
     ]
-    for (i, j) in itertools.product([1, 5, 10, 50, 100], [1, 2, 5, 10])
+    for (i, j, r) in itertools.product(
+        [1, 2, 5, 100, 1000, 10000, 100000],
+        [1],
+        np.linspace(0, 1, 6),
+    )
 }
 
+CONFIG_CHANGES_IMPORTANCE = {
+    f"importance_{i}_{r}": [
+        {"training": {"consolidation": {"type": "ewc", "importance": i}}},
+        {"model": {"teachers": {"feature_rotation": {"rotation_magnitude": np.arccos(r)}}}},
+    ]
+    for (i, r) in itertools.product(
+        [0, 10, 100, 1000, 10000, 100000, 1000000]
+        np.linspace(0, 1, 6),
+    )
+}
+
+CONFIG_CHANGES = {**CONFIG_CHANGES_IMPORTANCE, **CONFIG_CHANGES_INTERLEAVE}
 
 # class ConfigChange:
 
