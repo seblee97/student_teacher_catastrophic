@@ -29,7 +29,7 @@ CONFIG_CHANGES_IMPORTANCE = {
         {"model": {"teachers": {"feature_rotation": {"rotation_magnitude": np.arccos(r)}}}},
     ]
     for (i, r) in itertools.product(
-        [0, 10, 100, 1000, 10000, 100000, 1000000]
+        [0, 10, 100, 1000, 10000, 100000, 1000000],
         np.linspace(0, 1, 6),
     )
 }
