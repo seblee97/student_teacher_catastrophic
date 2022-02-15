@@ -56,6 +56,7 @@ class NetworkRunner(base_runner.BaseRunner):
         self._device = config.experiment_device
         self._input_dimension = config.input_dimension
         self._checkpoint_frequency = config.checkpoint_frequency
+        self._print_frequency = config.print_frequency
         self._checkpoint_path = config.checkpoint_path
         self._save_weight_frequency = config.save_weight_frequency
         self._total_training_steps = config.total_training_steps
@@ -510,9 +511,9 @@ class NetworkRunner(base_runner.BaseRunner):
                 for i in range(self._num_teachers)
             ]
 
-            if self._total_step_count % 500 == 0:
+            if self._total_step_count % self._print_frequency == 0:
                 if self._total_step_count != 0:
-                    self._logger.info(f"Time for last 500 steps: {time.time() - timer}")
+                    self._logger.info(f"Time for last {self._print_frequency} steps: {time.time() - timer}")
                     timer = time.time()
                 self._logger.info(
                     f"Generalisation errors @ (~) step {self._total_step_count} "
