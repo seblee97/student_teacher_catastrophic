@@ -8,4 +8,5 @@ torch==1.6.0
 torchvision==0.7.0
 tensorboardX==1.9
 
--e git://github.com/seblee97/config_package.git#egg=config-manager-seblee97
+-e git://github.com/seblee97/run_modes.git#egg=run-modes-seblee97
+-e git://github.com/seblee97/plotter.git#egg=plotter-seblee97
