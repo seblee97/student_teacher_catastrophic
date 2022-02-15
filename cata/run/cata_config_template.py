@@ -274,7 +274,10 @@ class CataConfigTemplate:
             config_field.Field(
                 name=constants.STUDENT_NONLINEARITY,
                 types=[str],
-                requirements=[lambda x: x in [constants.SCALED_ERF, constants.RELU]],
+                requirements=[
+                    lambda x: x
+                    in [constants.SCALED_ERF, constants.RELU, constants.LINEAR]
+                ],
             ),
             config_field.Field(
                 name=constants.APPLY_NONLINEARITY_ON_OUTPUT,
@@ -410,7 +413,8 @@ class CataConfigTemplate:
                 types=[list],
                 requirements=[
                     lambda x: all(
-                        y in [constants.SCALED_ERF, constants.RELU] for y in x
+                        y in [constants.SCALED_ERF, constants.RELU, constants.LINEAR]
+                        for y in x
                     )
                 ],
             ),
