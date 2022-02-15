@@ -29,8 +29,8 @@ or place this line in your bash profile.
 
 # Configurations
 
-Experiment configurations can be found in the ```run/config.yaml``` file. 
+Experiment configurations can be found in the ```cata/run/config.yaml``` file. 
 
 # Experiments
 
-Experiments are run with the ```python run/main.py``` command.
+The run script can be found at ```cata/run/run.py```.
