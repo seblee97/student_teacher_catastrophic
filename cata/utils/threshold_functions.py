@@ -1,7 +1,11 @@
+import torch
+
 def positive_threshold(x):
-    labels = torch.abs(y) > 0
+    labels = torch.abs(x) > 0
+    return labels
 
 
 def tanh_threshold(x):
-    tanh_y = torch.tanh(y)
+    tanh_y = torch.tanh(x)
     labels = tanh_y > 0
+    return labels
