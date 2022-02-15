@@ -267,23 +267,6 @@ class NetworkRunner(base_runner.BaseRunner):
             teacher_features_copy=teacher_features_copy,
         )
 
-    # @decorators.timer
-    # def _setup_logger(
-    #     self, config: student_teacher_config.StudentTeacherConfiguration
-    # ) -> base_logger.BaseLogger:
-    #     if config.split_logging:
-    #         logger = split_logger.SplitLogger(
-    #             config=config,
-    #             run_type=constants.SIM,
-    #             network_config=self.get_network_configuration(),
-    #         )
-    #     else:
-    #         logger = unified_logger.UnifiedLogger(
-    #             config=config,
-    #             run_type=constants.SIM,
-    #         )
-    #     return logger
-
     @decorators.timer
     def _setup_data(
         self, config: student_teacher_config.StudentTeacherConfig
@@ -462,6 +445,13 @@ class NetworkRunner(base_runner.BaseRunner):
 
             first_task = False
 
+            self._student.save_weights(
+                save_path=os.path.join(
+                    self._checkpoint_path,
+                    f"{constants.STUDENT_WEIGHTS}_{self._total_step_count}",
+                )
+            )
+
         # import pdb
 
         # pdb.set_trace()
@@ -627,6 +617,12 @@ class NetworkRunner(base_runner.BaseRunner):
 
         with torch.no_grad():
             student_outputs = self._student.forward_all(self._test_data_inputs)
+
+            # meta student will only have one set of outputs from forward_all call
+            if len(student_outputs) == 1:
+                student_outputs = [
+                    student_outputs[0] for _ in range(len(self._test_teacher_outputs))
+                ]
 
             for i, (student_output, teacher_output) in enumerate(
                 zip(student_outputs, self._test_teacher_outputs)
