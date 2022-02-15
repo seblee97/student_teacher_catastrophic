@@ -63,7 +63,7 @@ class FeatureRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             self._init_teacher(
                 nonlinearity=self._nonlinearities[i],
                 noise_std=self._noise_stds[i],
-                zero_head=0,
+                zero_head=False,
             )
             for i in range(self._num_teachers)
         ]
