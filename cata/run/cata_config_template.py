@@ -200,6 +200,11 @@ class CataConfigTemplate:
                 requirements=[lambda x: x > 0],
             ),
             config_field.Field(
+                name=constants.PRINT_FREQUENCY,
+                types=[int],
+                requirements=[lambda x: x > 0],
+            ),
+            config_field.Field(
                 name=constants.SAVE_WEIGHT_FREQUENCY,
                 types=[int, type(None)],
                 requirements=[lambda x: x is None or x > 0],
