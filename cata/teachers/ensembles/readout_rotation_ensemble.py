@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 import torch
 from cata.teachers.ensembles import base_teacher_ensemble
@@ -20,7 +20,8 @@ class ReadoutRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
         scale_hidden_lr: bool,
         forward_scaling: float,
         unit_norm_teacher_head: bool,
-        normalise_teachers: bool,
+        weight_normalisation: bool,
+        noise_stds: Union[int, float],
         num_teachers: int,
         initialisation_std: float,
         feature_copy_percentage: int,
@@ -39,6 +40,7 @@ class ReadoutRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             forward_scaling=forward_scaling,
             unit_norm_teacher_head=unit_norm_teacher_head,
             weight_normalisation=weight_normalisation,
+            noise_stds=noise_stds,
             num_teachers=num_teachers,
             initialisation_std=initialisation_std,
         )
@@ -67,7 +69,14 @@ class ReadoutRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             self._hidden_dimensions[0] > 1
         ), "Readout rotation teachers only valid for hidden dimensions > 1."
 
-        teachers = [self._init_teacher() for _ in range(self._num_teachers)]
+        teachers = [
+            self._init_teacher(
+                nonlinearity=self._nonlinearities[i],
+                noise_std=self._noise_stds[i],
+                zero_head=False,
+            )
+            for i in range(self._num_teachers)
+        ]
 
         with torch.no_grad():
             # copy specified fraction of first teacher input -> hidden
