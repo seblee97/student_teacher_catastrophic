@@ -24,6 +24,7 @@ class ClassificationTeacher(base_teacher.BaseTeacher):
         weight_normalisation: bool,
         noise_std: Union[float, int],
         initialisation_std: float,
+        zero_head: bool = False
     ):
         super().__init__(
             input_dimension=input_dimension,
@@ -46,7 +47,9 @@ class ClassificationTeacher(base_teacher.BaseTeacher):
         # ensure even class distributions
         if self._nonlinearity == constants.RELU:
             threshold_fn = threshold_functions.positive_threshold
-        elif self.nonlinearity_name == constants.LINEAR:
+        elif self._nonlinearity == constants.LINEAR:
+            threshold_fn = threshold_functions.tanh_threshold
+        elif self._nonlinearity == constants.SCALED_ERF:
             threshold_fn = threshold_functions.tanh_threshold
         else:
             raise NotImplementedError(
