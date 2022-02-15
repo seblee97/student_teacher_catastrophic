@@ -8,18 +8,18 @@ class MetaStudent(base_student.BaseStudent):
         """Instantiate the output layer."""
         self._heads = nn.ModuleList([])
         output_layer = nn.Linear(
-            self._hidden_dimensions[-1], self.output_dimension, bias=self.bias
+            self._hidden_dimensions[-1], self._output_dimension, bias=self._bias
         )
-        if self._initialise_student_outputs:
-            self._initialise_weights(output_layer)
+        if self._soft_committee:
+            output_layer.weight.data.fill_(1)
         else:
-            nn.init.zeros_(output_layer.weight)
-            if self.bias:
-                nn.init.zeros_(output_layer.bias)
-        if self.soft_committee:
-            for param in output_layer.parameters():
-                param.requires_grad = False
-        self._heads.append(output_layer)
+            if self._initialise_outputs:
+                self._initialise_weights(output_layer)
+            else:
+                nn.init.zeros_(output_layer.weight)
+                if self.bias:
+                    nn.init.zeros_(output_layer.bias)
+            self._heads.append(output_layer)
 
     def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
         """Pass tensor through head of student (only one for meta-learning)."""
@@ -28,6 +28,6 @@ class MetaStudent(base_student.BaseStudent):
             return self._threshold(y)
         return y
 
-    def signal_task_boundary(self, new_task: int) -> None:
+    def _signal_task_boundary(self, new_task: int) -> None:
         """Alert student to teacher change."""
         pass
