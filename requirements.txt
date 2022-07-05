@@ -1,12 +1,9 @@
-matplotlib==3.3.2
-numpy==1.17.3
-pandas==1.0.1
-PyYAML==5.1.2
-scikit-learn==0.22.1
-scipy==1.4.1
-torch==1.6.0
-torchvision==0.7.0
-tensorboardX==1.9
+matplotlib
+numpy
+pandas
+scikit-learn
+scipy
+torch
+torchvision
 
--e git://github.com/seblee97/run_modes.git#egg=run-modes-seblee97
--e git://github.com/seblee97/plotter.git#egg=plotter-seblee97
+git+https://github.com/seblee97/run_modes.git
