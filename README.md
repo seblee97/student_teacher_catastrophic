@@ -21,11 +21,7 @@ by running
 
 ```pip install -e .```
 
-from the root of the repository. Alternatively you can run
-
-```PYTHONPATH="${PYTHONPATH}:$PATH_TO_REPOS"```
-
-or place this line in your bash profile.
+from the root of the repository.
 
 # Configurations
 
@@ -33,4 +29,4 @@ Experiment configurations can be found in the ```cata/run/config.yaml``` file.
 
 # Experiments
 
-The run script can be found at ```cata/run/run.py```.
+The run script can be found at ```cata/run/run.py```, which uses [this](https://github.com/seblee97/run_modes) run_modes package.
