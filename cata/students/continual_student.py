@@ -16,7 +16,7 @@ class ContinualStudent(base_student.BaseStudent):
                 output_layer.weight.data.fill_(1)
             else:
                 if self._initialise_outputs:
-                    self._initialise_weights(output_layer)
+                    self._initialise_weights(output_layer, 1)
                 else:
                     nn.init.zeros_(output_layer.weight)
                     if self._bias:

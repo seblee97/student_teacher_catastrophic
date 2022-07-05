@@ -105,21 +105,24 @@ class BaseNetwork(nn.Module, abc.ABC):
 
         self._construct_output_layers()
 
-    def _initialise_weights(self, layer: nn.Module) -> None:
+    def _initialise_weights(self, layer: nn.Module, value=None) -> None:
         """In-place weight initialisation for a given layer in accordance with configuration.
 
         Args:
             layer: the layer to be initialised.
         """
-        if self._initialisation_std is not None:
-            nn.init.normal_(layer.weight, std=self._initialisation_std)
-            if self._bias:
-                nn.init.normal_(layer.bias, std=self._initialisation_std)
-        if self._symmetric_initialisation:
-            # copy first component of weight matrix to others to ensure zero overlap
-            base_parameters = copy.deepcopy(layer.state_dict()[constants.WEIGHT][0])
-            for dim in range(1, len(layer.state_dict()[constants.WEIGHT])):
-                layer.state_dict()[constants.WEIGHT][dim] = base_parameters
+        if value is not None:
+            layer.weight.data.fill_(value)
+        else:
+            if self._initialisation_std is not None:
+                nn.init.normal_(layer.weight, std=self._initialisation_std)
+                if self._bias:
+                    nn.init.normal_(layer.bias, std=self._initialisation_std)
+            if self._symmetric_initialisation:
+                # copy first component of weight matrix to others to ensure zero overlap
+                base_parameters = copy.deepcopy(layer.state_dict()[constants.WEIGHT][0])
+                for dim in range(1, len(layer.state_dict()[constants.WEIGHT])):
+                    layer.state_dict()[constants.WEIGHT][dim] = base_parameters
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """This method performs the forward pass. This implements the
