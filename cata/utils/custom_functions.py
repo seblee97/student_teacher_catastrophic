@@ -18,7 +18,7 @@ def _generate_rotated_vectors(
         dimension: desired dimension of two vectors.
         theta: angle to be rotated (in radians).
         normalisation: scaling of final two vectors.
-            e.g. with normalisation 1, y_1 \cdot y_2 = 1.
+            e.g. with normalisation 1, y_1 cdot y_2 = 1.
 
     Returns:
         rotated_vectors: tuple of two vectors appropriately rotated.
@@ -47,7 +47,7 @@ def generate_rotated_vectors(
         dimension: desired dimension of two vectors.
         theta: angle to be rotated (in radians).
         normalisation: scaling of final two vectors.
-            e.g. with normalisation 1, y_1 \cdot y_2 = 1.
+            e.g. with normalisation 1, y_1 cdot y_2 = 1.
 
     Returns:
         rotated_vectors: tuple of two vectors appropriately rotated.
