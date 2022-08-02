@@ -35,12 +35,17 @@ training:
     importance:                     0
 
 data:
-  input_source:                     iid_gaussian              # iid_gaussian, mnist_stream, mnist_digits, even_greater (see README)
+  input_source:                     exponnorm_convolve             # iid_gaussian, mnist_stream, mnist_digits, even_greater (see README)
 
   iid_gaussian:
     mean:                           0
     variance:                       1
     dataset_size:                   inf
+
+  exponnorm_convolve:
+    en_mean:                           0
+    en_variance:                       1
+    en_k:                              0.5
 
 logging:
   verbose:                          True                      
@@ -63,11 +68,11 @@ testing:
   overlap_frequency:                100                       # how often during training to compute / visualise overlap matrices
 
 model:
-  input_dimension:                  1000                
+  input_dimension:                  1000
   output_dimension:                 1
 
   student:
-    teacher_features_copy:                                      # emtpy/None = indpendent of teachers, integer = index of teacher to copy
+    teacher_features_copy:                                      # emtpy/None = independent of teachers, integer = index of teacher to copy
     student_hidden_layers:            [2]                       
     student_nonlinearity:             scaled_erf                      
     apply_nonlinearity_on_output:     False
@@ -76,7 +81,7 @@ model:
     copy_head_at_switch:              False                      # at task switch, copy over head weights from previous task
     soft_committee:                   False                     # whether or not to fix output layer of student to 1 (scm)
     scale_student_forward_by_hidden:  False
-    student_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (student)
+    student_bias_parameters:          False                     # whether or not to have bias parameters on linear layers (student)
     symmetric_student_initialisation: False                     # identically initialised student hidden units
 
   teachers:
@@ -86,8 +91,8 @@ model:
     teacher_initialisation_std:       1                         # std of normal initialisation for teacher network
     unit_norm_teacher_head:           True                      # choose head weight from 1, -1 or initialise using normal
     scale_teacher_forward_by_hidden:  False
-    teacher_bias_parameters:          False                     # whether or not to have bias parameters on linaer layers (teacher)
-    teacher_noises:                   [0, 0]
+    teacher_bias_parameters:          False                     # whether or not to have bias parameters on linear layers (teacher)
+    teacher_noises:                   [1, 1]
     feature_rotation:
       rotation_magnitude:             1
     readout_rotation:
@@ -96,9 +101,6 @@ model:
     both_rotation:
       feature_rotation_alpha:         0.5
       readout_rotation_alpha:         0.1
-    node_sharing:
-      num_shared_nodes:               1
-      rotation_magnitude:             1
     
 
 curriculum:
@@ -109,4 +111,4 @@ curriculum:
   loss_thresholds:                  [0.0001]                  # loss threshold under which teacher is changed
 
   interleave_period:                                          # how often to interleave previous examples
-  interleave_duration:              1                         # number of examples from previous task to show in each interleaving
+  interleave_duration:              1000                         # number of examples from previous task to show in each interleaving

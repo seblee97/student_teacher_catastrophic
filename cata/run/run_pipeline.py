@@ -154,10 +154,12 @@ def set_device(
         else:
             print("GPU not found, reverting to CPU")
             config.add_property(constants.USING_GPU, False)
-            experiment_device = torch.device("cpu")
+            #experiment_device = torch.device("cpu")
+            experiment_device = torch.device('mps')
     else:
         print("Using the CPU")
-        experiment_device = torch.device("cpu")
+        #experiment_device = torch.device("cpu")
+        experiment_device = torch.device('mps')
     config.add_property(constants.EXPERIMENT_DEVICE, experiment_device)
     return config
 
