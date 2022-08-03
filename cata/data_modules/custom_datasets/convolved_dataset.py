@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import Dataset
 
 
-class IIDDataset(Dataset):
+class ConvolvedDataset(Dataset):
     """IID gaussian samples dataset."""
 
     def __init__(self, dimension: int, num_datapoints: int, repeat: bool = False):

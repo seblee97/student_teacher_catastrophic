@@ -58,7 +58,6 @@ class FeatureRotationTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
         # assert (
         #     self._hidden_dimensions[0] == 1
         # ), "Feature rotation teachers implemented for hidden dimension 1 only."
-
         teachers = [
             self._init_teacher(
                 nonlinearity=self._nonlinearities[i],

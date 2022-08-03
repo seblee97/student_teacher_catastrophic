@@ -3,7 +3,7 @@ numpy
 pandas
 scikit-learn
 scipy
-torch
+torch==1.12.0
 torchvision
 
 git+https://github.com/seblee97/run_modes.git

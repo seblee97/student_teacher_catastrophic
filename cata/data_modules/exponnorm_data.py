@@ -2,26 +2,25 @@ from typing import Dict
 from typing import Union
 
 import torch
-import torch.distributions as tdist
+import scipy.stats
+import numpy as np
 from cata import constants
 from cata.data_modules import base_data_module
 from torch.utils.data import DataLoader
 
-
-class ExponormDataset(torch.utils.data.Dataset):
+class ExponnormDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         dataset_size: int,
-        distribution: torch.distributions.Normal,
+        distribution: scipy.stats.exponnorm(0.5),
         input_dimension,
     ) -> None:
         self._dataset_size = dataset_size
         self._data_distribution = distribution
         self._input_dimension = input_dimension
 
-        self._fixed_dataset = self._data_distribution.sample(
-            (self._dataset_size, self._input_dimension)
-        )
+        self._fixed_dataset = [self._data_distribution.rvs(size=self._input_dimension) for i in range(self._input_dimension)]
+        self._fixed_dataset = torch.FloatTensor(np.array(self._fixed_dataset))
 
     def __len__(self):
         return self._dataset_size
@@ -30,8 +29,8 @@ class ExponormDataset(torch.utils.data.Dataset):
         return self._fixed_dataset[idx]
 
 
-class ExponormData(base_data_module.BaseData):
-    """Class for generating data convolved from multiple distributions."""
+class ExponnormData(base_data_module.BaseData):
+    """Class for generating data convolved from an exponential and normal distribution."""
 
     def __init__(
         self,
@@ -40,6 +39,7 @@ class ExponormData(base_data_module.BaseData):
         input_dimension: int,
         mean: Union[int, float],
         variance: Union[int, float],
+        k: Union[int, float],
         dataset_size: Union[str, int],
     ):
         super().__init__(
@@ -48,24 +48,29 @@ class ExponormData(base_data_module.BaseData):
             input_dimension=input_dimension,
         )
 
-        self._data_distribution = tdist.Normal(mean, variance)
+        self._data_distribution = scipy.stats.exponnorm(k, loc=mean, scale=np.sqrt(variance))
 
         self._dataset_size = dataset_size
 
         if self._dataset_size != constants.INF:
-            self._dataset = ExponormDataset(
+            self._dataset = ExponnormDataset(
                 dataset_size=self._dataset_size,
                 distribution=self._data_distribution,
                 input_dimension=self._input_dimension,
             )
             self._reset_data_iterator()
 
+    def sample(self, num, dim) -> torch.Tensor:
+        """Generates a num x dim array of samples from the distribution"""
+        sample = [self._data_distribution.rvs(size=dim) for i in range(num)]
+        sample = torch.FloatTensor(np.array(sample))
+
+        return sample
+
     def get_test_data(self) -> Dict[str, torch.Tensor]:
         """Give fixed test data set (input data only)."""
-        test_input_data = self._data_distribution.sample(
-            (self._test_batch_size, self._input_dimension)
-        )
 
+        test_input_data = self.sample(self._test_batch_size, self._input_dimension)
         test_data_dict = {constants.X: test_input_data}
 
         return test_data_dict
@@ -87,10 +92,8 @@ class ExponormData(base_data_module.BaseData):
         return batch
 
     def _get_infinite_dataset_batch(self) -> torch.Tensor:
-        #This is where we need to change the code
-        batch = self._data_distribution.sample(
-            (self._train_batch_size, self._input_dimension)
-        )
+        batch = self.sample(self._train_batch_size, self._input_dimension)
+
         return batch
 
     def _reset_data_iterator(self):

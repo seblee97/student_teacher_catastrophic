@@ -17,6 +17,7 @@ from cata.curricula import periodic_curriculum
 from cata.curricula import threshold_curriculum
 from cata.data_modules import base_data_module
 from cata.data_modules import iid_data
+from cata.data_modules import exponnorm_data
 from cata.regularisers import ewc
 from cata.regularisers import node_consolidation
 from cata.regularisers import quadratic_penalty
@@ -280,6 +281,16 @@ class NetworkRunner(base_runner.BaseRunner):
                 input_dimension=config.input_dimension,
                 mean=config.mean,
                 variance=config.variance,
+                dataset_size=config.dataset_size,
+            )
+        elif config.input_source == constants.EXPONNORM_CONVOLVE:
+            data_module = exponnorm_data.ExponnormData(
+                train_batch_size=config.train_batch_size,
+                test_batch_size=config.test_batch_size,
+                input_dimension=config.input_dimension,
+                mean=config.en_mean,
+                variance=config.en_variance,
+                k=config.en_k,
                 dataset_size=config.dataset_size,
             )
         else:
