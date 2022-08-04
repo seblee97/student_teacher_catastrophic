@@ -40,6 +40,9 @@ class ExponnormData(base_data_module.BaseData):
         mean: Union[int, float],
         variance: Union[int, float],
         k: Union[int, float],
+        kRange: Union[int, float],
+        meanRange: Union[int, float],
+        stdRange: Union[int, float],
         dataset_size: Union[str, int],
     ):
         super().__init__(
@@ -60,8 +63,18 @@ class ExponnormData(base_data_module.BaseData):
             )
             self._reset_data_iterator()
 
+    def get_random_exponnorm(self, kran, mran, stdran):
+        """generates a randomised exponnorm distribution"""
+        mean = np.random.default_rng().uniform(-1*mran, mran)
+        k = -1*np.random.default_rng().uniform(-1*kran, 0) #picks non-zero random value in range
+        std = -1*np.random.default_rng().uniform(-1*stdran,0) #picks non-zero random value in range
+        self._data_distribution = scipy.stats.exponnorm(k, loc=mean, scale=std)
+        #consider renaming the distribution
+        
     def sample(self, num, dim) -> torch.Tensor:
         """Generates a num x dim array of samples from the distribution"""
+
+        self.get_random_exponnorm(self.kRange, self.meanRange, self.stdRange) #each batch will have a different gaussian
         sample = [self._data_distribution.rvs(size=dim) for i in range(num)]
         sample = torch.FloatTensor(np.array(sample))
 
