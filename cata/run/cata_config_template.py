@@ -160,6 +160,50 @@ class CataConfigTemplate:
         dependent_variables_required_values=[[constants.IID_GAUSSIAN]],
     )
 
+    _exponnorm_convolve_template = config_template.Template(
+        fields=[
+            config_field.Field(
+                name=constants.EN_MEAN,
+                types=[float, int],
+            ),
+            config_field.Field(
+                name=constants.EN_VARIANCE,
+                types=[int, float],
+                requirements=[lambda x: x > 0],
+            ),
+            config_field.Field(
+                name=constants.EN_K,
+                types=[int, float],
+                requirements=[lambda x: x != 0],
+            ),
+        ],
+        level=[constants.DATA, constants.EXPONNORM_CONVOLVE],
+        dependent_variables=[constants.INPUT_SOURCE],
+        dependent_variables_required_values=[[constants.EXPONNORM_CONVOLVE]],
+    )
+
+    _multiset_gaussian_template = config_template.Template(
+        fields=[
+            config_field.Field(
+                name=constants.MS_MEAN,
+                types=[float, int],
+            ),
+            config_field.Field(
+                name=constants.MS_VARIANCE,
+                types=[int, float],
+                requirements=[lambda x: x > 0],
+            ),
+            config_field.Field(
+                name=constants.MASK_PROPORTION,
+                types=[int, float],
+                requirements=[lambda x: 0 <= x <= 1],
+            ),
+        ],
+        level=[constants.DATA, constants.MULTISET_GAUSSIAN],
+        dependent_variables=[constants.INPUT_SOURCE],
+        dependent_variables_required_values=[[constants.MULTISET_GAUSSIAN]],
+    )
+
     _data_template = config_template.Template(
         fields=[
             config_field.Field(
@@ -170,11 +214,13 @@ class CataConfigTemplate:
                     in [
                         constants.IID_GAUSSIAN,
                         constants.MNIST_STREAM,
+                        constants.EXPONNORM_CONVOLVE,
+                        constants.MULTISET_GAUSSIAN
                     ]
                 ],
             )
         ],
-        nested_templates=[_iid_gaussian_template],
+        nested_templates=[_iid_gaussian_template, _exponnorm_convolve_template, _multiset_gaussian_template],
         level=[constants.DATA],
     )
 

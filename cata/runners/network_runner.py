@@ -18,6 +18,7 @@ from cata.curricula import threshold_curriculum
 from cata.data_modules import base_data_module
 from cata.data_modules import iid_data
 from cata.data_modules import exponnorm_data
+from cata.data_modules import multiset_gaussian
 from cata.regularisers import ewc
 from cata.regularisers import node_consolidation
 from cata.regularisers import quadratic_penalty
@@ -67,6 +68,7 @@ class NetworkRunner(base_runner.BaseRunner):
         self._log_overlaps = config.log_overlaps
         self._overlap_frequency = config.overlap_frequency
         self._consolidation_type = config.consolidation_type
+        self._data_source = config.input_source
 
         # initialise student, teachers, logger_module,
         # data_module, loss_module, torch optimiser, and curriculum object
@@ -292,6 +294,16 @@ class NetworkRunner(base_runner.BaseRunner):
                 variance=config.en_variance,
                 k=config.en_k,
                 dataset_size=config.dataset_size,
+            )
+        elif config.input_source == constants.MULTISET_GAUSSIAN:
+            data_module = multiset_gaussian.IIDData(
+                train_batch_size=config.train_batch_size,
+                test_batch_size=config.test_batch_size,
+                input_dimension=config.input_dimension,
+                mean=config.ms_mean,
+                variance=config.ms_variance,
+                dataset_size=config.dataset_size,
+                mask_proportion=config.mask_proportion
             )
         else:
             raise ValueError(
@@ -593,7 +605,11 @@ class NetworkRunner(base_runner.BaseRunner):
 
         training_step_dict = {}
 
-        batch = self._data_module.get_batch()
+        batch = None
+        if self._data_source == constants.MULTISET_GAUSSIAN:
+            batch = self._data_module.get_batch(teacher_index, False)
+        else:
+            batch = self._data_module.get_batch()
         batch_input = batch[constants.X].to(self._device)
 
         # forward through student network

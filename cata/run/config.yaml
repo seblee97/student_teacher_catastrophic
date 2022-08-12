@@ -35,7 +35,7 @@ training:
     importance:                     0
 
 data:
-  input_source:                     exponnorm_convolve             # iid_gaussian, mnist_stream, mnist_digits, even_greater (see README)
+  input_source:                     multiset_gaussian             # iid_gaussian, mnist_stream, mnist_digits, even_greater, exponnorm_convolve, multiset_gaussian (see README)
 
   iid_gaussian:
     mean:                           0
@@ -43,9 +43,15 @@ data:
     dataset_size:                   inf
 
   exponnorm_convolve:
-    en_mean:                           0
-    en_variance:                       1
-    en_k:                              0.5
+    en_mean:                        0
+    en_variance:                    1
+    en_k:                           0.5
+
+  multiset_gaussian:
+    ms_mean:                        0
+    ms_variance:                    1
+    mask_proportion:                0.8
+
 
 logging:
   verbose:                          True                      
@@ -106,7 +112,7 @@ model:
 curriculum:
   stopping_condition:               switch_steps              # condition on which to switch task (fixed_period, switch_steps, or loss_thresholds)
   
-  switch_steps:                     [250000]
+  switch_steps:                     [25000]
   fixed_period:                     2500                      # period for changing tasks 
   loss_thresholds:                  [0.0001]                  # loss threshold under which teacher is changed
 
