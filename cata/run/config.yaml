@@ -51,6 +51,7 @@ data:
     ms_mean:                        0
     ms_variance:                    1
     mask_proportion:                0.5
+    resample_probability:           0.5
 
 
 logging:
