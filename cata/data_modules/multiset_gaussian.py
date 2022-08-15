@@ -121,6 +121,18 @@ class IIDData(base_data_module.BaseData):
 
         # Simple masking for test data
         if masking == 1:
+            split = vector.split(self._half_dimension, dim=1)
+            negative = split[1].apply_(lambda x: (-1*x) if x > 0 else x)
+            return torch.cat([split[0][0], negative[0]])
+            """
+            for i in range(len(vector[0][self._half_dimension:self._input_dimension - 1])):
+                if vector[0][i] > 0:
+                    vector[0][i] *= -1
+            return vector
+            """
+
+            """
+            Old code (randomness)
             tries = 0
             second_half = vector[0][self._half_dimension:self._input_dimension - 1]
             less_than_zero = sum([1 if x <= 0 else 0 for x in second_half])
@@ -134,5 +146,6 @@ class IIDData(base_data_module.BaseData):
                 attempts.append([less_than_zero, vector])
             mx = max(attempts, key=lambda x: x[0])
             return mx[1]
+            """
 
 
