@@ -419,10 +419,16 @@ class NetworkRunner(base_runner.BaseRunner):
         # reset seeds before training to ensure data is the same.
         # experiment_utils.set_random_seeds(self._seed)
 
-        self._test_data_inputs = self._data_module.get_test_data()[constants.X].to(
-            self._device
-        )
-        self._test_teacher_outputs = self._teachers.forward_all(self._test_data_inputs)
+        # If we are using the multiset distribution, we run teachers on different distributions.
+        if self._data_source == constants.MULTISET_GAUSSIAN:
+            self._test_data_inputs = [self._data_module.get_test_data(i).to(self._device) for i in range(self._num_teachers)]
+            self._test_teacher_outputs = [self._teachers.forward(i, self._test_data_inputs[i]) for i in range(self._num_teachers)]
+
+        else:
+            self._test_data_inputs = self._data_module.get_test_data()[constants.X].to(
+                self._device
+            )
+            self._test_teacher_outputs = self._teachers.forward_all(self._test_data_inputs)
 
     def _pretrain_logging(self):
         """Log relevant quantities before start of training."""
@@ -644,7 +650,11 @@ class NetworkRunner(base_runner.BaseRunner):
         generalisation_errors = {}
 
         with torch.no_grad():
-            student_outputs = self._student.forward_all(self._test_data_inputs)
+            student_outputs = []
+            if self._data_source == constants.MULTISET_GAUSSIAN:
+                student_outputs = [self._student.forward(self._test_data_inputs[i]) for i in range(self._num_teachers)]
+            else:
+                student_outputs = self._student.forward_all(self._test_data_inputs)
 
             # meta student will only have one set of outputs from forward_all call
             if len(student_outputs) == 1:

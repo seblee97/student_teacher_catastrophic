@@ -50,7 +50,7 @@ data:
   multiset_gaussian:
     ms_mean:                        0
     ms_variance:                    1
-    mask_proportion:                0.8
+    mask_proportion:                0.5
 
 
 logging:

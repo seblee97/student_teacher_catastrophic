@@ -52,8 +52,7 @@ class IIDData(base_data_module.BaseData):
 
         self._data_distribution = tdist.Normal(mean, variance)
 
-        self._half_dimension = input_dimension//2
-        self._mask_number = mask_proportion*self._half_dimension
+        self._mask_dimension = int(input_dimension*mask_proportion)
         self._dataset_size = dataset_size
 
         if self._dataset_size != constants.INF:
@@ -64,19 +63,25 @@ class IIDData(base_data_module.BaseData):
             )
             self._reset_data_iterator()
 
-    def get_test_data(self) -> Dict[str, torch.Tensor]:
+    def get_test_data(self, teacher) -> Dict[str, torch.Tensor]:
         """Give fixed test data set (input data only)."""
-        test_input_data = self._data_distribution.sample(
-            (self._test_batch_size, self._input_dimension)
-        )
+        if teacher > 2:
+            raise ValueError(
+                "Multiset Gaussian distribution currently only supported for 2 teachers"
+            )
+        if teacher == 0:
+            test_input_data = self._data_distribution.sample(
+                (self._test_batch_size, self._input_dimension)
+            )
+            return test_input_data
 
-        test_data_dict = {constants.X: test_input_data}
-
-        return test_data_dict
+        if teacher == 1:
+            test_input_data = self._get_masked_batch(self._test_batch_size, self._input_dimension, 1)
+            return test_input_data
 
     def get_batch(self, teacher, replay) -> Dict[str, torch.Tensor]:
         """Returns batch of training data (input only)"""
-        #For training, we return unmasked data for teacher 0, masked data for teacher 1, and inverse masked data for replay
+        # For training, we return unmasked data for teacher 0, masked data for teacher 1, and inverse masked data for replay
         batch = None
         if teacher == 0 and not replay:
             if self._dataset_size == constants.INF:
@@ -105,9 +110,10 @@ class IIDData(base_data_module.BaseData):
             )
             return batch
 
-        sample = [self._mask(self._data_distribution.sample((1, self._input_dimension)), masking) for i in range(self._train_batch_size)]
-        batch = torch.cat(sample)
-        return batch
+        return self._get_masked_batch(self._train_batch_size, self._input_dimension, masking)
+        # sample = [self._mask(self._data_distribution.sample((1, self._input_dimension)), masking) for i in range(self._train_batch_size)]
+        # batch = torch.cat(sample)
+        # return batch
 
     def _reset_data_iterator(self):
         self._dataloader = DataLoader(
@@ -115,15 +121,22 @@ class IIDData(base_data_module.BaseData):
         )
         self._data_iterator = iter(self._dataloader)
 
+    def _get_masked_batch(self, batch_size, dimension, masking):
+        sample = [self._mask(self._data_distribution.sample((1, dimension)), masking) for i in range(batch_size)]
+
+        batch = torch.stack(sample)
+        return batch
+
     def _mask(self, vector, masking):
         if masking == 0:
             return vector
 
         # Simple masking for test data
         if masking == 1:
-            split = vector.split(self._half_dimension, dim=1)
-            negative = split[1].apply_(lambda x: (-1*x) if x > 0 else x)
-            return torch.cat([split[0][0], negative[0]])
+            split = vector.split(self._mask_dimension, dim=1)
+            negative = split[0].apply_(lambda x: (-1*x) if x > 0 else x)
+            return torch.cat([negative[0], split[1][0]])
+
             """
             for i in range(len(vector[0][self._half_dimension:self._input_dimension - 1])):
                 if vector[0][i] > 0:
