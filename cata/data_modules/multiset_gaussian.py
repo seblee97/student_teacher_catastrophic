@@ -42,7 +42,7 @@ class IIDData(base_data_module.BaseData):
         mean: Union[int, float],
         variance: Union[int, float],
         dataset_size: Union[str, int],
-        mask_proportion: Union[int, float]
+        mask_proportion: Union[int, float],
         resample_probability: float
     ):
         super().__init__(
