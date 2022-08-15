@@ -198,6 +198,11 @@ class CataConfigTemplate:
                 types=[int, float],
                 requirements=[lambda x: 0 <= x <= 1],
             ),
+            config_field.Field(
+                name=constants.RESAMPLE_PROBABILITY,
+                types=[int, float],
+                requirements=[lambda x: 0 <= x <= 1]
+            )
         ],
         level=[constants.DATA, constants.MULTISET_GAUSSIAN],
         dependent_variables=[constants.INPUT_SOURCE],

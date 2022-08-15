@@ -135,7 +135,7 @@ class IIDData(base_data_module.BaseData):
 
     def _mask(self, vector, masking):
         # Simple masking for test data
-        if masking == 1 and self._resample_probability >= np.random.uniform:
+        if masking == 1 and self._resample_probability >= np.random.uniform():
             split = vector.split(self._mask_dimension, dim=1)
             negative = split[0].apply_(lambda x: (-1*x) if x > 0 else x)
             return torch.cat([negative[0], split[1][0]])

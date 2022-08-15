@@ -303,7 +303,8 @@ class NetworkRunner(base_runner.BaseRunner):
                 mean=config.ms_mean,
                 variance=config.ms_variance,
                 dataset_size=config.dataset_size,
-                mask_proportion=config.mask_proportion
+                mask_proportion=config.mask_proportion,
+                resample_probability=config.resample_probability
             )
         else:
             raise ValueError(
