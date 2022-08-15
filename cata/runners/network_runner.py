@@ -527,9 +527,16 @@ class NetworkRunner(base_runner.BaseRunner):
             self._total_step_count += 1
             task_step_count += 1
 
+            replay = False
+
+            # If we are using multiset and we are training on the first teacher, and have trained on it before:
+            if teacher_index == 0 and len(self._curriculum.history) > 1 and self._data_source == constants.MULTISET_GAUSSIAN:
+                replay = True
+
             step_logging_dict = self._train_test_step(
                 teacher_index=teacher_index,
                 consolidation_module=consolidation_module,
+                replay=replay
             )
 
             latest_generalisation_errors = [
@@ -583,10 +590,10 @@ class NetworkRunner(base_runner.BaseRunner):
             )
 
     def _train_test_step(
-        self, teacher_index: int, consolidation_module
+        self, teacher_index: int, consolidation_module, replay=False
     ) -> Dict[str, Any]:
         step_logging_dict = self._training_step(
-            teacher_index=teacher_index, consolidation_module=consolidation_module
+            teacher_index=teacher_index, consolidation_module=consolidation_module, replay=replay
         )
 
         self._student.signal_step(step=self._total_step_count)
@@ -605,7 +612,7 @@ class NetworkRunner(base_runner.BaseRunner):
         return step_logging_dict
 
     def _training_step(
-        self, teacher_index: int, consolidation_module: Union[None, ewc.EWC]
+        self, teacher_index: int, consolidation_module: Union[None, ewc.EWC], replay=False
     ):
         """Perform single training step."""
 
@@ -613,7 +620,7 @@ class NetworkRunner(base_runner.BaseRunner):
 
         batch = None
         if self._data_source == constants.MULTISET_GAUSSIAN:
-            batch = self._data_module.get_batch(teacher_index, False)
+            batch = self._data_module.get_batch(teacher_index, replay)
         else:
             batch = self._data_module.get_batch()
         batch_input = batch[constants.X].to(self._device)

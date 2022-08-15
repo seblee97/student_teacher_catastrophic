@@ -93,6 +93,11 @@ class IIDData(base_data_module.BaseData):
                 batch = self._get_infinite_dataset_batch(1)
             else:
                 batch = self._get_finite_dataset_batch()
+        if teacher == 0 and replay:
+            if self._dataset_size == constants.INF:
+                batch = self._get_infinite_dataset_batch(2)
+            else:
+                batch = self._get_finite_dataset_batch()
         return {constants.X: batch}
 
     def _get_finite_dataset_batch(self) -> torch.Tensor:
@@ -137,6 +142,12 @@ class IIDData(base_data_module.BaseData):
             negative = split[0].apply_(lambda x: (-1*x) if x > 0 else x)
             return torch.cat([negative[0], split[1][0]])
 
+        # Masking for replay
+        if masking == 2:
+            # Currently, let's replay only positive vectors (overlap = 0) MUST BE CHANGED.
+            split = vector.split(self._mask_dimension, dim=1)
+            positive = split[0].apply_(lambda x: (-1*x) if x < 0 else x)
+            return torch.cat([positive[0], split[1][0]])
             """
             for i in range(len(vector[0][self._half_dimension:self._input_dimension - 1])):
                 if vector[0][i] > 0:
