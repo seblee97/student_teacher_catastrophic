@@ -43,6 +43,7 @@ class IIDData(base_data_module.BaseData):
         variance: Union[int, float],
         dataset_size: Union[str, int],
         mask_proportion: Union[int, float]
+        resample_probability: float
     ):
         super().__init__(
             train_batch_size=train_batch_size,
@@ -51,7 +52,7 @@ class IIDData(base_data_module.BaseData):
         )
 
         self._data_distribution = tdist.Normal(mean, variance)
-
+        self._resample_probability = resample_probability
         self._mask_dimension = int(input_dimension*mask_proportion)
         self._dataset_size = dataset_size
 
@@ -133,11 +134,8 @@ class IIDData(base_data_module.BaseData):
         return batch
 
     def _mask(self, vector, masking):
-        if masking == 0:
-            return vector
-
         # Simple masking for test data
-        if masking == 1:
+        if masking == 1 and self._resample_probability >= np.random.uniform:
             split = vector.split(self._mask_dimension, dim=1)
             negative = split[0].apply_(lambda x: (-1*x) if x > 0 else x)
             return torch.cat([negative[0], split[1][0]])
@@ -148,6 +146,9 @@ class IIDData(base_data_module.BaseData):
             split = vector.split(self._mask_dimension, dim=1)
             positive = split[0].apply_(lambda x: (-1*x) if x < 0 else x)
             return torch.cat([positive[0], split[1][0]])
+        else:
+            return vector
+
             """
             for i in range(len(vector[0][self._half_dimension:self._input_dimension - 1])):
                 if vector[0][i] > 0:
