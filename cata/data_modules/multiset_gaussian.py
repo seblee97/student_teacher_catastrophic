@@ -130,7 +130,7 @@ class IIDData(base_data_module.BaseData):
     def _get_masked_batch(self, batch_size, dimension, masking):
         sample = [self._mask(self._data_distribution.sample((1, dimension)), masking) for i in range(batch_size)]
 
-        batch = torch.stack(sample)
+        batch = torch.cat(sample)
         return batch
 
     def _mask(self, vector, masking):
