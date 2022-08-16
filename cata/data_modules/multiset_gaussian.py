@@ -129,8 +129,7 @@ class IIDData(base_data_module.BaseData):
 
     def _get_masked_batch(self, batch_size, dimension, masking):
         sample = [self._mask(self._data_distribution.sample((1, dimension)), masking) for i in range(batch_size)]
-
-        batch = torch.cat(sample)
+        batch = torch.stack(sample)
         return batch
 
     def _mask(self, vector, masking):
@@ -139,13 +138,15 @@ class IIDData(base_data_module.BaseData):
         if masking == 1 and self._resample_probability >= np.random.uniform():
             split = vector.split(self._mask_dimension, dim=1)
             negative = split[0].apply_(lambda x: (-1*x) if x > 0 else x)
-            return torch.cat([negative[0], split[1][0]])
+            # The use of None is to make the shape correct
+            return torch.cat([negative[0], split[1][0]])[None, :]
 
         # Masking for replay
         """approach 1: select vector from --- region with smaller probability (thus creating overlap"""
         if masking == 2 and 1-self._resample_probability >= np.random.uniform(): #can also make res_prob into a 2 element array and select different probabilities
             # Currently, let's replay only positive vectors (overlap = 0) MUST BE CHANGED.
             split = vector.split(self._mask_dimension, dim=1)
+
             positive = split[0].apply_(lambda x: (-1*x) if x > 0 else x)
             
             return torch.cat([positive[0], split[1][0]])
@@ -161,9 +162,34 @@ class IIDData(base_data_module.BaseData):
             if split[0]
         """
         
+        #     positive = split[0].apply_(lambda x: (-1*x) if x < 0 else x)
+        #     return torch.cat([positive[0], split[1][0]])[None, :]
 
+        # return vector
 
-        
+        """
+        for i in range(len(vector[0][self._half_dimension:self._input_dimension - 1])):
+            if vector[0][i] > 0:
+                vector[0][i] *= -1
+        return vector
+        """
+
+        """
+        Old code (randomness)
+        tries = 0
+        second_half = vector[0][self._half_dimension:self._input_dimension - 1]
+        less_than_zero = sum([1 if x <= 0 else 0 for x in second_half])
+        attempts = [[less_than_zero, vector]]
+
+        while tries < 50 and less_than_zero < self._mask_number:
+            vector = self._data_distribution.sample((1, self._input_dimension))
+            second_half = vector[0][self._half_dimension:self._input_dimension-1]
+            less_than_zero = sum([1 if x <= 0 else 0 for x in second_half])
+            tries += 1
+            attempts.append([less_than_zero, vector])
+        mx = max(attempts, key=lambda x: x[0])
+        return mx[1]
+        """
 
         
             # for i in range(len(vector[0][self._half_dimension:self._input_dimension - 1])):
