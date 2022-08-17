@@ -135,21 +135,32 @@ class IIDData(base_data_module.BaseData):
     def _mask(self, vector, masking):
         # Simple masking for test data
         """select vector from --- region with certain probability"""
-        if masking == 1 and self._resample_probability >= np.random.uniform():
-            split = vector.split(self._mask_dimension, dim=1)
-            negative = split[0].apply_(lambda x: (-1*x) if x > 0 else x)
-            # The use of None is to make the shape correct
-            return torch.cat([negative[0], split[1][0]])[None, :]
-
+        bias_marker = np.random.uniform()
+        split = vector.split([self._mask_dimension,self._input_dimension - self._mask_dimension], dim=1)
+        if masking == 1:
+            if self._resample_probability >= bias_marker:
+                negative = split[0].apply_(lambda x: (-1*x) if x > 0 else x)
+                # The use of None is to make the shape correct
+                # New: [None, :] may no longer be required. Check needed
+                return torch.cat([negative[0], split[1][0]])[None, :]
+            elif split[0][0][torch.argmin(split[0][0])] < 0:
+                #make first negative component in split[0][0] positive
+                split[0][0][split[0][0] == split[0][0][torch.argmin(split[0][0])]] = split[0][0][torch.argmin(split[0][0])]*-1 
+                return torch.cat([split[0][0], split[1][0]])[None, :]
+            else:
+                return vector
         # Masking for replay
-        """approach 1: select vector from --- region with smaller probability (thus creating overlap"""
-        if masking == 2 and 1-self._resample_probability >= np.random.uniform(): #can also make res_prob into a 2 element array and select different probabilities
-            # Currently, let's replay only positive vectors (overlap = 0) MUST BE CHANGED.
-            split = vector.split(self._mask_dimension, dim=1)
-
-            positive = split[0].apply_(lambda x: (-1*x) if x > 0 else x)
-            
-            return torch.cat([positive[0], split[1][0]])
+        """approach 1: select vector from --- region with smaller probability (thus creating overlap)"""
+        if masking == 2:
+            if self._resample_probability < bias_marker:
+                negative = split[0].apply_(lambda x: (-1*x) if x > 0 else x)
+                # The use of None is to make the shape correct
+                return torch.cat([negative[0], split[1][0]])[None, :]
+            elif split[0][0][torch.argmin(split[0])] < 0:
+                split[0][0][split[0][0] == split[0][0][torch.argmin(split[0][0])]] = split[0][0][torch.argmin(split[0])]*-1 #make first negative component in split[0] positive
+                return torch.cat([split[0][0], split[1][0]])[None, :]
+            else:
+                return vector
 
         else:
             return vector
@@ -158,8 +169,13 @@ class IIDData(base_data_module.BaseData):
         approach 2: draw random vector, if it is in the --- region then resample with probability P
 
         if masking == 2:
-            split = vector.split(self._mask_dimension, dim = 1)
-            if split[0]
+            while self._resample_probability >= np.random.uniform():
+                split = vector.split(self._mask_dimension, dim = 1)
+                if torch.all(split[0]<0):
+                    vector = self._data_distribution.sample((1, dimension)) #would need to add dimension parameter
+                else:
+                    break
+            return vector
         """
         
         #     positive = split[0].apply_(lambda x: (-1*x) if x < 0 else x)
