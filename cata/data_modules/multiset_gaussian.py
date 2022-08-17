@@ -162,8 +162,8 @@ class IIDData(base_data_module.BaseData):
             else:
                 return vector
 
-        else:
-            return vector
+
+        return vector
 
         """
         approach 2: draw random vector, if it is in the --- region then resample with probability P
