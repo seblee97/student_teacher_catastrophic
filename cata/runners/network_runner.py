@@ -34,6 +34,7 @@ from cata.teachers.ensembles import node_sharing_ensemble
 from cata.teachers.ensembles import readout_rotation_ensemble
 from cata.utils import decorators
 from cata.utils import network_configuration
+from cata.utils import custom_functions
 from run_modes import base_runner
 
 
@@ -69,7 +70,7 @@ class NetworkRunner(base_runner.BaseRunner):
         self._overlap_frequency = config.overlap_frequency
         self._consolidation_type = config.consolidation_type
         self._data_source = config.input_source
-
+        
         # initialise student, teachers, logger_module,
         # data_module, loss_module, torch optimiser, and curriculum object
         self._teachers = self._setup_teachers(config=config)
@@ -83,7 +84,9 @@ class NetworkRunner(base_runner.BaseRunner):
         self._consolidation_module = self._setup_consolidation(config=config)
 
         self._manage_network_devices()
-
+        self._generalisation_dict = {}
+        for i in range(self._num_teachers):
+            self._generalisation_dict[f"{constants.DELTA}_{i}"] = list()
         super().__init__(config=config, unique_id=unique_id)
 
     def _get_data_columns(self):
@@ -489,7 +492,7 @@ class NetworkRunner(base_runner.BaseRunner):
 
         # self._data_logger.checkpoint()
 
-    def _train_on_teacher(self, teacher_index: int):
+    def _train_on_teacher(self, teacher_index: int, config: student_teacher_config.StudentTeacherConfig):
         """One phase of training (wrt one teacher)."""
         self._student.signal_task_boundary(new_task=teacher_index)
 
@@ -570,6 +573,10 @@ class NetworkRunner(base_runner.BaseRunner):
                         )
                     )
 
+            #find delta in generalisation error between switch and end of training
+            if self._total_step_count == config.switch_steps[0] or self._total_step_count == self._total_training_steps:
+                self.get_generalisation_delta(self._generalisation_dict, error = latest_generalisation_errors)
+
             if self._curriculum.to_switch(
                 task_step=task_step_count,
                 error=latest_generalisation_errors[teacher_index],
@@ -609,6 +616,7 @@ class NetworkRunner(base_runner.BaseRunner):
             step_logging_dict = {**step_logging_dict, **network_config.dictionary}
 
         step_logging_dict[constants.TEACHER_INDEX] = teacher_index
+        
 
         return step_logging_dict
 
@@ -684,6 +692,22 @@ class NetworkRunner(base_runner.BaseRunner):
         self._student.train()
 
         return generalisation_errors
+
+    def get_generalisation_delta(self, error, config: student_teacher_config.StudentTeacherConfig):
+        """Get the difference in generalisation error. Currently implemented for two teachers only!"""
+        #called at switch and at the end
+        error_key = list(self._generalisation_dict.keys())
+        #error_val = list(self._generalisation_dict.values())
+        for i in range(len(error_key)):
+            self._generalisation_dict = custom_functions.add_values_in_dict(self._generalisation_dict, error_key[i], error[i])
+        error_val = list(self._generalisation_dict.values())
+        #find delta = error @ switch - error @ end
+        if len(error_key) == 2:
+            temp_dict = {f"{error_key[i]}": error_val[1] - error_val[0]}
+        self._generalisation_dict.update(temp_dict)
+        
+                
+
 
     def _log_step_data(self, step: int, logging_dict: Dict[str, Any]):
         for tag, scalar in logging_dict.items():

@@ -99,7 +99,7 @@ model:
     unit_norm_teacher_head:           True                      # choose head weight from 1, -1 or initialise using normal
     scale_teacher_forward_by_hidden:  False
     teacher_bias_parameters:          False                     # whether or not to have bias parameters on linear layers (teacher)
-    teacher_noises:                   [1, 1]
+    teacher_noises:                   [0, 0]
     feature_rotation:
       rotation_magnitude:             1
     readout_rotation:
