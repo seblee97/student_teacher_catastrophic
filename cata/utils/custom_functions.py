@@ -168,3 +168,11 @@ def create_iterator(offset: int, increments: List[int]):
             return x
 
     return iter(CustomIterator())
+
+def add_values_in_dict(sample_dict, key, list_of_values):
+    ''' Append multiple values to a key in 
+        the given dictionary '''
+    if key not in sample_dict:
+        sample_dict[key] = list()
+    sample_dict[key].extend(list_of_values)
+    return sample_dict
