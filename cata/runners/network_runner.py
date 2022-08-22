@@ -32,6 +32,7 @@ from cata.teachers.ensembles import both_rotation_ensemble
 from cata.teachers.ensembles import feature_rotation_ensemble
 from cata.teachers.ensembles import node_sharing_ensemble
 from cata.teachers.ensembles import readout_rotation_ensemble
+from cata.teachers.ensembles import identical_ensemble
 from cata.utils import decorators
 from cata.utils import network_configuration
 from cata.utils import custom_functions
@@ -213,6 +214,10 @@ class NetworkRunner(base_runner.BaseRunner):
                 constants.NUM_SHARED_NODES: config.num_shared_nodes,
                 constants.FEATURE_ROTATION_MAGNITUDE: config.feature_rotation_magnitude,
             }
+        elif config.teacher_configuration == constants.IDENTICAL:
+            teachers_class = identical_ensemble.IdenticalTeacherEnsemble
+            #additional_arguments = {}
+        
         else:
             raise ValueError(
                 f"Teacher configuration '{config.teacher_configuration}' not recognised."

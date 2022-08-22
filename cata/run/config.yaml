@@ -14,7 +14,7 @@ ode_run:
 task:
   label_task_boundaries:            True                      
   learner_configuration:            continual                 # meta or continual - specifies whether student has separate heads for each teacher (continual) or not (meta)
-  teacher_configuration:            feature_rotation               # feature_rotation, readout_rotation,, noisy, independent, overlapping, drifting, trained_mnist (see README)
+  teacher_configuration:            identical               # identical, feature_rotation, readout_rotation,, noisy, independent, overlapping, drifting, trained_mnist (see README)
   num_teachers:                     2                         
   loss_type:                        regression                # classification or regression
 
