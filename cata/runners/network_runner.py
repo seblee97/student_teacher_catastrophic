@@ -581,6 +581,7 @@ class NetworkRunner(base_runner.BaseRunner):
             #find delta in generalisation error between switch and end of training
             if self._total_step_count == config.switch_steps[0] or self._total_step_count == self._total_training_steps:
                 self.get_generalisation_delta(self._generalisation_dict, error = latest_generalisation_errors)
+                step_logging_dict = {**step_logging_dict, **self._generalisation_dict}
 
             if self._curriculum.to_switch(
                 task_step=task_step_count,
