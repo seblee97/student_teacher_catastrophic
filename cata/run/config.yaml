@@ -14,12 +14,12 @@ ode_run:
 task:
   label_task_boundaries:            True                      
   learner_configuration:            continual                 # meta or continual - specifies whether student has separate heads for each teacher (continual) or not (meta)
-  teacher_configuration:            identical               # identical, feature_rotation, readout_rotation,, noisy, independent, overlapping, drifting, trained_mnist (see README)
+  teacher_configuration:            feature_rotation               # identical, feature_rotation, readout_rotation,, noisy, independent, overlapping, drifting, trained_mnist (see README)
   num_teachers:                     2                         
   loss_type:                        regression                # classification or regression
 
 training:
-  total_training_steps:             1000000
+  total_training_steps:             50000
   train_batch_size:                 1                         
   learning_rate:                    0.15                                             
   loss_function:                    mse                       # mse, bce
@@ -99,9 +99,9 @@ model:
     unit_norm_teacher_head:           True                      # choose head weight from 1, -1 or initialise using normal
     scale_teacher_forward_by_hidden:  False
     teacher_bias_parameters:          False                     # whether or not to have bias parameters on linear layers (teacher)
-    teacher_noises:                   [0, 0]
+    teacher_noises:                   [1, 1]
     feature_rotation:
-      rotation_magnitude:             3.14159
+      rotation_magnitude:             1
     readout_rotation:
       rotation_magnitude:             3.14159
       feature_copy_percentage:        100
@@ -113,7 +113,7 @@ model:
 curriculum:
   stopping_condition:               switch_steps              # condition on which to switch task (fixed_period, switch_steps, or loss_thresholds)
   
-  switch_steps:                     [500000]
+  switch_steps:                     [25000]
   fixed_period:                     2500                      # period for changing tasks 
   loss_thresholds:                  [0.0001]                  # loss threshold under which teacher is changed
 

@@ -7,6 +7,7 @@ import torch
 from cata import constants
 from cata.teachers import classification_teacher
 from cata.teachers import regression_teacher
+from cata.teachers.ensembles import base_teacher_ensemble
 
 
 class IdenticalTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
