@@ -109,7 +109,12 @@ class NetworkRunner(base_runner.BaseRunner):
             columns.extend(list(sample_network_config.dictionary.keys()))
         if self._consolidation_module:
             columns.append(constants.CONSOLIDATION_PENALTY)
+        generalisation_delta_tags = [
+            f"{constants.DELTA}_{i}"
+            for i in range(self._num_teachers)
+        ]
 
+        columns.extend(generalisation_delta_tags)
         return columns
 
     def get_network_configuration(self) -> network_configuration.NetworkConfiguration:
@@ -581,14 +586,11 @@ class NetworkRunner(base_runner.BaseRunner):
                     )
 
             #find delta in generalisation error between switch and end of training
-            if self._total_step_count == self._switch_check:
-                # print(type(latest_generalisation_errors))
-                # print(latest_generalisation_errors[0])
-                # print(latest_generalisation_errors)
-                self.get_generalisation_delta(error = latest_generalisation_errors)
-            if self._total_step_count == self._total_training_steps:
-                self.get_generalisation_delta(error = latest_generalisation_errors)
-                step_logging_dict = {**step_logging_dict, **self._generalisation_dict}
+            # if self._total_step_count == self._switch_check:
+            #     self.get_generalisation_delta(error = latest_generalisation_errors)
+            # if self._total_step_count == self._total_training_steps:
+            #     self.get_generalisation_delta(error = latest_generalisation_errors)
+            #     step_logging_dict = {**step_logging_dict, **self._generalisation_dict}
 
             if self._curriculum.to_switch(
                 task_step=task_step_count,
@@ -629,7 +631,36 @@ class NetworkRunner(base_runner.BaseRunner):
             step_logging_dict = {**step_logging_dict, **network_config.dictionary}
 
         step_logging_dict[constants.TEACHER_INDEX] = teacher_index
-        
+        #generalisation_delta_tags = [
+        #     f"{constants.DELTA}_{i}"
+        #     for i in range(self._num_teachers)
+        # ]
+
+
+        if self._total_step_count == self._switch_check:
+            error_list = [generalisation_errors[
+                f"{constants.GENERALISATION_ERROR}_{i}"] for i in range(self._num_teachers)
+                    ]
+            print(error_list)
+            #for i in range(self._num_teachers):
+                #print(generalisation_errors)
+                #print(generalisation_errors[
+                #     f"{constants.GENERALISATION_ERROR}_{i}"]
+                # )
+            self.get_generalisation_delta(error = error_list)
+
+        if self._total_step_count == self._total_training_steps:
+            error_list = [generalisation_errors[
+                    f"{constants.GENERALISATION_ERROR}_{i}"] for i in range(self._num_teachers)
+                    ]
+            print(error_list)
+            #for i in range(self._num_teachers):
+            self.get_generalisation_delta(error = error_list)
+            step_logging_dict = {**step_logging_dict, **self._generalisation_dict}
+
+        elif self._total_step_count != self._switch_check and self._total_step_count != self._total_training_steps:
+            for i in range(self._num_teachers):
+                step_logging_dict[f"{constants.DELTA}_{i}"] = None
 
         return step_logging_dict
 
@@ -707,20 +738,26 @@ class NetworkRunner(base_runner.BaseRunner):
         return generalisation_errors
 
     def get_generalisation_delta(self, error):
-        """Get the difference in generalisation error. Currently implemented for two teachers only!"""
+        """Get the difference in generalisation error. Currently implemented for two teacher phases only!"""
         #called at switch and at the end
         error_key = list(self._generalisation_dict.keys())
+        #print(error_key)
+        #print(error)
         #error_val = list(self._generalisation_dict.values())
         for i in range(len(error_key)):
-            self._generalisation_dict = custom_functions.add_values_in_dict(self._generalisation_dict, error_key[i], [error[i]])
+             self._generalisation_dict = custom_functions.add_values_in_dict(self._generalisation_dict, error_key[i], [error[i]])
+        #self._generalisation_dict = custom_functions.add_values_in_dict(self._generalisation_dict, )
         error_val = list(self._generalisation_dict.values()) #[[0_0], [0_1]]
-        print(error_val)
-        print(error_val[0])
+        #print(error_val)
+        #print(error_val[0])
         #find delta = error @ switch - error @ end
         if len(error_val[0]) == 2:
+            print('LAST STEP')
             for i in range(2):
-                temp_dict = {f"{error_key[i]}": error_val[i][1] - error_val[i][0]}
-            self._generalisation_dict.update(temp_dict)
+                temp = error_val[1][i] - error_val[0][i]
+                print(temp)
+                temp_dict = {f"{error_key[i]}": error_val[1][i] - error_val[0][i]}
+                self._generalisation_dict.update(temp_dict)
         
     def _log_step_data(self, step: int, logging_dict: Dict[str, Any]):
         for tag, scalar in logging_dict.items():
