@@ -223,7 +223,7 @@ class NetworkRunner(base_runner.BaseRunner):
             }
         elif config.teacher_configuration == constants.IDENTICAL:
             teachers_class = identical_ensemble.IdenticalTeacherEnsemble
-            #additional_arguments = {}
+            additional_arguments = {}
         
         else:
             raise ValueError(
@@ -367,7 +367,7 @@ class NetworkRunner(base_runner.BaseRunner):
     @decorators.timer
     def _setup_consolidation(
         self, config: student_teacher_config.StudentTeacherConfig
-    ) -> Union[None]:
+    ) -> None:
         if config.consolidation_type is None:
             consolidation_module = None
         elif config.consolidation_type == constants.EWC:

@@ -14,14 +14,14 @@ ode_run:
 task:
   label_task_boundaries:            True                      
   learner_configuration:            continual                 # meta or continual - specifies whether student has separate heads for each teacher (continual) or not (meta)
-  teacher_configuration:            feature_rotation               # identical, feature_rotation, readout_rotation,, noisy, independent, overlapping, drifting, trained_mnist (see README)
+  teacher_configuration:            identical               # identical, feature_rotation, readout_rotation,, noisy, independent, overlapping, drifting, trained_mnist (see README)
   num_teachers:                     2                         
   loss_type:                        regression                # classification or regression
 
 training:
-  total_training_steps:             50000
+  total_training_steps:             1000000
   train_batch_size:                 1                         
-  learning_rate:                    0.15                                             
+  learning_rate:                    0.125                                             
   loss_function:                    mse                       # mse, bce
   scale_head_lr:                    True                      # whether to add 1/N factor in lr of output layer  
   scale_hidden_lr:                  True                      # whether to add 1/\sqrt{N} factor in forward of hidden layer(s)
@@ -113,7 +113,7 @@ model:
 curriculum:
   stopping_condition:               switch_steps              # condition on which to switch task (fixed_period, switch_steps, or loss_thresholds)
   
-  switch_steps:                     [25000]
+  switch_steps:                     [500000]
   fixed_period:                     2500                      # period for changing tasks 
   loss_thresholds:                  [0.0001]                  # loss threshold under which teacher is changed
 

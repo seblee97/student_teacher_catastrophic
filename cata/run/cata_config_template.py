@@ -37,6 +37,7 @@ class CataConfigTemplate:
                 requirements=[
                     lambda x: x
                     in [
+                        constants.IDENTICAL,
                         constants.FEATURE_ROTATION,
                         constants.READOUT_ROTATION,
                         constants.BOTH_ROTATION,
