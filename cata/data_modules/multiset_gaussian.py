@@ -136,6 +136,9 @@ class IIDData(base_data_module.BaseData):
         # Simple masking for test data
         """select vector from --- region with certain probability"""
         bias_marker = np.random.uniform()
+        if self._mask_dimension == 0:
+            return vector
+
         split = vector.split([self._mask_dimension,self._input_dimension - self._mask_dimension], dim=1)
 
         if masking == 1:

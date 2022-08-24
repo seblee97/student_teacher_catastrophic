@@ -35,7 +35,7 @@ training:
     importance:                     0
 
 data:
-  input_source:                     iid_gaussian             # iid_gaussian, mnist_stream, mnist_digits, even_greater, exponnorm_convolve, multiset_gaussian (see README)
+  input_source:                     multiset_gaussian             # iid_gaussian, mnist_stream, mnist_digits, even_greater, exponnorm_convolve, multiset_gaussian (see README)
 
   iid_gaussian:
     mean:                           0
