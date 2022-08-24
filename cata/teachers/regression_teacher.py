@@ -39,13 +39,21 @@ class RegressionTeacher(base_teacher.BaseTeacher):
             initialisation_std=initialisation_std,
             zero_head=zero_head,
         )
-        self._noise_module = torch.distributions.normal.Normal(
-            loc=0, scale=self._noise_std
-        )
+        if self._noise_std != 0:
+        #print(f"{self._noise_std}")
+            self._noise_module = torch.distributions.normal.Normal(
+                loc=0, scale=self._noise_std
+            )
+        else:
+            print("NOISELESS")
 
     def _get_output_from_head(self, x: torch.Tensor) -> torch.Tensor:
         """Pass tensor through head."""
         noiseless_y = self._head(x)
-        noise = self._noise_module.sample(noiseless_y.shape)
+        if self._noise_std == 0:
+            noise = 0
+        else:
+            noise = self._noise_module.sample(noiseless_y.shape)
+            
         y = noiseless_y + noise
         return y
