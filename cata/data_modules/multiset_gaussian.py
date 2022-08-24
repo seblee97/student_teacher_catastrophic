@@ -137,6 +137,7 @@ class IIDData(base_data_module.BaseData):
         """select vector from --- region with certain probability"""
         bias_marker = np.random.uniform()
         split = vector.split([self._mask_dimension,self._input_dimension - self._mask_dimension], dim=1)
+
         if masking == 1:
             if self._resample_probability >= bias_marker:
                 negative = split[0].apply_(lambda x: (-1*x) if x > 0 else x)
@@ -144,8 +145,8 @@ class IIDData(base_data_module.BaseData):
                 # New: [None, :] may no longer be required. Check needed
                 return torch.cat([negative[0], split[1][0]])[None, :]
             elif split[0][0][torch.argmin(split[0][0])] < 0:
-                #make first negative component in split[0][0] positive
-                split[0][0][split[0][0] == split[0][0][torch.argmin(split[0][0])]] = split[0][0][torch.argmin(split[0][0])]*-1 
+                # make first negative component in split[0][0] positive
+                split[0][0][split[0][0] == split[0][0][torch.argmin(split[0][0])]] = split[0][0][torch.argmin(split[0][0])]*-1
                 return torch.cat([split[0][0], split[1][0]])[None, :]
             else:
                 return vector
@@ -161,7 +162,6 @@ class IIDData(base_data_module.BaseData):
                 return torch.cat([split[0][0], split[1][0]])[None, :]
             else:
                 return vector
-
 
         return vector
 
