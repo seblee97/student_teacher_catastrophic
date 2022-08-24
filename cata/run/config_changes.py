@@ -34,7 +34,23 @@ CONFIG_CHANGES_IMPORTANCE = {
     )
 }
 
-CONFIG_CHANGES = {**CONFIG_CHANGES_IMPORTANCE, **CONFIG_CHANGES_INTERLEAVE}
+CONFIG_CHANGES_SIMILARITY = {
+    f"similarity_{i}_{j}": [
+        {"data": {"multiset_gaussian": {"ms_mean": 0,
+                                        "ms_variance": 1,
+                                        "mask_proportion": i,
+                                        "resample_probability": j}}}
+    ]
+    for (i, j) in itertools.product(
+        [x/5 for x in range(6)], repeat=2
+    )
+    # Sets the mask proportion (i) and resample probability (j) to every possible value between 0 and 1, depending on
+    # the iterable. Example: x/5 for x in range(6) produces x = 0.0, 0.2, 0.4, 0.6, 0.8, and 1.0
+    # Repeat = 2 means there are 2 dimensions, so we have values: (0.0, 0.0), (0.0, 0.2), ... (0.2, 0.0), ...  e.t.c.
+
+}
+
+CONFIG_CHANGES = {**CONFIG_CHANGES_SIMILARITY}
 
 # class ConfigChange:
 
