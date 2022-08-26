@@ -21,7 +21,7 @@ task:
 training:
   total_training_steps:             1000000
   train_batch_size:                 1                         
-  learning_rate:                    0.125                                             
+  learning_rate:                    0.1                                             
   loss_function:                    mse                       # mse, bce
   scale_head_lr:                    True                      # whether to add 1/N factor in lr of output layer  
   scale_hidden_lr:                  True                      # whether to add 1/\sqrt{N} factor in forward of hidden layer(s)
@@ -51,7 +51,7 @@ data:
     ms_mean:                        0
     ms_variance:                    1
     mask_proportion:                0.5
-    resample_probability:           0.5
+    resample_probability:           0.8
 
 
 logging:

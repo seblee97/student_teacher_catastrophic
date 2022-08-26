@@ -9,7 +9,7 @@ from cata.utils import custom_functions
 
 class IdenticalTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
     """Teacher ensemble (primarily for mean-field limit regime) in which both feature and
-    readout similarities are tuned by rotation.
+    readout similarities are tuned by rotation. IMPLEMENTED FOR TWO TEACHERS ONLY ATM!!
     """
 
     def __init__(
@@ -74,12 +74,20 @@ class IdenticalTeacherEnsemble(base_teacher_ensemble.BaseTeacherEnsemble):
             v = np.random.normal(size=(dimension))
             #v_2 = np.random.normal(size=(dimension))
             normal = normalisation * v / np.linalg.norm(v)
-            teacher_0_tensor = torch.Tensor(normal).reshape(teachers[0].layers[0].weight.data.shape)
-            teacher_1_tensor = torch.Tensor(normal).reshape(teachers[1].layers[0].weight.data.shape)
+            teacher_tensor = torch.Tensor(normal).reshape(teachers[0].layers[0].weight.data.shape)
+            #teacher_1_tensor = torch.Tensor(normal).reshape(teachers[1].layers[0].weight.data.shape)
+            for teacher in teachers:
+                teacher.layers[0].weight.data = teacher_tensor
+            #teachers[1].layers[0].weight.data = teacher_1_tensor
+            
+            for teacher in teachers:
+                teacher.head.weight.data = torch.Tensor([-1]).reshape(teacher.head.weight.data.shape)
+            print("-----TEACHER WEIGHT-----")
+            #print(teachers[0].head.weight)
+            print(teachers[0].head.weight.data)
+            print(teachers[1].head.weight.data)
 
-            teachers[0].layers[0].weight.data = teacher_0_tensor
-            teachers[1].layers[0].weight.data = teacher_1_tensor
-        print(teachers)
+        #print(teachers)
         return teachers
 
 
