@@ -10,6 +10,8 @@ from typing import Union
 import numpy as np
 import torch
 import torch.nn as nn
+from run_modes import base_runner
+
 from cata import constants
 from cata.curricula import base_curriculum
 from cata.curricula import hard_steps_curriculum
@@ -28,11 +30,11 @@ from cata.students import meta_student
 from cata.teachers.ensembles import base_teacher_ensemble
 from cata.teachers.ensembles import both_rotation_ensemble
 from cata.teachers.ensembles import feature_rotation_ensemble
+from cata.teachers.ensembles import identical_teacher_ensemble
 from cata.teachers.ensembles import node_sharing_ensemble
 from cata.teachers.ensembles import readout_rotation_ensemble
 from cata.utils import decorators
 from cata.utils import network_configuration
-from run_modes import base_runner
 
 
 class NetworkRunner(base_runner.BaseRunner):
@@ -66,6 +68,7 @@ class NetworkRunner(base_runner.BaseRunner):
         self._log_overlaps = config.log_overlaps
         self._overlap_frequency = config.overlap_frequency
         self._consolidation_type = config.consolidation_type
+        self._noise_to_student = config.noise_to_student
 
         # initialise student, teachers, logger_module,
         # data_module, loss_module, torch optimiser, and curriculum object
@@ -74,6 +77,7 @@ class NetworkRunner(base_runner.BaseRunner):
         self._student = self._setup_student(config=config)
         # self._logger = self._setup_logger(config=config)
         self._data_module = self._setup_data(config=config)
+        self._noise_modules = self._setup_noise(config=config)
         self._loss_function = self._setup_loss(config=config)
         self._optimiser = self._setup_optimiser(config=config)
         self._curriculum = self._setup_curriculum(config=config)
@@ -207,6 +211,9 @@ class NetworkRunner(base_runner.BaseRunner):
                 constants.NUM_SHARED_NODES: config.num_shared_nodes,
                 constants.FEATURE_ROTATION_MAGNITUDE: config.feature_rotation_magnitude,
             }
+        elif config.teacher_configuration == constants.IDENTICAL:
+            teachers_class = identical_teacher_ensemble.IdenticalTeacherEnsemble
+            additional_arguments = {}
         else:
             raise ValueError(
                 f"Teacher configuration '{config.teacher_configuration}' not recognised."
@@ -287,6 +294,24 @@ class NetworkRunner(base_runner.BaseRunner):
                 f"Data module (specified by input source) {config.input_source} not recognised"
             )
         return data_module
+
+    @decorators.timer
+    def _setup_noise(
+        self, config: student_teacher_config.StudentTeacherConfig
+    ) -> base_data_module.BaseData:
+        """Initialise input noise module."""
+        noise_modules = []
+        for (mean, variance) in config.noise_to_student:
+            noise_module = iid_data.IIDData(
+                train_batch_size=config.train_batch_size,
+                test_batch_size=config.test_batch_size,
+                input_dimension=config.input_dimension,
+                mean=mean,
+                variance=variance,
+                dataset_size=config.dataset_size,
+            )
+            noise_modules.append(noise_module)
+        return noise_modules
 
     @decorators.timer
     def _setup_loss(
@@ -513,7 +538,9 @@ class NetworkRunner(base_runner.BaseRunner):
 
             if self._total_step_count % self._print_frequency == 0:
                 if self._total_step_count != 0:
-                    self._logger.info(f"Time for last {self._print_frequency} steps: {time.time() - timer}")
+                    self._logger.info(
+                        f"Time for last {self._print_frequency} steps: {time.time() - timer}"
+                    )
                     timer = time.time()
                 self._logger.info(
                     f"Generalisation errors @ (~) step {self._total_step_count} "
@@ -585,8 +612,11 @@ class NetworkRunner(base_runner.BaseRunner):
         batch = self._data_module.get_batch()
         batch_input = batch[constants.X].to(self._device)
 
+        noise = self._noise_modules[teacher_index].get_batch()
+        noise_input = noise[constants.X].to(self._device)
+
         # forward through student network
-        student_output = self._student.forward(batch_input)
+        student_output = self._student.forward(batch_input + noise_input)
 
         # forward through teacher network(s)
         teacher_output = self._teachers.forward(teacher_index, batch_input)
