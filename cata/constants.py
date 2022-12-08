@@ -196,6 +196,8 @@ CLUSTER = "cluster"
 LOSS = "loss"
 CONSOLIDATION_PENALTY = "consolidation_penalty"
 PRINT_FREQUENCY = "print_frequency"
+IDENTICAL = "identical"
+NOISE_TO_STUDENT = "noise_to_student"
 
 
 EVEN_ODD_MAPPING = {0: 0, 1: 1, 2: 0, 3: 1, 4: 0, 5: 1, 6: 0, 7: 1, 8: 0, 9: 1}
