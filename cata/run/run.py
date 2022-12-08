@@ -1,14 +1,15 @@
 import argparse
 import os
 
-from cata import constants
-from cata.run import student_teacher_config
-from cata.runners import core_runner
 from run_modes import cluster_run
 from run_modes import parallel_run
 from run_modes import serial_run
 from run_modes import single_run
 from run_modes import utils
+
+from cata import constants
+from cata.run import student_teacher_config
+from cata.runners import core_runner
 
 MAIN_FILE_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -66,6 +67,7 @@ if __name__ == "__main__":
             config_path=args.config_path,
             checkpoint_path=single_checkpoint_path,
             run_methods=["run", "post_process"],
+            stochastic_packages=["numpy", "torch", "random"],
         )
 
     elif args.mode in [constants.PARALLEL, constants.SERIAL, constants.CLUSTER]:
