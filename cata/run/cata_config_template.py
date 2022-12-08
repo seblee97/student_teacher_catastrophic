@@ -1,6 +1,7 @@
-from cata import constants
 from config_manager import config_field
 from config_manager import config_template
+
+from cata import constants
 
 
 class CataConfigTemplate:
@@ -39,6 +40,7 @@ class CataConfigTemplate:
                     in [
                         constants.FEATURE_ROTATION,
                         constants.READOUT_ROTATION,
+                        constants.IDENTICAL,
                         constants.BOTH_ROTATION,
                         constants.NODE_SHARING,
                     ]
@@ -172,7 +174,22 @@ class CataConfigTemplate:
                         constants.MNIST_STREAM,
                     ]
                 ],
-            )
+            ),
+            config_field.Field(
+                name=constants.NOISE_TO_STUDENT,
+                types=[list],
+                requirements=[
+                    lambda x: all(
+                        [
+                            isinstance(y, list)
+                            and all(
+                                [isinstance(z, float) or isinstance(z, int) for z in y]
+                            )
+                            for y in x
+                        ]
+                    )
+                ],
+            ),
         ],
         nested_templates=[_iid_gaussian_template],
         level=[constants.DATA],
