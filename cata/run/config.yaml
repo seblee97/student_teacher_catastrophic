@@ -43,8 +43,8 @@ data:
     dataset_size:                   inf
 
   noise_to_student: # list of lists dim 2. One item for each teacher, each item specifies mean, variance
-    - [0, 0]
-    - [0, 0]
+    - []
+    - []
 
 logging:
   verbose:                          True                      
