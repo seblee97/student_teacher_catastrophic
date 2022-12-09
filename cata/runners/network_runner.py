@@ -301,16 +301,20 @@ class NetworkRunner(base_runner.BaseRunner):
     ) -> base_data_module.BaseData:
         """Initialise input noise module."""
         noise_modules = []
-        for (mean, variance) in config.noise_to_student:
-            noise_module = iid_data.IIDData(
-                train_batch_size=config.train_batch_size,
-                test_batch_size=config.test_batch_size,
-                input_dimension=config.input_dimension,
-                mean=mean,
-                variance=variance,
-                dataset_size=config.dataset_size,
-            )
-            noise_modules.append(noise_module)
+        for noise_spec in config.noise_to_student:
+            if not noise_spec:
+                noise_modules.append(None)
+            else:
+                mean, variance = noise_spec
+                noise_module = iid_data.IIDData(
+                    train_batch_size=config.train_batch_size,
+                    test_batch_size=config.test_batch_size,
+                    input_dimension=config.input_dimension,
+                    mean=mean,
+                    variance=variance,
+                    dataset_size=config.dataset_size,
+                )
+                noise_modules.append(noise_module)
         return noise_modules
 
     @decorators.timer
