@@ -182,8 +182,14 @@ class CataConfigTemplate:
                     lambda x: all(
                         [
                             isinstance(y, list)
-                            and all(
-                                [isinstance(z, float) or isinstance(z, int) for z in y]
+                            and (
+                                not bool(y)  # empty list
+                                or all(
+                                    [
+                                        isinstance(z, float) or isinstance(z, int)
+                                        for z in y
+                                    ]
+                                )
                             )
                             for y in x
                         ]
