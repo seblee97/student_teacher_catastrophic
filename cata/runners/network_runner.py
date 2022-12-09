@@ -616,11 +616,16 @@ class NetworkRunner(base_runner.BaseRunner):
         batch = self._data_module.get_batch()
         batch_input = batch[constants.X].to(self._device)
 
-        noise = self._noise_modules[teacher_index].get_batch()
-        noise_input = noise[constants.X].to(self._device)
+        noise_module = self._noise_modules[teacher_index]
+        if noise_module is None:
+            student_batch_input = batch_input
+        else:
+            noise = noise_module.get_batch()
+            noise_input = noise[constants.X].to(self._device)
+            student_batch_input = batch_input + noise_input
 
         # forward through student network
-        student_output = self._student.forward(batch_input + noise_input)
+        student_output = self._student.forward(student_batch_input)
 
         # forward through teacher network(s)
         teacher_output = self._teachers.forward(teacher_index, batch_input)
