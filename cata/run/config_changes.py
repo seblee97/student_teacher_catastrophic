@@ -35,6 +35,18 @@ CONFIG_CHANGES_INPUT_NOISE = {
     for n in [0, 0.01, 0.1, 1, 3]
 }
 
+CONFIG_CHANGES_IMPAIRED_UNITS = {
+    f"impaired_units_{n}": [
+        {
+            "model": {
+                "student": {"student_hidden_layers": [3]},
+            }
+        },
+        {"training": {"freeze_units": [n, 0]}},
+    ]
+    for n in [0, 1, 2]
+}
+
 CONFIG_CHANGES_OUTPUT_NOISE_OVERPARAM = {
     f"output_noise_{n}": [{"model": {"teachers": {"teacher_noises": [n, 0]}}}]
     for n in [0, 0.1, 1, 3]
@@ -43,10 +55,6 @@ CONFIG_CHANGES_OUTPUT_NOISE_OVERPARAM = {
 CONFIG_CHANGES_INPUT_NOISE_OVERPARAM = {
     f"input_noise_{n}": [{"data": {"noise_to_student": [[0, n], [0, 0]]}}]
     for n in [0, 0.01, 0.1, 1, 3]
-}
-
-CONFIG_CHANGES_IMPAIRED_UNITS = {
-    f"impaired_units_{n}": [{"training": {"freeze_units": [n, 0]}}] for n in [0, 1, 2]
 }
 
 CONFIG_CHANGES_IMPAIRED_UNITS_OVERPARAM = {
