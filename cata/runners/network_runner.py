@@ -69,6 +69,7 @@ class NetworkRunner(base_runner.BaseRunner):
         self._overlap_frequency = config.overlap_frequency
         self._consolidation_type = config.consolidation_type
         self._noise_to_student = config.noise_to_student
+        self._freeze_units = config.freeze_units
 
         # initialise student, teachers, logger_module,
         # data_module, loss_module, torch optimiser, and curriculum object
@@ -82,6 +83,7 @@ class NetworkRunner(base_runner.BaseRunner):
         self._optimiser = self._setup_optimiser(config=config)
         self._curriculum = self._setup_curriculum(config=config)
         self._consolidation_module = self._setup_consolidation(config=config)
+        self._unit_masks = self._setup_unit_masks(config=config)
 
         self._manage_network_devices()
 
@@ -355,9 +357,7 @@ class NetworkRunner(base_runner.BaseRunner):
         return curriculum
 
     @decorators.timer
-    def _setup_consolidation(
-        self, config: student_teacher_config.StudentTeacherConfig
-    ) -> Union[None]:
+    def _setup_consolidation(self, config: student_teacher_config.StudentTeacherConfig):
         if config.consolidation_type is None:
             consolidation_module = None
         elif config.consolidation_type == constants.EWC:
@@ -385,6 +385,16 @@ class NetworkRunner(base_runner.BaseRunner):
                 f"Consolidation type {config.consolidation_type} not recognised."
             )
         return consolidation_module
+
+    @decorators.timer
+    def _setup_unit_masks(
+        self, config: student_teacher_config.StudentTeacherConfig
+    ) -> None:
+        unit_masks = []
+        for num_units in config.freeze_units:
+            mask = torch.zeros(num_units, self._input_dimension)
+            unit_masks.append(mask)
+        return unit_masks
 
     @decorators.timer
     def _setup_optimiser(
@@ -645,6 +655,15 @@ class NetworkRunner(base_runner.BaseRunner):
                 training_step_dict[constants.CONSOLIDATION_PENALTY] = 0
 
         loss.backward()
+
+        # mask units in first layer
+        if self._freeze_units[teacher_index] > 0:
+            for params in self._student.layers[0].parameters():
+                for unit_index, unit in enumerate(
+                    range(self._freeze_units[teacher_index])
+                ):
+                    params.grad[unit, :] = self._unit_masks[teacher_index][unit_index]
+
         self._optimiser.step()
 
         return training_step_dict
