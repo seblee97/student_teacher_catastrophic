@@ -19,7 +19,7 @@ task:
   loss_type:                        regression                # classification or regression
 
 training:
-  total_training_steps:             5000000
+  total_training_steps:             50000000
   train_batch_size:                 1                         
   learning_rate:                    1                                             
   loss_function:                    mse                       # mse, bce
@@ -108,7 +108,7 @@ model:
 curriculum:
   stopping_condition:               switch_steps              # condition on which to switch task (fixed_period, switch_steps, or loss_thresholds)
   
-  switch_steps:                     [1500000]
+  switch_steps:                     [5000000]
   fixed_period:                     1                      # period for changing tasks 
   loss_thresholds:                  [0.0001]                  # loss threshold under which teacher is changed
 
