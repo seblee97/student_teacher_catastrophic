@@ -135,6 +135,11 @@ class CataConfigTemplate:
                 types=[list],
                 requirements=[lambda x: all(isinstance(y, int) for y in x)],
             ),
+            config_field.Field(
+                name=constants.FREEZE_UNITS,
+                types=[list],
+                requirements=[lambda x: all(isinstance(y, int) for y in x)],
+            ),
         ],
         nested_templates=[_consolidation_template],
         level=[constants.TRAINING],
