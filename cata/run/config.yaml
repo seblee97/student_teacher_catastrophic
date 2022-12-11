@@ -29,7 +29,7 @@ training:
   train_head_layer:                 True
   freeze_features:                  []                        # hidden layers frozen / unfrozen at these steps.
 
-  freeze_units:                     [1, 0] # list of dim num_teachers. Each item is number of units to freeze for each teacher.
+  freeze_units:                     [0, 0] # list of dim num_teachers. Each item is number of units to freeze for each teacher.
   
   consolidation:                    
 
