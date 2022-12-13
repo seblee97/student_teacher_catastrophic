@@ -21,7 +21,7 @@ task:
 training:
   total_training_steps:             30000000
   train_batch_size:                 1                         
-  learning_rate:                    2                                             
+  learning_rate:                    1                                             
   loss_function:                    mse                       # mse, bce
   scale_head_lr:                    True                      # whether to add 1/N factor in lr of output layer  
   scale_hidden_lr:                  True                      # whether to add 1/\sqrt{N} factor in forward of hidden layer(s)
@@ -52,7 +52,7 @@ logging:
   verbose:                          True                      
   verbose_tb:                       0                         # 0 - no tb logging, 1 - minimal tb logging, 2 - full tb logging                     
   log_frequency:                    100
-  checkpoint_frequency:             500
+  checkpoint_frequency:             1000
   print_frequency:                  500                    
   log_to_df:                        True
   merge_at_checkpoint:              True
